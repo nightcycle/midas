@@ -1,0 +1,13 @@
+[package]
+name = "nightcycle/midas"
+description = "Turn every game you touch to gold with a comprehensive analytics suite!"
+version = "0.1.0"
+authors = ["CJ Oyer <coyer@nightcycle.us>"]
+realm = "shared"
+registry = "https://github.com/upliftgames/wally-index"
+exclude = ["Packages", ".vscode"]
+
+[dependencies]
+maid = "quenty/maid@^2.0.1-canary"
+signal = "quenty/signal@^2.0.0-canary"
+attributer = "nightcycle/attributer@1.0.4"
