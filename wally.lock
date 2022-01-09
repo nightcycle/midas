@@ -3,6 +3,11 @@
 registry = "test"
 
 [[package]]
+name = "elttob/fusion"
+version = "0.1.1-beta"
+dependencies = []
+
+[[package]]
 name = "evaera/promise"
 version = "3.2.1"
 dependencies = []
@@ -28,9 +33,19 @@ version = "3.2.1"
 dependencies = []
 
 [[package]]
+name = "freddylist/llama"
+version = "1.1.1"
+dependencies = []
+
+[[package]]
 name = "nightcycle/midas"
 version = "0.1.0"
-dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["remote", "finobinos/remote@3.3.5"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
+dependencies = [["fusion", "elttob/fusion@0.1.1-beta"], ["import", "vocksel/import@2.1.0"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["promise", "evaera/promise@3.2.1"], ["remote", "finobinos/remote@3.3.5"], ["rodux", "roblox/rodux@3.0.0"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
+
+[[package]]
+name = "osyrisrblx/t"
+version = "3.0.0"
+dependencies = []
 
 [[package]]
 name = "quenty/maid"
@@ -41,3 +56,18 @@ dependencies = []
 name = "quenty/signal"
 version = "2.0.0-canary.140ed9d6.2"
 dependencies = []
+
+[[package]]
+name = "roblox/rodux"
+version = "3.0.0"
+dependencies = []
+
+[[package]]
+name = "roblox/testez"
+version = "0.4.1"
+dependencies = []
+
+[[package]]
+name = "vocksel/import"
+version = "2.1.0"
+dependencies = [["Llama", "freddylist/llama@1.1.1"], ["TestEZ", "roblox/testez@0.4.1"], ["t", "osyrisrblx/t@3.0.0"]]

@@ -1,6 +1,7 @@
+local runService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
-local packages = script.Parent
-local promiseConstructor = require(packages:WaitForChild("Promise"))
+local packages = script.Parent.Parent
+local promiseConstructor = require(packages:WaitForChild("promise"))
 
 local PlayFabSettings = {
     _internalSettings = {
@@ -69,6 +70,7 @@ end
 local PlayFab = {}
 
 function PlayFab:Fire(entityToken, request)
+    print("FIAH", entityToken, request)
 	task.spawn(function()
 		local success, msg = function()
 			makePlayFabApiCall("/Event/WriteEvents", request or {}, "X-EntityToken", entityToken)
@@ -82,15 +84,18 @@ function PlayFab:Fire(entityToken, request)
 end
 
 function PlayFab:Register(player)
+    if runService:IsClient() then return end
+    print("A")
 	repeat task.wait() until PlayFabSettings.settings.devSecretKey ~= nil
+    print("Fiah")
 	local loginResult = makePlayFabApiCall("/Client/LoginWithCustomID", {
         CreateAccount = true, -- Create an account if one doesn't already exist
         CustomId = tostring(player.UserId) -- You can use your own CustomId scheme
     })
 
-	local entityToken = loginResult.EntityToken.EntityToken
+	local entityToken = loginResult.EntityToken
 	local sessionTicket = loginResult.SessionTicket
-
+    print("Entity")
 	return entityToken, sessionTicket
 end
 

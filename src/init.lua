@@ -10,47 +10,57 @@ local playFab = require(script:WaitForChild("PlayFab"))
 local Midas = {}
 Midas.ClassName = "Midas"
 
-function Midas.new(class, parentClass, player: Player)
+function Midas.new(class, parentClass, player)
 	local self = {
 		_class = class,
 		_parent = parentClass,
 		_player = player,
-		_states = {},
+		_metrics = {},
 		_maid = maidConstructor.new(),
 	}
+	setmetatable(self, Midas)
 	self._maid:GiveTask(self)
-	return setmetatable(self, Midas)
+	return self
 end
 
 if runService:IsClient() then
-	local clientRemote = remoteConstructor.new()
-	clientRemote:BindToServer(game:WaitForChild("ReplicatedStorage"):WaitForChild("MidasAnalyticsEvent"))
+	local clientRemote = game:WaitForChild("ReplicatedStorage"):WaitForChild("MidasAnalyticsEvent")
 
 	function Midas:Fire()
-
+		clientRemote:FireServer(self:Serialize())
 	end
 else
 	local remoteEvent = Instance.new("RemoteEvent", game:WaitForChild("ReplicatedStorage"))
 	remoteEvent.Name = "MidasAnalyticsEvent"
 
+	local function sendEvent(player, payload)
+		local playerInfo = players[player]
+		print("Player", players)
+		if playerInfo then
+			print("Dababy lessgo")
+			local playFabApi = playerInfo.PlayFab:getState()
+			local token = playFabApi.EntityToken
+			playFab:Fire(token,{
+				Payload = payload,
+			})
+		end
+	end
+
+	remoteEvent.OnServerEvent:Connect(function(player, payload)
+		print("A: ", player, payload)
+		sendEvent(player, payload)
+	end)
+
 	function Midas:Fire() --shoot it out to server
-		local playerInfo = players[self._player]
-		local playFabApi = playerInfo.PlayFab:getState()
-		local context = self:Serialize()
-		playFab:Fire(playFabApi.EntityToken,{
-			Payload = {
-
-			},
-			Eneity = playFabApi.EntityToken,
-
-		})
+		local payload = self:Serialize()
+		sendEvent(self._player, payload)
 	end
 end
 
 function Midas:Serialize()
-	local function serialize(states)
+	local function serialize(metrics)
 		local newTabl = {}
-		for k, v in pairs(states) do
+		for k, v in pairs(metrics) do
 			if type(v) == "table" then
 				newTabl[k] = serialize(v)
 			elseif type(v) == "function" then
@@ -61,7 +71,14 @@ function Midas:Serialize()
 		end
 		return newTabl
 	end
-	return serialize(self._states)
+	print(self)
+	local output = {
+		CLASS = self._class,
+		PARENT = self._parent,
+		PLAYER = self._player.UserId,
+		METRICS = serialize(self._metrics),
+	}
+	return output
 end
 
 function Midas:Connect(signal)
@@ -74,23 +91,19 @@ function Midas:__index(index)
 	if Midas[index] then
 		return Midas[index]
 	else
-		return self._tasks[index]
+		return self._metrics[index]
 	end
 end
 
 function Midas:__newindex(index, newState)
-	if Midas[index] ~= nil then
-		error(("'%s' is reserved"):format(tostring(index)), 2)
-	end
-
-	local states = self._states
-	local oldState = states[index]
+	local metrics = self._metrics
+	local oldState = metrics[index]
 
 	if oldState == newState then
 		return
 	end
 
-	states[index] = newState
+	metrics[index] = newState
 end
 
 function Midas:Destroy()

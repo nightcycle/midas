@@ -15,30 +15,18 @@ local function setUpPlayer(player)
 				SessionTicket = sessionTicket,
 			}
 		end),
-		State = rodux.createReducer(function(state, action)
-			return {
-
-			}
-		end),
 		Session = rodux.createReducer(function(state, action)
 			return {
 
 			}
 		end),
 	})
-
-	player.CharacterAdded:Connect(function()
-
-	end)
-	player.Chatted:Connect(function(msg)
-
-	end)
-	player.CharacterRemoving:Connect(function()
-
-	end)
 end
 
 game.Players.PlayerAdded:Connect(setUpPlayer)
+for i, player in ipairs(game.Players:GetChildren()) do
+	setUpPlayer(player)
+end
 
 game.Players.PlayerRemoving:Connect(function(player)
 	playFab:Deregister(player)

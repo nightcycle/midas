@@ -1,5 +1,5 @@
 {
-  "name": "synthetic-test",
+  "name": "midas-test",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -9,14 +9,14 @@
         "$path": "Packages"
       }
     },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "midas": {
+        "$path": "src"
+      }
+    },
     "StarterPlayer": {
       "$className": "StarterPlayer",
-      "StarterPlayerScripts": {
-        "$className": "StarterPlayerScripts",
-        "synthetic": {
-          "$path": "src"
-        }
-      },
       "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
         "$path": "lab"
