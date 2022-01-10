@@ -38,9 +38,14 @@ version = "1.1.1"
 dependencies = []
 
 [[package]]
+name = "nightcycle/fetchu"
+version = "1.0.1"
+dependencies = []
+
+[[package]]
 name = "nightcycle/midas"
 version = "0.1.0"
-dependencies = [["fusion", "elttob/fusion@0.1.1-beta"], ["import", "vocksel/import@2.1.0"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["promise", "evaera/promise@3.2.1"], ["remote", "finobinos/remote@3.3.5"], ["rodux", "roblox/rodux@3.0.0"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
+dependencies = [["comm", "sleitnick/comm@0.2.2"], ["fetchu", "nightcycle/fetchu@1.0.1"], ["fusion", "elttob/fusion@0.1.1-beta"], ["import", "vocksel/import@2.1.0"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["promise", "evaera/promise@3.2.1"], ["remote", "finobinos/remote@3.3.5"], ["rodux", "roblox/rodux@3.0.0"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
 
 [[package]]
 name = "osyrisrblx/t"
@@ -65,6 +70,21 @@ dependencies = []
 [[package]]
 name = "roblox/testez"
 version = "0.4.1"
+dependencies = []
+
+[[package]]
+name = "sleitnick/comm"
+version = "0.2.2"
+dependencies = [["Option", "sleitnick/option@1.0.3"], ["Promise", "evaera/promise@3.2.1"], ["Signal", "sleitnick/signal@1.0.1"]]
+
+[[package]]
+name = "sleitnick/option"
+version = "1.0.3"
+dependencies = []
+
+[[package]]
+name = "sleitnick/signal"
+version = "1.0.1"
 dependencies = []
 
 [[package]]

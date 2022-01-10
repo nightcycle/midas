@@ -19,7 +19,9 @@
       "$className": "StarterPlayer",
       "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
-        "$path": "lab"
+        "lab": {
+          "$path": "lab"
+        }
       }
     }
   }

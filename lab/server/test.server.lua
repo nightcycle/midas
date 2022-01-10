@@ -1,6 +1,8 @@
+local packages = game.ReplicatedStorage:WaitForChild("Packages")
+
 local titleId = "82C4C"
-local devSecretKey = "CB6D9C684247986C"
+local devSecretKey = "PK9MCKRMBC9BD7J5TMQX9R6SPKD6DC7K41YHPIXKFUTK7KBZ1N"
+
 local midas = game.ServerStorage:WaitForChild("midas")
-midas.Parent = game.ReplicatedStorage:WaitForChild("Packages")
-local midasAnalytics = require(midas)
-midasAnalytics = midasAnalytics(titleId, devSecretKey)
+midas.Parent = packages
+local analytics = require(packages:WaitForChild("midas"))(titleId, devSecretKey)

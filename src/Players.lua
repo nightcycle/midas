@@ -1,39 +1,29 @@
+local RunService = game:GetService("RunService")
+if RunService:IsClient() then return {} end
+
 local packages = script.Parent.Parent
-local rodux = require(packages:WaitForChild("rodux"))
-
 local playFab = require(script.Parent:WaitForChild("PlayFab"))
-
 local players = {}
 
 local function setUpPlayer(player)
-	local entityToken, sessionTicket = playFab:Register(player)
-
-	players[player] = rodux.combineReducers({
-		PlayFab = rodux.createReducer(function()
-			return {
-				EntityToken = entityToken,
-				SessionTicket = sessionTicket,
-			}
-		end),
-		Session = rodux.createReducer(function(state, action)
-			return {
-
-			}
-		end),
-	})
+	local sessionId, playerId = playFab:Register(tostring(player.UserId))
+	players[player] = {
+		PlayerId = playerId,
+		SID = sessionId,
+	}
 end
+
+
 
 game.Players.PlayerAdded:Connect(setUpPlayer)
-for i, player in ipairs(game.Players:GetChildren()) do
-	setUpPlayer(player)
-end
-
-game.Players.PlayerRemoving:Connect(function(player)
-	playFab:Deregister(player)
+task.spawn(function()
+	for i, player in ipairs(game.Players:GetChildren()) do
+		setUpPlayer(player)
+	end
 end)
 
-game.Close:Connect(function()
-
+game.Players.PlayerRemoving:Connect(function(player)
+	players[player] = nil
 end)
 
 return players

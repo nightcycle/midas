@@ -1,107 +1,95 @@
+local httpService = game:GetService("HttpService")
 local runService = game:GetService("RunService")
-local HttpService = game:GetService("HttpService")
 local packages = script.Parent.Parent
-local promiseConstructor = require(packages:WaitForChild("promise"))
-
-local PlayFabSettings = {
-    _internalSettings = {
-        sdkVersionString = "RobloxSdk_undefined",
-        buildIdentifier = "default_manual_build",
-        requestGetParams = {["sdk"] = "RobloxSdk_undefined"}
-    },
-    settings = {
-        titleId = nil,
-        devSecretKey = nil,
-        -- Probably don't need to edit
-        productionUrl = ".playfabapi.com",
-        verticalName = nil -- The name of a customer vertical. This is only for customers running a private cluster. Generally you shouldn't touch this
-    }
-}
-
-function makePlayFabApiCall(path, requestBody, authKey, authValue, onSuccess)
-	local fullUrl = "https://" .. PlayFabSettings.settings.titleId .. PlayFabSettings.settings.productionUrl .. path
-	local getParams = PlayFabSettings._internalSettings.requestGetParams
-	local firstParam = true
-	for key, value in pairs(getParams) do
-		if firstParam then
-			fullUrl ..= "?"
-			firstParam = false
-		else
-			fullUrl ..= "&"
-		end
-
-		fullUrl ..= key .. "=" .. value
-	end
-
-    local encodedBody = HttpService:JSONEncode(requestBody)
-    local headers = {
-        ["X-ReportErrorAsSuccess"] = "true",
-        ["X-PlayFabSDK"] = PlayFabSettings._internalSettings.sdkVersionString,
-        ["Content-Type"] = "application/json",
-    }
-
-    if authKey and authValue ~= "" and authValue then
-        headers[authKey] = authValue
-    end
-
-    local success, response = pcall(HttpService.RequestAsync, HttpService, {
-        Url = fullUrl,
-        Method = "POST",
-        Headers = headers,
-        Body = encodedBody,
-    })
-
-    if success then
-        if response.Success then
-            local responseBody = HttpService:JSONDecode(response.Body)
-            if responseBody and responseBody.code == 200 and responseBody.data then
-                onSuccess(responseBody.data)
-            end
-        end
-    else
-		if response.Body then
-			print(response, HttpService:JSONDecode(response.Body))
-		else
-			print(response)
-		end
-    end
-end
+local fetchu = require(packages:WaitForChild("fetchu"))
 
 local PlayFab = {}
 
-function PlayFab:Fire(entityToken, request)
-    print("FIAH", entityToken, request)
-	task.spawn(function()
-		local success, msg = function()
-			makePlayFabApiCall("/Event/WriteEvents", request or {}, "X-EntityToken", entityToken)
-		end
-		if success then
-			print("Success!")
-		else
-			warn("Failure: "..tostring(msg))
-		end
-	end)
+local titleId
+local devSecretKey
+
+function PlayFab:Fire(playerId, eventName, body)
+    local function httpEvent(attempt)
+        if not attempt then attempt = 0 end
+        local url = "https://"..titleId..".playfabapi.com/Server/WritePlayerEvent"
+
+        local response
+        print(playerId, eventName, body)
+        local success, msg = pcall(function()
+            response = fetchu.post(url,
+            {
+                content_type = Enum.HttpContentType.ApplicationJson,
+                headers = {
+                    ["X-SecretKey"] = devSecretKey,
+                },
+                body = {
+                    EventName = eventName,
+                    PlayFabId = playerId,
+                    Body = body,
+                },
+                compress = false,
+            })
+        end)
+        response = httpService:JSONDecode(response)
+        if success and response.code == 200 then
+            return response.data.EventId
+        elseif attempt < 10 then
+            task.wait(1)
+            return httpEvent(attempt + 1)
+        else
+            print(response)
+            error("Couldn't send event")
+        end
+    end
+	task.spawn(httpEvent)
 end
 
-function PlayFab:Register(player)
+function PlayFab:Register(id)
     if runService:IsClient() then return end
-    print("A")
-	repeat task.wait() until PlayFabSettings.settings.devSecretKey ~= nil
-    print("Fiah")
-	local loginResult = makePlayFabApiCall("/Client/LoginWithCustomID", {
-        CreateAccount = true, -- Create an account if one doesn't already exist
-        CustomId = tostring(player.UserId) -- You can use your own CustomId scheme
-    })
+    while titleId == nil do task.wait() end
 
-	local entityToken = loginResult.EntityToken
-	local sessionTicket = loginResult.SessionTicket
-    print("Entity")
-	return entityToken, sessionTicket
+    local function httpRegister(attempt)
+        if not attempt then attempt = 0 end
+        local url = "https://"..titleId..".playfabapi.com/Client/LoginWithCustomID"
+
+        local response
+        local success, msg = pcall(function()
+            response = fetchu.post(url,
+            {
+                content_type = Enum.HttpContentType.ApplicationJson,
+                headers = {
+                    ["X-ReportErrorAsSuccess"] = "true",
+                    ["X-PlayFabSDK"] = "RobloxSdk_undefined",
+                },
+                body = {
+                    TitleId = titleId,
+                    CustomId = tostring(id),
+                    CreateAccount = true,
+                },
+                compress = false,
+            })
+        end)
+        response = httpService:JSONDecode(response)
+        if success and response.code == 200 then
+            local data = response.data
+            local sID = data.SessionTicket
+            local pID = data.PlayFabId
+            return sID, pID
+        elseif attempt < 10 then
+            task.wait(1)
+            return httpRegister(attempt + 1)
+        else
+            error("Couldn't retrieve entity token for "..tostring(id))
+        end
+    end
+
+    local sessionId, playerId = httpRegister()
+    return sessionId, playerId
 end
 
-function PlayFab.init(titleId, devSecretKey)
-	PlayFabSettings.settings.titleId = titleId
-	PlayFabSettings.settings.devSecretKey = devSecretKey
+function PlayFab.init(tId, dSK)
+	titleId = tId
+	devSecretKey = dSK
 end
 
 return PlayFab
