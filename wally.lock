@@ -3,6 +3,11 @@
 registry = "test"
 
 [[package]]
+name = "csqrl/colour-utils"
+version = "1.1.1"
+dependencies = []
+
+[[package]]
 name = "elttob/fusion"
 version = "0.1.1-beta"
 dependencies = []
@@ -13,29 +18,14 @@ version = "3.2.1"
 dependencies = []
 
 [[package]]
-name = "finobinos/maid"
-version = "3.2.1"
+name = "howmanysmall/enumerator"
+version = "2.2.3"
 dependencies = []
 
 [[package]]
-name = "finobinos/remote"
-version = "3.3.5"
-dependencies = [["Maid", "finobinos/maid@3.2.1"], ["Promise", "evaera/promise@3.2.1"], ["Signal", "finobinos/signal@3.2.0"], ["TableUtil", "finobinos/tableutil@3.2.1"]]
-
-[[package]]
-name = "finobinos/signal"
-version = "3.2.0"
-dependencies = []
-
-[[package]]
-name = "finobinos/tableutil"
-version = "3.2.1"
-dependencies = []
-
-[[package]]
-name = "freddylist/llama"
-version = "1.1.1"
-dependencies = []
+name = "nightcycle/attributer"
+version = "2.0.1"
+dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
 
 [[package]]
 name = "nightcycle/fetchu"
@@ -43,13 +33,28 @@ version = "1.0.1"
 dependencies = []
 
 [[package]]
-name = "nightcycle/midas"
-version = "0.1.0"
-dependencies = [["comm", "sleitnick/comm@0.2.2"], ["fetchu", "nightcycle/fetchu@1.0.1"], ["fusion", "elttob/fusion@0.1.1-beta"], ["import", "vocksel/import@2.1.0"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["promise", "evaera/promise@3.2.1"], ["remote", "finobinos/remote@3.3.5"], ["rodux", "roblox/rodux@3.0.0"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
+name = "nightcycle/filter"
+version = "1.0.3"
+dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"]]
 
 [[package]]
-name = "osyrisrblx/t"
-version = "3.0.0"
+name = "nightcycle/midas"
+version = "0.1.0"
+dependencies = [["comm", "sleitnick/comm@0.2.2"], ["fetchu", "nightcycle/fetchu@1.0.1"], ["fusion", "elttob/fusion@0.1.1-beta"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"], ["synthetic", "nightcycle/synthetic@2.4.8"]]
+
+[[package]]
+name = "nightcycle/synthetic"
+version = "2.4.8"
+dependencies = [["attributer", "nightcycle/attributer@2.0.1"], ["color-utils", "csqrl/colour-utils@1.1.1"], ["enumerator", "howmanysmall/enumerator@2.2.3"], ["filter", "nightcycle/filter@1.0.3"], ["fusion", "elttob/fusion@0.1.1-beta"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"], ["typography", "nightcycle/typography@1.1.5"], ["viewport", "nightcycle/viewport-handler@1.0.6"]]
+
+[[package]]
+name = "nightcycle/typography"
+version = "1.1.5"
+dependencies = [["fusion", "elttob/fusion@0.1.1-beta"]]
+
+[[package]]
+name = "nightcycle/viewport-handler"
+version = "1.0.6"
 dependencies = []
 
 [[package]]
@@ -60,16 +65,6 @@ dependencies = []
 [[package]]
 name = "quenty/signal"
 version = "2.0.0-canary.140ed9d6.2"
-dependencies = []
-
-[[package]]
-name = "roblox/rodux"
-version = "3.0.0"
-dependencies = []
-
-[[package]]
-name = "roblox/testez"
-version = "0.4.1"
 dependencies = []
 
 [[package]]
@@ -86,8 +81,3 @@ dependencies = []
 name = "sleitnick/signal"
 version = "1.0.1"
 dependencies = []
-
-[[package]]
-name = "vocksel/import"
-version = "2.1.0"
-dependencies = [["Llama", "freddylist/llama@1.1.1"], ["TestEZ", "roblox/testez@0.4.1"], ["t", "osyrisrblx/t@3.0.0"]]

@@ -13,9 +13,8 @@ local function setUpPlayer(player)
 	}
 end
 
-
-
 game.Players.PlayerAdded:Connect(setUpPlayer)
+
 task.spawn(function()
 	for i, player in ipairs(game.Players:GetChildren()) do
 		setUpPlayer(player)

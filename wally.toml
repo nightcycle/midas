@@ -10,9 +10,8 @@ exclude = ["Packages", ".vscode"]
 [dependencies]
 maid = "quenty/maid@^2.0.1-canary"
 signal = "quenty/signal@^2.0.0-canary"
-fusion = "elttob/fusion@0.1.1-beta"
-rodux = "roblox/rodux@3.0.0"
-import = "vocksel/import@2.1.0"
-promise = "evaera/promise@3.1.0"
+fusion = "nightcycle/cold-fusion@0.1.9"
+synthetic = "nightcycle/synthetic@2.4.8"
+# fusion = "elttob/fusion@^0.1.1-beta"
 fetchu  = "nightcycle/fetchu@1.0.1"
 comm = "sleitnick/comm@0.2.2"

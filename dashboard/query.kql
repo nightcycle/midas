@@ -1,0 +1,2 @@
+set truncationmaxsize = 1048576;
+set truncationmaxrecords = 1105;

@@ -6,7 +6,7 @@ local player = game.Players.LocalPlayer
 local midasAnalytics = require(packages:WaitForChild("midas"))
 local chatMaid = midasAnalytics.new("CHAT", player)
 
-local fill = fusion.State(2)
+local fill = fusion.Value(2)
 
 chatMaid:Connect(player.Chatted)
 chatMaid.FILL = fill
