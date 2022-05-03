@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkdocs=self.webpackChunkdocs||[]).push([[238],{97868:function(s){s.exports=JSON.parse('{"sourceUrl":"https://github.com/nightcycle/midas/blob/master","baseUrl":"/midas/","classOrder":[],"apiCategories":[]}')}}]);
