@@ -1,2 +1,10 @@
-set truncationmaxsize = 1048576;
-set truncationmaxrecords = 1105;
+// https://developer.playfab.com/en-us/r/t/92D06/playstream/query
+// https://docs.microsoft.com/en-us/gaming/playfab/features/insights/connectivity/connecting-power-bi-to-insights
+['events.all'] 
+	| where FullName_Namespace == "title.92D06"
+	| project-keep EventData, Timestamp, EventId
+	| extend EventName = EventData["EventName"]
+	| extend State = EventData["State"]
+	| extend Version = EventData["Version"]
+	| project-keep EventName, State, Version, Timestamp, EventId
+	| where Version >= 9
