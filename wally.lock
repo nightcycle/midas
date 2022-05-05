@@ -28,6 +28,11 @@ version = "2.0.1"
 dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
 
 [[package]]
+name = "nightcycle/cold-fusion"
+version = "0.4.19"
+dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"]]
+
+[[package]]
 name = "nightcycle/fetchu"
 version = "1.0.1"
 dependencies = []
@@ -39,8 +44,8 @@ dependencies = [["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"]]
 
 [[package]]
 name = "nightcycle/midas"
-version = "0.1.0"
-dependencies = [["comm", "sleitnick/comm@0.2.2"], ["fetchu", "nightcycle/fetchu@1.0.1"], ["fusion", "elttob/fusion@0.1.1-beta"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"], ["synthetic", "nightcycle/synthetic@2.4.8"]]
+version = "0.1.1"
+dependencies = [["cold-fusion", "nightcycle/cold-fusion@0.4.19"], ["comm", "sleitnick/comm@0.2.2"], ["fetchu", "nightcycle/fetchu@1.0.1"], ["maid", "quenty/maid@2.0.1-canary.140ed9d6.1"], ["signal", "quenty/signal@2.0.0-canary.140ed9d6.2"], ["synthetic", "nightcycle/synthetic@2.4.8"]]
 
 [[package]]
 name = "nightcycle/synthetic"

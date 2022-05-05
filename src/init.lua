@@ -31,7 +31,7 @@ Service.__index = Service
 	This function allows for the rapid construction of Midaii
 	@method Midas
 	@within Service
-	@param ... --all parameters passed to Midas object
+	@param ... any --all parameters passed to Midas object
 	@return Midas -- Returns a midas object
 ]=]
 function Service:Midas(...)
@@ -71,10 +71,9 @@ end
 
 --[=[
 	This function returns the configuration table for editing
-
-    @method GetConfig
-    @within Service
-    @return table -- Returns the configuration table
+	@method GetConfig
+	@within Service
+	@return table -- Returns the configuration table
 ]=]
 function Service:GetConfig()
 	return config
