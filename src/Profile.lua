@@ -1,7 +1,7 @@
 local runService = game:GetService("RunService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local players = game:GetService("Players")
-if runService:IsClient() then return {} end
+if not runService:IsServer() then return {} end
 
 local package = script.Parent
 local packages = package.Parent
@@ -13,8 +13,8 @@ local config = require(package:WaitForChild("Config"))
 
 local analytics --set in init
 local registry = {}
-local profilesFolder = Instance.new("Folder", replicatedStorage)
-profilesFolder.Name = "Profiles"
+local profilesFolder = replicatedStorage:FindFirstChild("MidasProfiles") or Instance.new("Folder", replicatedStorage)
+profilesFolder.Name = "MidasProfiles"
 
 function writePath(tabl, pathWords, val)
 	-- print("Tabl", tabl, "Path", pathWords, "V", val)

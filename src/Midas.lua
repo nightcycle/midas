@@ -19,17 +19,14 @@ Midas.ClassName = "Midas"
 
 local constructMidas
 local destroyMidas
-if runService:IsClient() then
-	constructMidas = replicatedStorage:WaitForChild("ConstructMidas")
-	destroyMidas = replicatedStorage:WaitForChild("DestroyMidas")
-else
-	constructMidas = Instance.new("RemoteEvent", replicatedStorage)
+if runService:IsServer() then
+	constructMidas = replicatedStorage:FindFirstChild("ConstructMidas") or Instance.new("RemoteEvent", replicatedStorage)
 	constructMidas.Name = "ConstructMidas"
 	constructMidas.OnServerEvent:Connect(function(player, eventKeyPath)
 		Midas.new(player, eventKeyPath)
 	end)
 
-	destroyMidas = Instance.new("RemoteEvent", replicatedStorage)
+	destroyMidas = replicatedStorage:FindFirstChild("DestroyMidas") or Instance.new("RemoteEvent", replicatedStorage)
 	destroyMidas.Name = "DestroyMidas"
 	destroyMidas.OnServerEvent:Connect(function(player, eventKeyPath)
 		local profile = profile.get(player)
@@ -37,6 +34,9 @@ else
 			profile:DestroyMidas(eventKeyPath)
 		end
 	end)
+else
+	constructMidas = replicatedStorage:WaitForChild("ConstructMidas")
+	destroyMidas = replicatedStorage:WaitForChild("DestroyMidas")
 end
 
 function stateToFunction(state)
@@ -74,13 +74,13 @@ function Midas:__newindex(index, newState)
 end
 
 function Midas:Destroy()
-	if runService:IsClient() then
-		destroyMidas:FireServer(self._path)
-	else
+	if runService:IsServer() then
 		for k, signal in ipairs(self._seriesSignal) do
 			self._seriesSignal[k] = nil
 			signal:Fire()
 		end
+	else
+		destroyMidas:FireServer(self._path)
 	end
 	self.Destroying:Fire()
 	self.profile = nil
@@ -275,15 +275,14 @@ if runService:IsServer() then
 end
 
 function Midas:_Fire(eventName: string, utc, seriesDuration: number | nil, includeEndEvent: boolean | nil)
-	if runService:IsClient() then
-		self._OnClientFire:FireServer(eventName, utc, seriesDuration)
-	else
-		-- logger:Log("Calling _Fire: "..tostring(eventName).." for "..tostring(self._player.Name))
+	if runService:IsServer() then
 		if seriesDuration ~= nil then
 			self:_FireSeries(eventName, utc, seriesDuration, includeEndEvent)
 		else
 			self:_FireEvent(eventName, utc)
 		end
+	else
+		self._OnClientFire:FireServer(eventName, utc, seriesDuration)
 	end
 end
 

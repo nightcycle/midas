@@ -126,7 +126,7 @@ end
 
 function PlayFab:Register(userId)
 	-- print("A")
-	if runService:IsClient() then return end
+	if not runService:IsServer() then return end
 	-- print("B")
 	while titleId == nil do print("WAITING FOR TITLE") task.wait() end
 	-- print("C")

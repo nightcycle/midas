@@ -1,7 +1,7 @@
 [package]
 name = "nightcycle/midas"
 description = "Turn every game you touch to gold with a comprehensive analytics suite!"
-version = "0.1.1"
+version = "0.2.2"
 authors = ["CJ Oyer <coyer@nightcycle.us>"]
 realm = "shared"
 registry = "https://github.com/upliftgames/wally-index"
@@ -10,7 +10,6 @@ exclude = ["Packages", ".vscode"]
 [dependencies]
 maid = "quenty/maid@^2.0.1-canary"
 signal = "quenty/signal@^2.0.0-canary"
-cold-fusion = "nightcycle/cold-fusion@0.4.19"
 synthetic = "nightcycle/synthetic@2.4.8"
 fetchu  = "nightcycle/fetchu@1.0.1"
 comm = "sleitnick/comm@0.2.2"

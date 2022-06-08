@@ -9,7 +9,6 @@ local voiceChatService = game:GetService("VoiceChatService")
 local package = script
 local packages = package.Parent
 
-local fusion = require(packages:WaitForChild("cold-fusion"))
 local maidConstructor = require(packages:WaitForChild("maid"))
 local signalConstructor = require(packages:WaitForChild("signal"))
 
@@ -36,14 +35,6 @@ Service.__index = Service
 ]=]
 function Service:Midas(...)
 	return midasConstructor.new(...)
-end
-
-function Service.State(...)
-	return fusion.State(...)
-end
-
-function Service.Computed(...)
-	return fusion.Computed(...)
 end
 
 function clientResponse(remoteEvent, func)
@@ -88,144 +79,7 @@ end
 function Service:LoadDefault(player)
 	-- logger:Log("Loading default state for "..player.Name)
 	local maid = maidConstructor.new()
-	if runService:IsClient() then
-		local localizationService = game:GetService("LocalizationService")
-
-		local mDemographics = midasConstructor.new(player, "Audience/Demographics")
-		mDemographics:SetRoundingPrecision(0)
-		mDemographics.AccountAge = player.AccountAge
-		mDemographics.RobloxLangugage = localizationService.RobloxLocaleId
-		mDemographics.SystemLanguage = localizationService.SystemLocaleId
-
-		mDemographics["Platform/Accelerometer"] = function()
-			return userInputService.VREnabled
-		end
-		mDemographics["Platform/Gamepad"] = function()
-			return userInputService.GamepadConnected
-		end
-		mDemographics["Platform/Gyroscope"] = function()
-			return userInputService.GyroscopeEnabled
-		end
-		mDemographics["Platform/Keyboard"] = function()
-			return userInputService.KeyboardEnabled
-		end
-		mDemographics["Platform/Mouse"] = function()
-			return userInputService.MouseEnabled
-		end
-		mDemographics["Platform/TouchEnabled"] = function()
-			return userInputService.TouchEnabled
-		end
-		-- mDemographics["Platform/VREnabled"] = function()
-		-- 	return vrService.VREnabled
-		-- end
-		-- mDemographics["Platform/VRAvailable"] = function()
-		-- 	return vrService.VRDeviceAvailable
-		-- end
-		mDemographics["Platform/VCEnabled"] = function()
-			return voiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId)
-		end
-		mDemographics["Platform/ScreenSize"] = function()
-			return game.Workspace.CurrentCamera.ViewportSize.Magnitude
-		end
-		mDemographics["Platform/ScreenRatio"] = function()
-			local size = game.Workspace.CurrentCamera.ViewportSize
-			local x = size.X
-			local y = size.Y
-			local ratio = y/x
-			if ratio == 16/10 then
-				return "16:10"
-			elseif ratio == 16/9 then
-				return "16:9"
-			elseif ratio == 5/4 then
-				return "5:4"
-			elseif ratio == 5/3 then
-				return "5:3"
-			elseif ratio == 3/2 then
-				return "3:2"
-			elseif ratio == 4/3 then
-				return "4:3"
-			elseif ratio == 9/16 then
-				return "9:16"
-			end
-			return (math.round(100/ratio)/100)..":1"
-		end
-
-		local mPolicy = midasConstructor.new(player, "Policy")
-		task.spawn(function()
-			local policyInfo = policyService:GetPolicyInfoForPlayerAsync(player)
-			mPolicy.Lootboxes = policyInfo.ArePaidRandomItemsRestricted
-			mPolicy.AllowedLinks = policyInfo.AllowedExternalLinkReferences
-			mPolicy.Trading = policyInfo.IsPaidItemTradingAllowed
-			mPolicy.China = policyInfo.IsSubjectToChinaPolicies
-		end)
-
-		local mClientPerformance = midasConstructor.new(player, "Performance/Client")
-		mClientPerformance:SetRoundingPrecision(0)
-		mClientPerformance.Ping = function()
-			return math.clamp(player:GetNetworkPing(), 0, 10^6)
-		end
-
-		local frames = 0
-		local duration = 0
-		maid:GiveTask(runService.RenderStepped:Connect(function(delta)
-			frames += 1
-			duration += delta
-			task.delay(1, function()
-				frames -= 1
-				duration -= delta
-			end)
-		end))
-		mClientPerformance.FPS = function()
-			return frames/duration
-		end
-		maid:GiveTask(game.GraphicsQualityChangeRequest:Connect(function(increase)
-			if increase then
-				mClientPerformance:Fire("Graphics/Increase")
-			else
-				mClientPerformance:Fire("Graphics/Decrease")
-			end
-		end))
-
-		local gameSettings = UserSettings():GetService("UserGameSettings")
-		local mSettings = midasConstructor.new(player, "Settings")
-		mClientPerformance:SetRoundingPrecision(2)
-		-- mSettings.CameraMode = function()
-		-- 	return gameSettings.CustomCameraMode.Name
-		-- end
-		mSettings.ComputerMovementMode = function()
-			return gameSettings.ComputerMovementMode.Name
-		end
-		mSettings.ControlMode = function()
-			return gameSettings.ControlMode.Name
-		end
-		mSettings.MasterVolume = function()
-			return gameSettings.MasterVolume
-		end
-		mSettings.MouseSensitivity = function()
-			return gameSettings.MouseSensitivity
-		end
-		mSettings.RotationType = function()
-			return gameSettings.RotationType.Name
-		end
-		mSettings.SavedQualityLevel = function()
-			return gameSettings.SavedQualityLevel.Value
-		end
-		mSettings.TouchCameraMovementMode = function()
-			return gameSettings.TouchCameraMovementMode.Value
-		end
-		mSettings.TouchMovementMode = function()
-			return gameSettings.TouchMovementMode.Value
-		end
-		-- mSettings.VREnabled = function()
-		-- 	return gameSettings.VREnabled
-		-- end
-		-- mSettings.VRRotationIntensity = function()
-		-- 	return gameSettings.VRRotationIntensity
-		-- end
-		mSettings.VignetteEnabled = function()
-			return gameSettings.VignetteEnabled
-		end
-	else
+	if runService:IsServer() then
 		local startTick = tick()
 		local serverProfile = profile.get(player.UserId)
 
@@ -551,6 +405,143 @@ function Service:LoadDefault(player)
 			serverProfile:Destroy()
 			maid:Destroy()
 		end))
+	else
+		local localizationService = game:GetService("LocalizationService")
+
+		local mDemographics = midasConstructor.new(player, "Audience/Demographics")
+		mDemographics:SetRoundingPrecision(0)
+		mDemographics.AccountAge = player.AccountAge
+		mDemographics.RobloxLangugage = localizationService.RobloxLocaleId
+		mDemographics.SystemLanguage = localizationService.SystemLocaleId
+
+		mDemographics["Platform/Accelerometer"] = function()
+			return userInputService.VREnabled
+		end
+		mDemographics["Platform/Gamepad"] = function()
+			return userInputService.GamepadConnected
+		end
+		mDemographics["Platform/Gyroscope"] = function()
+			return userInputService.GyroscopeEnabled
+		end
+		mDemographics["Platform/Keyboard"] = function()
+			return userInputService.KeyboardEnabled
+		end
+		mDemographics["Platform/Mouse"] = function()
+			return userInputService.MouseEnabled
+		end
+		mDemographics["Platform/TouchEnabled"] = function()
+			return userInputService.TouchEnabled
+		end
+		-- mDemographics["Platform/VREnabled"] = function()
+		-- 	return vrService.VREnabled
+		-- end
+		-- mDemographics["Platform/VRAvailable"] = function()
+		-- 	return vrService.VRDeviceAvailable
+		-- end
+		mDemographics["Platform/VCEnabled"] = function()
+			return voiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId)
+		end
+		mDemographics["Platform/ScreenSize"] = function()
+			return game.Workspace.CurrentCamera.ViewportSize.Magnitude
+		end
+		mDemographics["Platform/ScreenRatio"] = function()
+			local size = game.Workspace.CurrentCamera.ViewportSize
+			local x = size.X
+			local y = size.Y
+			local ratio = y/x
+			if ratio == 16/10 then
+				return "16:10"
+			elseif ratio == 16/9 then
+				return "16:9"
+			elseif ratio == 5/4 then
+				return "5:4"
+			elseif ratio == 5/3 then
+				return "5:3"
+			elseif ratio == 3/2 then
+				return "3:2"
+			elseif ratio == 4/3 then
+				return "4:3"
+			elseif ratio == 9/16 then
+				return "9:16"
+			end
+			return (math.round(100/ratio)/100)..":1"
+		end
+
+		local mPolicy = midasConstructor.new(player, "Policy")
+		task.spawn(function()
+			local policyInfo = policyService:GetPolicyInfoForPlayerAsync(player)
+			mPolicy.Lootboxes = policyInfo.ArePaidRandomItemsRestricted
+			mPolicy.AllowedLinks = policyInfo.AllowedExternalLinkReferences
+			mPolicy.Trading = policyInfo.IsPaidItemTradingAllowed
+			mPolicy.China = policyInfo.IsSubjectToChinaPolicies
+		end)
+
+		local mClientPerformance = midasConstructor.new(player, "Performance/Client")
+		mClientPerformance:SetRoundingPrecision(0)
+		mClientPerformance.Ping = function()
+			return math.clamp(player:GetNetworkPing(), 0, 10^6)
+		end
+
+		local frames = 0
+		local duration = 0
+		maid:GiveTask(runService.RenderStepped:Connect(function(delta)
+			frames += 1
+			duration += delta
+			task.delay(1, function()
+				frames -= 1
+				duration -= delta
+			end)
+		end))
+		mClientPerformance.FPS = function()
+			return frames/duration
+		end
+		maid:GiveTask(game.GraphicsQualityChangeRequest:Connect(function(increase)
+			if increase then
+				mClientPerformance:Fire("Graphics/Increase")
+			else
+				mClientPerformance:Fire("Graphics/Decrease")
+			end
+		end))
+
+		local gameSettings = UserSettings():GetService("UserGameSettings")
+		local mSettings = midasConstructor.new(player, "Settings")
+		mClientPerformance:SetRoundingPrecision(2)
+		-- mSettings.CameraMode = function()
+		-- 	return gameSettings.CustomCameraMode.Name
+		-- end
+		mSettings.ComputerMovementMode = function()
+			return gameSettings.ComputerMovementMode.Name
+		end
+		mSettings.ControlMode = function()
+			return gameSettings.ControlMode.Name
+		end
+		mSettings.MasterVolume = function()
+			return gameSettings.MasterVolume
+		end
+		mSettings.MouseSensitivity = function()
+			return gameSettings.MouseSensitivity
+		end
+		mSettings.RotationType = function()
+			return gameSettings.RotationType.Name
+		end
+		mSettings.SavedQualityLevel = function()
+			return gameSettings.SavedQualityLevel.Value
+		end
+		mSettings.TouchCameraMovementMode = function()
+			return gameSettings.TouchCameraMovementMode.Value
+		end
+		mSettings.TouchMovementMode = function()
+			return gameSettings.TouchMovementMode.Value
+		end
+		-- mSettings.VREnabled = function()
+		-- 	return gameSettings.VREnabled
+		-- end
+		-- mSettings.VRRotationIntensity = function()
+		-- 	return gameSettings.VRRotationIntensity
+		-- end
+		mSettings.VignetteEnabled = function()
+			return gameSettings.VignetteEnabled
+		end
 	end
 end
 
@@ -559,9 +550,7 @@ function Service.new()
 	return self
 end
 
-if runService:IsClient() then
-	return Service.new()
-else
+if runService:IsServer() then
 	--[=[
 	This function returns the configuration table for editing
 
@@ -587,5 +576,7 @@ else
 		return teleportData
 	end
 
+	return Service.new()
+else
 	return Service.new()
 end

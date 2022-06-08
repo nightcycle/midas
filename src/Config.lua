@@ -1,9 +1,5 @@
 local RunService = game:GetService("RunService")
-if RunService:IsClient() then
-	return {
-
-	}
-else
+if RunService:IsServer() then
 	return {
 		Chances = {},
 		VIP = {
@@ -14,5 +10,9 @@ else
 			Test = 123,
 		},
 		Version = 12,
+	}
+else
+	return {
+
 	}
 end
