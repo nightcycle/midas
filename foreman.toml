@@ -1,3 +1,4 @@
 [tools]
-rojo = 		{source = "quenty/rojo", 				version = "7.0.0-quenty-npm-canary.4"}
-wally = { 	source = "UpliftGames/wally", 		version = "0.3.1" }
+remodel = {source = "rojo-rbx/remodel", 		version = "0.9.1" }
+rojo = 	{source = "rojo-rbx/rojo", 			version = "7.1.0" }
+wally = 	{source = "UpliftGames/wally", 		version = "0.3.1" }

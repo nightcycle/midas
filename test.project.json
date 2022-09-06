@@ -1,28 +1,20 @@
 {
-  "name": "midas-test",
-  "tree": {
-    "$className": "DataModel",
-    "ReplicatedStorage": {
-      "$className": "ReplicatedStorage",
-      "Packages": {
-        "$className": "Folder",
-        "$path": "Packages"
-      }
-    },
-    "ServerStorage": {
-      "$className": "ServerStorage",
-      "midas": {
-        "$path": "src"
-      }
-    },
-    "StarterPlayer": {
-      "$className": "StarterPlayer",
-      "StarterCharacterScripts": {
-        "$className": "StarterCharacterScripts",
-        "lab": {
-          "$path": "lab"
-        }
-      }
-    }
-  }
+	"name": "midas-test",
+	"globIgnorePaths": [
+		"**/package.json",
+		"**/tsconfig.json"
+	],
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Packages": {
+				"$className": "Folder",
+				"$path": "Packages",
+				"Midas": {
+					"$path": "src"
+				}
+			}
+		}
+	}
 }

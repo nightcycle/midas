@@ -1,168 +1,130 @@
-local httpService = game:GetService("HttpService")
-local runService = game:GetService("RunService")
-
-local package = script.Parent
-local packages = package.Parent
-
-local fetchu = require(packages:WaitForChild("fetchu"))
-local config = require(package:WaitForChild("Config"))
 
 
-local debugMode = false
+--!strict
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+
+-- Packages
+local _Package = script.Parent
+local _Packages = _Package.Parent
+local _Maid = require(_Packages.Maid)
+local _Signal = require(_Packages.Signal)
+
+-- Modules
+local Config = require(_Package.Config)
+
+-- Constants
+local TITLE_ID: string?
+local DEV_SECRET_KEY: string?
+
+-- Class
 local PlayFab = {}
 
-local titleId
-local devSecretKey
+type HttpResponse = {
+	code: number,
+	data: {[string]: any},
+}
 
-function getURL(path)
-	return "https://"..titleId..".playfabapi.com/"..path
+function getURL(path: string): string
+	assert(TITLE_ID ~= nil, "Bad Title Id")
+	return "https://"..TITLE_ID..".playfabapi.com/"..path
 end
 
-function post(url, headers: table, body: table, attempt)
+function post(url: string, headers: {[string]: any}, body: {[string]: any}, attempt: number?): HttpResponse?
 	attempt = attempt or 1
-	local response
+	assert(attempt ~= nil)
 
-	local size = string.len(httpService:JSONEncode(body))
-	if runService:IsStudio() then
+	local rawResponse: string?
+
+	local size = string.len(HttpService:JSONEncode(body))
+	if RunService:IsStudio() then
 		print("Firing "..body.EventName, "(", size, "):", body)
 	end
-	local httpService = game:GetService("HttpService")
-	local success, msg = pcall(function()
-		response = httpService:PostAsync(
+
+	local success, _msg = pcall(function()
+		rawResponse = HttpService:PostAsync(
 			url,
-			httpService:JSONEncode(body or {}),
+			HttpService:JSONEncode(body or {}),
 			Enum.HttpContentType.ApplicationJson,
 			false,
 			headers
 		)
 	end)
-	local responseTabl = httpService:JSONDecode(response or {})
-	if success and responseTabl.code == 200 then
+
+	local response: HttpResponse = HttpService:JSONDecode(rawResponse or "") :: any
+
+	if success and response.code == 200 then
 		return response
 	elseif attempt < 15 then
 		task.wait(1)
 		return post(url, headers, body, attempt+1)
 	else
-		print(response, success, responseTabl)
+		print(response, success, response)
 		error("API call failed to "..url)
-	end
-	-- print("Response", responseTabl, response)
-end
-
-function apiFire(url, headers: table, body: table, attempt)
-	if not attempt then attempt = 0 end
-
-	local packet = {
-		content_type = Enum.HttpContentType.ApplicationJson,
-		headers = headers or {},
-		body = body or {},
-		compress = false,
-	}
-
-	if debugMode ~= true then
-		local response
-
-		local success, msg = pcall(function()
-			response = httpService:JSONDecode(fetchu.post(url,packet))
-		end)
-		
-		if success and response.code == 200 then
-			return response
-		elseif attempt < 15 then
-			task.wait(1)
-			return apiFire(url, headers, body, attempt)
-		else
-			print(response)
-			error("API call failed to "..url)
-		end
 	end
 end
 
 function PlayFab:Fire(pId, eventName, data, tags, timeStamp)
-	-- logger:Log("Firing to PlayFab: "..tostring(eventName).." for "..tostring(pId))
-	while titleId == nil do task.wait() end
+	assert(RunService:IsServer(), "PlayFab API can only be called on server")
+
+	-- Yield until TITLE_ID has been set
+	while TITLE_ID == nil do task.wait() end
+
+	-- Fire event
 	task.spawn(function()
-		local url = getURL("Server/WritePlayerEvent")
-		local cleanHistory = {}
-		local function clean(tabl)
-			if cleanHistory[tabl] then return end
-			cleanHistory[tabl] = true
-			for k, v in pairs(tabl) do
-				local finalK
-				if type(k) == "string" then
-					finalK = string.gsub(k, "/", "")
-					tabl[finalK] = v
-					tabl[k] = nil
-				else
-					finalK = k
-				end
-				if type(v) == "string" then
-					tabl[finalK] = string.gsub(v, "/", "")
-				elseif type(v) == "table" then
-					tabl[finalK] = clean(v)
-				end
-			end
-			return tabl
-		end
-		-- data = clean(data)
-		post(url,
-			{
-				["X-SecretKey"] = devSecretKey,
-			},
-			{
-				-- EventName = "Test",
-				EventName = string.gsub(eventName, "/", ""),
-				PlayFabId = pId,
-				CustomTags = tags,
-				Timestamp = timeStamp,
-				Body = {
-					Version = config.Version,
-					State = data or {},
-				}
+
+		local url: string = getURL("Server/WritePlayerEvent")
+
+		local headers = {
+			["X-SecretKey"] = DEV_SECRET_KEY,
+		}
+	
+		local body = {
+			EventName = string.gsub(eventName, "/", ""),
+			PlayFabId = pId,
+			CustomTags = tags,
+			Timestamp = timeStamp,
+			Body = {
+				Version = Config.Version,
+				State = data or {},
 			}
-		)
+		}
+		
+		post(url, headers, body)
 	end)
 end
 
-function PlayFab:Register(userId)
-	-- print("A")
-	if not runService:IsServer() then return end
-	-- print("B")
-	while titleId == nil do print("WAITING FOR TITLE") task.wait() end
-	-- print("C")
+function PlayFab:Register(userId: number): (string, string)
+	assert(RunService:IsServer(), "PlayFab API can only be called on server")
+
+	while TITLE_ID == nil do print("WAITING FOR TITLE"); task.wait() end
 	local url = getURL("Client/LoginWithCustomID")
-	local response
-	-- print("Registering")
-	response = apiFire(url,
-		{
-			["X-ReportErrorAsSuccess"] = "true",
-			["X-PlayFabSDK"] = "RobloxSdk_undefined",
-		},
-		{
-			TitleId = titleId,
-			CustomId = tostring(userId),
-			CreateAccount = true,
-		}
-	)
-	-- print("Response", response)
-	-- if debugMode then
-	-- 	response = {
-	-- 		data = {
-	-- 				SessionTicket = httpService:GenerateGUID(false),
-	-- 				PlayFabId = httpService:GenerateGUID(false)
-	-- 		},
-	-- 	}
-	-- end
-	local responseData = response.data
-	local sessionId = responseData.SessionTicket
-	local playerId = responseData.PlayFabId
-	-- print("Returning", sessionId, playerId)
+
+	local headers = {
+		["X-ReportErrorAsSuccess"] = "true",
+		["X-PlayFabSDK"] = "RobloxSdk_undefined",
+	}
+
+	local body = {
+		TitleId = TITLE_ID,
+		CustomId = tostring(userId),
+		CreateAccount = true,
+	}
+
+	local response: HttpResponse? = post(url, headers, body)
+	assert(response ~= nil, "Bad response")
+
+	local responseData: {[string]: any} = response.data
+	local sessionId: string = responseData.SessionTicket
+	local playerId: string = responseData.PlayFabId
+
 	return sessionId, playerId
 end
 
-function PlayFab.init(tId, dSK)
-	titleId = tId
-	devSecretKey = dSK
+function PlayFab.init(titleId: string, devSecretKey: string)
+	assert(RunService:IsServer(), "PlayFab API can only be called on server")
+	TITLE_ID = titleId
+	DEV_SECRET_KEY = devSecretKey
 end
 
 return PlayFab

@@ -1,35 +1,79 @@
-local runService = game:GetService("RunService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local players = game:GetService("Players")
-if not runService:IsServer() then return {} end
+--!strict
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
-local package = script.Parent
-local packages = package.Parent
+-- Packages
+local _Package = script.Parent
+local _Packages = _Package.Parent
+local _Maid = require(_Packages.Maid)
+local _Signal = require(_Packages.Signal)
 
-local maidConstructor = require(packages:WaitForChild("maid"))
-local signalConstructor = require(packages:WaitForChild("signal"))
-local playFab = require(package:WaitForChild("PlayFab"))
-local config = require(package:WaitForChild("Config"))
+-- Modules
+local Config = require(_Package.Config)
+local PlayFab = require(_Package.PlayFab)
+local Network = require(_Package.Network)
 
-local analytics --set in init
-local registry = {}
-local profilesFolder = replicatedStorage:FindFirstChild("MidasProfiles") or Instance.new("Folder", replicatedStorage)
-profilesFolder.Name = "MidasProfiles"
+type Midas = {}
 
-function writePath(tabl, pathWords, val)
-	-- print("Tabl", tabl, "Path", pathWords, "V", val)
+local REGISTRY: {[number]: Profile} = {}
+
+export type TeleportDataEntry = {
+	_Prev: {[string]: any},
+	_SessionId: string,
+	_PlayerId: string,
+}
+
+export type Profile = {
+	_Maid: _Maid.Maid,
+	Player: Player,
+	Instance: Instance,
+	EventsPerMinute: number,
+	TimeDifference: number,
+	_IsAlive: boolean,
+	_ConstructionTick: number,
+	_IsTeleporting: boolean,
+	_WasTeleported: boolean,
+	_Index: number,
+	_Midaii: {[string]: Midas},
+	_Prev: {},
+	_SessionId: string?,
+	_PlayerId: string?,
+	Destroy: (self: Profile) -> nil,
+	_Fire: (self: Profile, eventFullPath: string, delta: {[string]: any}, tags: {string}, timestamp: number) -> nil,
+	_Format: (self: Profile, midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number, timestamp: number) -> ({[string]: any}, string),
+	FireSeries: (self: Profile, midas: Midas, eventName: string, timeStamp: string, eventIndex: number, includeEndEvent: boolean) -> _Signal.Signal,
+	Fire: (self: Profile, midas: Midas, eventName: string, timestamp: string, eventIndex: number, duration: number?) -> nil, 
+	HasPath: (self: Profile, midas: Midas, path: string) -> boolean,
+	DestroyPath: (self: Profile, path: string) -> nil,
+	DestroyMidas: (self: Profile, path: string) -> nil,
+	SetMidas: (self: Profile, midas: Midas) -> nil,
+	_Export: (self: Profile) -> TeleportDataEntry,
+	Teleport: (self: Profile) -> nil,
+	new: (player: Player) -> Profile,
+	get:(userId: number) -> Profile?,
+	getProfilesFolder: () -> Folder,
+	__index: Profile,
+}
+
+local Profile: Profile = {} :: any
+Profile.__index = Profile
+
+local ProfilesFolder: Folder? = script:FindFirstChild("MidasProfiles") or Instance.new("Folder")
+assert(ProfilesFolder ~= nil)
+ProfilesFolder.Name = "MidasProfiles"
+ProfilesFolder.Parent = script
+
+function writePath(tabl: any, pathWords: string | {string}, val: any)
 	if type(pathWords) == "string" then
 		pathWords = string.split(pathWords, "/")
 	end
-	-- print("Post tabl", pathWords)
+	assert(typeof(pathWords) == "table")
 	local nextKey = pathWords[1]
-	-- assert(tabl == nil, "Bad table")
 	assert(nextKey ~= nil, "Bad key")
 	table.remove(pathWords, 1)
 	if #pathWords == 0 then
 		tabl[nextKey] = val
 	elseif tabl[nextKey] then
-		-- table.remove(pathWords, 1)
 		writePath(tabl[nextKey], pathWords, val)
 	else
 		tabl[nextKey] = {}
@@ -37,11 +81,11 @@ function writePath(tabl, pathWords, val)
 	end
 end
 
-function readPath(tabl, pathWords)
-	-- print("Tabl", tabl, "Words", pathWords)
+function readPath(tabl: any, pathWords: string | {string})
 	if type(pathWords) == "string" then
 		pathWords = string.split(pathWords, "/")
 	end
+	assert(typeof(pathWords) == "table")
 	local nextKey = pathWords[1]
 
 	if tabl[nextKey] == nil then return nil end
@@ -54,7 +98,7 @@ function readPath(tabl, pathWords)
 	end
 end
 
-function writeDelta(path, value, delta, old)
+function writeDelta(path: string, value: any, delta, old)
 	local lastValue = readPath(old, path)
 	if lastValue ~= value then
 		writePath(delta, path, value)
@@ -62,68 +106,52 @@ function writeDelta(path, value, delta, old)
 	end
 end
 
-function readDelta(path, value, delta, old)
-	local lastValue = readPath(old, path)
-	if lastValue ~= value then
-		writePath(delta, path, value)
-	end
-end
-
-
-local Profile = {}
-Profile.__type = "Profile"
-Profile.__index = Profile
-
 function Profile:Destroy()
-	registry[self._player] = nil
-	self._maid:Destroy()
+	if not self._IsAlive then return end
+	self._IsAlive = false
+
+	REGISTRY[self.Player.UserId] = nil
+
+	self._Maid:Destroy()
+
+	setmetatable(self, nil)
+	local tabl: any = self
+	for k, v in pairs(tabl) do
+		tabl[k] = nil
+	end
+
+	return nil
 end
 
-function Profile:_Fire(eventFullPath, delta, tags, timeStamp)
-
-	-- logger:Log("_Fire: "..tostring(eventFullPath).." for "..tostring(self._player.Name))
-	-- eventFullPath = string.upper(eventFullPath)
-
-	-- print("Previous", self._prev)
+function Profile:_Fire(eventFullPath: string, delta: {[string]: any}, tags: {string}, timestamp: number)
 	self.EventsPerMinute += 1
+	
 	task.delay(60, function()
-		if self ~= nil and self._mServerPerformance ~= nil then
+		if self ~= nil and self._ServerPerformanceMidas ~= nil then
 			self.EventsPerMinute -= 1
 		end
 	end)
-	self.TimeDifference = tick() - self._constructionTick
 
+	self.TimeDifference = tick() - self._ConstructionTick
 
-	local history = {}
-	local function toUpper(val)
-		return val
-		-- if type(val) == "table" and history[val] == nil then
-		-- 	history[val] = true
-		-- 	local newTabl = {}
-		-- 	for k, v in pairs(val) do
-		-- 		newTabl[toUpper(k)] = toUpper(v)
-		-- 	end
-		-- 	return newTabl
-		-- elseif type(val) ~= "table" then
-		-- 	return string.upper(tostring(val))
-		-- end
-	end
-	-- logger:Log("Waiting for instance: "..tostring(eventFullPath).." for "..tostring(self._player.Name))
-	while self.Instance ~= nil and self._pId == nil do task.wait(0.1) end
-	-- logger:Log("Firing to PlayFab: "..tostring(eventFullPath).." for "..tostring(self._player.Name))
-	playFab:Fire(self._pId, toUpper(eventFullPath), toUpper(delta), toUpper(tags), toUpper(timeStamp))
+	while self._IsAlive and self._PlayerId == nil do task.wait(0.1) end
+
+	PlayFab:Fire(self._PlayerId, eventFullPath, delta, tags, timestamp)
+	return nil
 end
 
-function Profile:_Format(midas, eventName, delta, eventIndex, duration, ts)
-	self._index += 1
+function Profile:_Format(midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number?, timestamp: number): ({[string]: any}, string)
+	self._Index += 1
+
 	delta.Index = {
-		Total = self._index,
+		Total = self._Index,
 		Event = eventIndex,
 	}
-	-- delta.UTC = ts
+
 	delta.Duration = duration or 0
 	local path = midas:GetPath()
 	local eventFullPath = path.."/"..eventName
+
 	if eventName == "Empty" then
 		eventFullPath = path
 	end
@@ -131,87 +159,87 @@ function Profile:_Format(midas, eventName, delta, eventIndex, duration, ts)
 end
 
 
-function Profile:FireSeries(midas, eventName: string, timeStamp: string, eventIndex: string, includeEndEvent: boolean)
-	-- logger:Log("_FireSeries: "..tostring(eventName).." for "..tostring(self._player.Name))
+function Profile:FireSeries(midas: Midas, eventName: string, timestamp: string, eventIndex: number, includeEndEvent: boolean): _Signal.Signal
 	local deltaStates = {}
-	for p, midas in pairs(self._midaii) do
-		local output = midas:Render()
+	for p, midas in pairs(self._Midaii) do
+		local output = midas:Compile()
 
 		if output then
 			for k, v in pairs(output) do
 				local fullPath = p.."/"..k
-				writeDelta(fullPath, v, deltaStates, self._prev)
+				writeDelta(fullPath, v, deltaStates, self._Prev)
 			end
 		end
 	end
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, timeStamp)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, timestamp)
 
-	local maid = maidConstructor.new()
-	self._maid:GiveTask(maid)
-	local trigger = signalConstructor.new()
+	local maid = _Maid.new()
+	self._Maid:GiveTask(maid)
+
+	local trigger = _Signal.new(); maid:GiveTask(trigger)
 	local hasFired = false
+
 	maid:GiveTask(trigger:Connect(function(duration)
 		if hasFired == true then return end
 		deltaStates.Duration = duration
 		if includeEndEvent and midas.Living == true then
-			self:_Fire(eventFullPath.."Start", deltaStates, midas._tags, timeStamp)
+			self:_Fire(eventFullPath.."Start", deltaStates, midas._Tags, timestamp)
 			self:Fire(midas, eventName.."Finish", midas:GetUTC(), eventIndex, duration)
 		else
-			self:_Fire(eventFullPath, deltaStates, midas._tags, timeStamp)
+			self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
 		end
 		hasFired = true
 		maid:Destroy()
 	end))
+
 	return trigger
 end
 
-function Profile:Fire(midas, eventName, timeStamp, eventIndex, duration) --shoot it out to server
-	-- logger:Log("Fire called: "..tostring(eventName).." for "..tostring(self._player.Name))
+--shoot it out to server
+function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventIndex: number, duration: number?): nil 
+
 	local deltaStates = {}
 
-	-- print("Midaii", self._midaii)
-	for p, midas in pairs(self._midaii) do
-		local output = midas:Render()
-		-- print(p, output)
+	for p, midas in pairs(self._Midaii) do
+		local output = midas:Compile()
 		if output then
 			for k, v in pairs(output) do
 				local fullPath = p.."/"..k
-				writeDelta(fullPath, v, deltaStates, self._prev)
+				writeDelta(fullPath, v, deltaStates, self._Prev)
 			end
 		end
 	end
 	
 	deltaStates.Id = deltaStates.Id or {}
 	deltaStates.Id.Place = tostring(game.PlaceId)
-	deltaStates.Id.Session = tostring(self._sId)
-	deltaStates.Id.User = tostring(self._player.UserId)
-
+	deltaStates.Id.Session = tostring(self._SessionId)
+	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
 	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timeStamp)
 
-	self:_Fire(eventFullPath, deltaStates, midas._tags, timeStamp)
+	self:_Fire(eventFullPath, deltaStates, midas._Tags, timeStamp)
 end
 
-function Profile:HasPath(midas, path)
+function Profile:HasPath(midas: Midas, path: string): boolean
 	local mPath = midas:GetPath()
 	local pLen = string.len(path)
 	return string.find(mPath, path) and path == string.sub(mPath, 1, pLen)
 end
 
-function Profile:DestroyPath(path)
+function Profile:DestroyPath(path: string): nil
 	local pLen = string.len(path)
-	for k, midas in pairs(self._midaii) do
+	for k, midas in pairs(self._Midaii) do
 		if self:HasPath(midas, path) then
 			self:DestroyMidas(k)
 		end
 	end
 end
 
-function Profile:DestroyMidas(path)
-	local midas = self._midaii[path]
+function Profile:DestroyMidas(path: string): nil
+	local midas = self._Midaii[path]
 	if midas then
 		midas:Destroy()
 	end
@@ -219,126 +247,137 @@ end
 
 function Profile:SetMidas(midas)
 	local path = midas:GetPath()
-	-- print("Set Midas", path, midas)
-	self._midaii[path] = midas
+	self._Midaii[path] = midas
 
 	midas.Instance.Parent = self.Instance
 
-	for kPath, vChance in pairs(config.Chances) do
+	for kPath, vChance in pairs(Config.Chances) do
 		if self:HasPath(midas, kPath) then
 			midas:SetChance(vChance)
 		end
 	end
 
-	self._maid[path] = midas
-	self._maid[path.."_Destroy"] = midas.Destroying:Connect(function()
-		self._midaii[path] = nil
+	self._Maid[path] = midas
+	self._Maid[path.."_Destroy"] = midas.Destroying:Connect(function()
+		self._Midaii[path] = nil
 	end)
 
 	return self
 end
 
+function Profile.getProfilesFolder(): Folder
+	return ProfilesFolder
+end
+
 function Profile:_Export()
 	return {
-		_prev = self._prev,
-		_sId = self._sId,
-		_pId = self._pId,
+		_Prev = self._Prev,
+		_SessionId = self._SessionId,
+		_PlayerId = self._PlayerId,
 	}
 end
 
 function Profile:Teleport()
-	self._isTeleporting = true
-	local output = self._Export
+	self._IsTeleporting = true
+	local output = self:_Export()
 	self._mExit:Fire("Teleport")
 	self:Destroy()
 	return output
 end
 
-function Profile.new(player)
-	local self = setmetatable({}, Profile)
-	
-	self._maid = maidConstructor.new()
-	self._maid:GiveTask(self)
+function Profile.new(player: Player): Profile
+	local inst = Instance.new("Folder")
+	inst.Name = tostring(player.UserId)
+	inst.Parent = ProfilesFolder
 
-	self._player = player
-	self.Instance = Instance.new("Folder", profilesFolder)
-	self.Instance.Name = tostring(player.UserId)
-	self.EventsPerMinute = 0
-
-	self._constructionTick = tick()
-	self._isTeleporting = false
-	self._wasTeleported = false
-	self._index = 0
-	self._midaii = {}
+	local self = setmetatable({
+		_Maid = _Maid.new(),
+		Player = player,
+		["Instance"] = inst,
+		_IsAlive = true,
+		EventsPerMinute = 0,
+		TimeDifference = 0,
+		_ConstructionTick = tick(),
+		_IsTeleporting = false,
+		_WasTeleported = false,
+		_Index = 0,
+		_Midaii = {},
+		_Prev = {},
+		_SessionId = nil,
+		_PlayerId = nil,
+	}, Profile)
 
 	local joinData = player:GetJoinData()
 	local teleportData = joinData.TeleportData
-	-- print("Profile created")
+
 	if teleportData == nil or teleportData.MidasAnalyticsData == nil then
-		-- print("Not teleported")
-		self._prev = {}
-		self._sId, self._pId = playFab:Register(tostring(self._player.UserId))
-		-- print("Result", self._sId, self._pId)
+		self._Prev = {}
+		self._SessionId, self._PlayerId = PlayFab:Register(tostring(self.Player.UserId))
 	else
-		-- print("Teleported")
-		self._wasTeleported = true
+		self._WasTeleported = true
 		local midasData = teleportData.MidasAnalyticsData
-		self._prev = midasData._prev
-		self._sId = midasData._sId
-		self._pId = midasData._pId
+		self._Prev = midasData._Prev
+		self._SessionId = midasData._SessionId
+		self._PlayerId = midasData._PlayerId
 	end
 
-	registry[tostring(self._player.UserId)] = self
+	local preExistingProfile: Profile? = REGISTRY[self.Player.UserId]
+	if preExistingProfile then
+		preExistingProfile:Destroy()
+		REGISTRY[self.Player.UserId] = nil
+	end
+	REGISTRY[self.Player.UserId] = self :: any
 
-	return self
+	return self :: any
 end
 
-function Profile.get(playerOrUserId, attempt)
-	attempt = attempt or 1
-	if attempt > 10/0.1 then return end
-	local result
-	if typeof(playerOrUserId) == "Instance" and playerOrUserId:IsA("Player") then
-		result = registry[tostring(playerOrUserId.UserId)]
-	else
-		result = registry[tostring(playerOrUserId)]
+function Profile.get(userId: number)
+	local function getProfile(attempt: number?)
+		attempt = attempt or 1
+		assert(attempt ~= nil)
+
+		if attempt > 10/0.1 then return end
+
+		local result: Profile? = REGISTRY[userId] :: any
+
+		if result == nil then
+			task.wait(0.1)
+			return getProfile(attempt + 1)
+		else
+			return result
+		end
 	end
-	if result == nil then
-		task.wait(0.1)
-		return Profile.get(playerOrUserId, attempt + 1)
-	else
-		return result
-	end
+	return getProfile(userId)
 end
 
-function Profile.init(a)
-	analytics = a
+if RunService:IsServer() then
+
+	Players.PlayerAdded:Connect(Profile.new)
+	task.spawn(function()
+		for i, player in ipairs(Players:GetChildren()) do
+			Profile.new(player)
+		end
+	end)
+	
+	Players.PlayerRemoving:Connect(function(player: Player)
+		local profile = Profile.get(player.UserId)
+		if profile then
+			task.delay(15, function()
+				profile:Destroy()
+			end)
+		end
+	end)	
 end
 
-function newPlayer(player)
-	if registry[player] then
-		registry[player]:Destroy()
-		registry[player] = nil
-	end
-	local profile = Profile.new(player)
-	if profile then
-		analytics:LoadDefault(player)
-	end
+
+if RunService:IsServer() then
+	local DestroyMidas = Network.getRemoteEvent("DestroyMidas")
+	DestroyMidas.OnServerEvent:Connect(function(player: Player, eventKeyPath: string)
+		local profile = Profile.get(player.UserId)
+		if profile then
+			profile:DestroyMidas(eventKeyPath)
+		end
+	end)
 end
-
-players.PlayerAdded:Connect(newPlayer)
-task.spawn(function()
-	for i, player in ipairs(game.Players:GetChildren()) do
-		newPlayer(player)
-	end
-end)
-
-game.Players.PlayerRemoving:Connect(function(player)
-	local profile = Profile.get(player.UserId)
-	if profile then
-		task.delay(15, function()
-			profile:Destroy()
-		end)
-	end
-end)
 
 return Profile
