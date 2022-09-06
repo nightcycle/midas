@@ -14,7 +14,6 @@ local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
 
 -- Modules
-local Config = require(_Package.Config)
 local Midas = require(_Package.Midas)
 
 export type Midas = Midas.Midas
@@ -36,9 +35,12 @@ end
 function Templates.chat(player: Player): Midas
 	assert(RunService:IsServer(), "Bad domain")
 	local mChat = Midas.new(player, "Chat")
-	mChat.LastMessage = nil
+	local lastMessage: string?
+	
+	mChat:SetState("LastMessage", function() return lastMessage end)
+	
 	mChat._Maid:GiveTask(player.Chatted:Connect(function(msg)
-		mChat.LastMessage = string.sub(msg, 140)
+		lastMessage = string.sub(msg, 140)
 		mChat:Fire("Spoke")
 	end))
 	return mChat
@@ -57,74 +59,70 @@ function Templates.character(character: Model): Midas
 
 	local mCharacter = Midas.new(player, "Character")
 	mCharacter:SetRoundingPrecision(1)
-	mCharacter.IsDead = false
-	mCharacter.Height = function()
+
+	local isDead = false
+
+	mCharacter:SetState("IsDead", function() return isDead end)
+	mCharacter:SetState("Height", function()
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			local humDesc = humanoid:GetAppliedDescription()
-			if humDesc then
-				return humDesc.HeightScale
-			end
-		end
-	end
+		assert(humanoid ~= nil)
+		local humDesc = humanoid:GetAppliedDescription()
+		assert(humDesc ~= nil)
+		return humDesc.HeightScale
+	end)
 
-	mCharacter.Mass = function()
-		local primarypart = character.PrimaryPart
-		if primarypart then
-			return primarypart.AssemblyMass
-		end
-	end
+	mCharacter:SetState("Mass", function()
+		local primaryPart = character.PrimaryPart
+		assert(primaryPart ~= nil)
+		return primaryPart.AssemblyMass
+	end)
 
-	mCharacter.WalkSpeed = function()
+	mCharacter:SetState("WalkSpeed", function()
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			return humanoid.WalkSpeed
-		end
-	end
+		assert(humanoid ~= nil)
+		return humanoid.WalkSpeed
+	end)
 
-	mCharacter.Position = function()
-		local primarypart = character.PrimaryPart
-		if primarypart then
-			return Vector2.new(primarypart.Position.X, primarypart.Position.Z)
-		end
-	end
+	mCharacter:SetState("Position", function()
+		local primaryPart = character.PrimaryPart
+		assert(primaryPart ~= nil)
+		return Vector2.new(primaryPart.Position.X, primaryPart.Position.Z)
+	end)
 
-	mCharacter.Altitude = function()
-		local primarypart = character.PrimaryPart
-		if primarypart then
-			return primarypart.Position.Y
-		end
-	end
+	mCharacter:SetState("Altitude", function()
+		local primaryPart = character.PrimaryPart
+		assert(primaryPart ~= nil)
+		return primaryPart.Position.Y
+	end)
 
-	mCharacter.JumpPower = function()
+	mCharacter:SetState("JumpPower", function()
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			return humanoid.WalkSpeed
-		end
-	end
+		assert(humanoid ~= nil)
+		return humanoid.WalkSpeed
+	end)
 
-	mCharacter.Health = function()
+	mCharacter:SetState("Health", function()
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			return humanoid.Health
-		end
-	end
+		assert(humanoid ~= nil)
+		return humanoid.Health
+	end)
 
-	mCharacter.MaxHealth = function()
+	mCharacter:SetState("MaxHealth", function()
 		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			return humanoid.MaxHealth
-		end
-	end
+		assert(humanoid ~= nil)
+		return humanoid.MaxHealth
+	end)
 
-	mCharacter.Deaths = 0
+	local deaths = 0
+
+	mCharacter:SetState("Deaths", function() return deaths end)
 	local humanoid = character:WaitForChild("Humanoid", 15)
 	assert(humanoid ~= nil and humanoid:IsA("Humanoid"), "Bad humanoid")
 
 	maid:GiveTask(humanoid.Died:Connect(function()
-		mCharacter.Deaths += 1
+		deaths += 1
 		mCharacter:Fire("Died")
-		mCharacter.IsDead = true
+		isDead = true
 	end))
 	return mCharacter
 end
@@ -132,10 +130,10 @@ end
 function Templates.population(player: Player): Midas
 	assert(RunService:IsServer(), "Bad domain")
 	local mPopulation = Midas.new(player, "Population")
-	mPopulation.Total = function()
+	mPopulation:SetState("Total", function()
 		return #game.Players:GetChildren()
-	end
-	mPopulation.Team = function()
+	end)
+	mPopulation:SetState("Team", function()
 		local teamColor = player.TeamColor
 		local count = 0
 		for i, plr in ipairs(game.Players:GetChildren()) do
@@ -144,7 +142,7 @@ function Templates.population(player: Player): Midas
 			end
 		end
 		return count
-	end
+	end)
 	
 	local friendPages = Players:GetFriendsAsync(player.UserId)
 	local friends = {}
@@ -169,62 +167,43 @@ function Templates.population(player: Player): Midas
 		end
 	end)
 
-	mPopulation.PeakFriends = 0
-	mPopulation.Friends = function()
+	local peakFriends = 0
+	mPopulation:SetState("PeakFriends", function() return peakFriends end)
+	mPopulation:SetState("Friends", function()
 		local count = 0
 		for i, plr in ipairs(game.Players:GetChildren()) do
 			if plr ~= player and friends[plr.UserId] == true then
 				count += 1
 			end
 		end
-		mPopulation.PeakFriends = math.max(mPopulation.PeakFriends, count)
+		peakFriends = math.max(peakFriends, count)
 		return count
-	end
-
-	local results = {}
-	for k, id in pairs(Config.VIP.Developers or {}) do
-		if tostring(id) == tostring(player.UserId) then
-			mPopulation["VIP/Groups/Developer"] = true
-		end
-		if friends[tonumber(id)] then
-			mPopulation["VIP/Friends/"..k] = true
-		else
-			mPopulation["VIP/Friends/"..k] = false
-		end
-	end
-
-	task.spawn(function()
-		for k, id in pairs(Config.VIP.Groups or {}) do
-			if player:IsInGroup(id) then
-				mPopulation["VIP/Groups/"..k] = true
-			else
-				mPopulation["VIP/Groups/"..k] = false
-			end
-		end
 	end)
 
 	-- end
-	mPopulation.SpeakingDistance = function()
+	mPopulation:SetState("SpeakingDistance", function()
 		local count = 0
-		local pChar = player.Character
-		if pChar then
-			local pPrim = pChar.PrimaryPart
-			for i, plr in ipairs(game.Players:GetChildren()) do
-				if plr ~= player then
-					local char = plr.Char
-					if char then
-						local prim = char.PrimaryPart
-						if prim then
-							local dist = (prim.Position - pPrim.Position).Magnitude
-							if dist < 40 then
-								count += 1
-							end
+		local pChar: Model? = player.Character :: any
+		assert(pChar ~= nil)
+		local pPrim = pChar.PrimaryPart
+		assert(pPrim ~= nil)
+		for i, plr in ipairs(game.Players:GetChildren()) do
+			if plr ~= player then
+				local char = plr.Char
+				if char then
+					local prim = char.PrimaryPart
+					if prim then
+						local dist = (prim.Position - pPrim.Position).Magnitude
+						if dist < 40 then
+							count += 1
 						end
 					end
 				end
 			end
 		end
-	end
+		return count
+	end)
+
 	return mPopulation
 end
 
@@ -232,7 +211,7 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 	assert(RunService:IsServer(), "Bad domain")
 	local mServerPerformance = Midas.new(player, "Performance/Server")
 	mServerPerformance:SetRoundingPrecision(0)
-	mServerPerformance.EventsPerMinute = function()
+	mServerPerformance:SetState("EventsPerMinute", function()
 		local timeDifference = getTimeDifference()
 		local eventsPerMinute = getEventsPerMinute()
 		if timeDifference < 60 then
@@ -240,100 +219,100 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 		else
 			return eventsPerMinute
 		end
-	end
-	mServerPerformance["ServerTime"] = function()
+	end)
+	mServerPerformance:SetState("ServerTime", function()
 		return math.round(time())
-	end
-	mServerPerformance["HeartRate"] = function()
-		return math.clamp(math.round(1/StatService.HeartbeatTimeMs), 6000)
-	end
-	mServerPerformance["Instances"] = function()
+	end)
+	mServerPerformance:SetState("HeartRate", function()
+		return math.clamp(math.round(1/StatService.HeartbeatTimeMs), 0, 6000)
+	end)
+	mServerPerformance:SetState("Instances", function()
 		return math.round(StatService.InstanceCount/1000)*1000
-	end
-	mServerPerformance["MovingParts"] = function()
+	end)
+	mServerPerformance:SetState("MovingParts", function()
 		return StatService.InstanceCount
-	end
-	mServerPerformance["Network/Data/Send"] = function()
+	end)
+	mServerPerformance:SetState("Network/Data/Send", function()
 		return StatService.DataSendKbps
-	end
-	mServerPerformance["Network/Data/Receive"] = function()
+	end)
+	mServerPerformance:SetState("Network/Data/Receive", function()
 		return StatService.DataReceiveKbps
-	end
-	mServerPerformance["Network/Physics/Send"] = function()
+	end)
+	mServerPerformance:SetState("Network/Physics/Send", function()
 		return StatService.PhysicsSendKbps
-	end
-	mServerPerformance["Network/Physics/Receive"] = function()
+	end)
+	mServerPerformance:SetState("Network/Physics/Receive", function()
 		return StatService.PhysicsReceiveKbps
-	end
-	mServerPerformance["Memory/Internal"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Internal", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Internal)
-	end
-	mServerPerformance["Memory/HttpCache"] = function()
+	end)
+	mServerPerformance:SetState("Memory/HttpCache", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.HttpCache)
-	end
-	mServerPerformance["Memory/Instances"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Instances", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Instances)
-	end
-	mServerPerformance["Memory/Signals"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Signals", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Signals)
-	end
-	mServerPerformance["Memory/LuaHeap"] = function()
+	end)
+	mServerPerformance:SetState("Memory/LuaHeap", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.LuaHeap)
-	end
-	mServerPerformance["Memory/Script"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Script", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Script)
-	end
-	mServerPerformance["Memory/PhysicsCollision"] = function()
+	end)
+	mServerPerformance:SetState("Memory/PhysicsCollision", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.PhysicsCollision)
-	end
-	mServerPerformance["Memory/PhysicsParts"] = function()
+	end)
+	mServerPerformance:SetState("Memory/PhysicsParts", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.PhysicsParts)
-	end
-	mServerPerformance["Memory/CSG"] = function()
+	end)
+	mServerPerformance:SetState("Memory/CSG", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsMeshParts)
-	end
-	mServerPerformance["Memory/Particle"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Particle", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsParticles)
-	end
-	mServerPerformance["Memory/Part"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Part", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsParts)
-	end
-	mServerPerformance["Memory/MeshPart"] = function()
+	end)
+	mServerPerformance:SetState("Memory/MeshPart", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsMeshParts)
-	end
-	mServerPerformance["Memory/SpatialHash"] = function()
+	end)
+	mServerPerformance:SetState("Memory/SpatialHash", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsSpatialHash)
-	end
-	mServerPerformance["Memory/TerrainGraphics"] = function()
+	end)
+	mServerPerformance:SetState("Memory/TerrainGraphics", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.TerrainVoxels)
-	end
-	mServerPerformance["Memory/Textures"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Textures", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsTexture)
-	end
-	mServerPerformance["Memory/CharacterTextures"] = function()
+	end)
+	mServerPerformance:SetState("Memory/CharacterTextures", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsTextureCharacter)
-	end
-	mServerPerformance["Memory/SoundsData"] = function()
+	end)
+	mServerPerformance:SetState("Memory/SoundsData", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Sounds)
-	end
-	mServerPerformance["Memory/SoundsStreaming"] = function()
+	end)
+	mServerPerformance:SetState("Memory/SoundsStreaming", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.StreamingSounds)
-	end
-	mServerPerformance["Memory/TerrainVoxels"] = function()
+	end)
+	mServerPerformance:SetState("Memory/TerrainVoxels", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.TerrainVoxels)
-	end
-	mServerPerformance["Memory/Guis"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Guis", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Gui)
-	end
-	mServerPerformance["Memory/Animations"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Animations", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Animation)
-	end
-	mServerPerformance["Memory/Pathfinding"] = function()
+	end)
+	mServerPerformance:SetState("Memory/Pathfinding", function()
 		return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Navigation)
-	end
-	mServerPerformance["PlayerHTTPLimit"] = function()
+	end)
+	mServerPerformance:SetState("PlayerHTTPLimit", function()
 		return 500/#Players:GetChildren()
-	end
+	end)
 	return mServerPerformance
 end
 
@@ -341,25 +320,28 @@ function Templates.market(player: Player)
 	assert(RunService:IsServer(), "Bad domain")
 
 	local mMarket = Midas.new(player, "Spending")
-	mMarket.Products = 0
-	mMarket.Gamepasses = 0
-	mMarket.Spending = function()
-		return mMarket.Products + mMarket.Gamepasses
-	end
+
+	local products = 0
+	local gamepasses = 0
+
+	mMarket:SetState("Products", function() return products end)
+	mMarket:SetState("Gamepasses", function() return gamepasses end)
+	mMarket:SetState("Spending", function()
+		return products + gamepasses
+	end)
 
 	mMarket._Maid:GiveTask(MarketplaceService.PromptPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
 		if plr ~= player and success then
 			local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)
 			mMarket:Fire("Purchase/Product/"..itemInfo.Name)
-			mMarket.Products += itemInfo.PriceInRobux
+			products += itemInfo.PriceInRobux
 		end
-
 	end))
 	mMarket._Maid:GiveTask(MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
 		if plr ~= player and success then
 			local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
 			mMarket:Fire("Purchase/Gamepass/"..itemInfo.Name)
-			mMarket.Gamepasses += itemInfo.Gamepasses
+			gamepasses += itemInfo.Gamepasses
 		end
 	end))
 	return mMarket
@@ -387,35 +369,18 @@ function Templates.demographics(player: Player): Midas
 
 	local mDemographics = Midas.new(player, "Audience/Demographics")
 	mDemographics:SetRoundingPrecision(0)
-	mDemographics.AccountAge = player.AccountAge
-	mDemographics.RobloxLangugage = localizationService.RobloxLocaleId
-	mDemographics.SystemLanguage = localizationService.SystemLocaleId
-
-	mDemographics["Platform/Accelerometer"] = function()
-		return UserInputService.VREnabled
-	end
-	mDemographics["Platform/Gamepad"] = function()
-		return UserInputService.GamepadConnected
-	end
-	mDemographics["Platform/Gyroscope"] = function()
-		return UserInputService.GyroscopeEnabled
-	end
-	mDemographics["Platform/Keyboard"] = function()
-		return UserInputService.KeyboardEnabled
-	end
-	mDemographics["Platform/Mouse"] = function()
-		return UserInputService.MouseEnabled
-	end
-	mDemographics["Platform/TouchEnabled"] = function()
-		return UserInputService.TouchEnabled
-	end
-	mDemographics["Platform/VCEnabled"] = function()
-		return VoiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId)
-	end
-	mDemographics["Platform/ScreenSize"] = function()
-		return game.Workspace.CurrentCamera.ViewportSize.Magnitude
-	end
-	mDemographics["Platform/ScreenRatio"] = function()
+	mDemographics:SetState("AccountAge", function() return player.AccountAge end)
+	mDemographics:SetState("RobloxLangugage", function() return localizationService.RobloxLocaleId end)
+	mDemographics:SetState("SystemLanguage", function() return localizationService.SystemLocaleId end)
+	mDemographics:SetState("Platform/Accelerometer", function() return UserInputService.VREnabled end)
+	mDemographics:SetState("Platform/Gamepad", function() return UserInputService.GamepadConnected end)
+	mDemographics:SetState("Platform/Gyroscope", function() return UserInputService.GyroscopeEnabled end)
+	mDemographics:SetState("Platform/Keyboard", function() return UserInputService.KeyboardEnabled end)
+	mDemographics:SetState("Platform/Mouse", function() return UserInputService.MouseEnabled end)
+	mDemographics:SetState("Platform/TouchEnabled", function() return UserInputService.TouchEnabled end)
+	mDemographics:SetState("Platform/VCEnabled", function() return VoiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId) end)
+	mDemographics:SetState("Platform/ScreenSize", function() return game.Workspace.CurrentCamera.ViewportSize.Magnitude end)
+	mDemographics:SetState("Platform/ScreenRatio", function()
 		local size = game.Workspace.CurrentCamera.ViewportSize
 		local x = size.X
 		local y = size.Y
@@ -436,7 +401,8 @@ function Templates.demographics(player: Player): Midas
 			return "9:16"
 		end
 		return (math.round(100/ratio)/100)..":1"
-	end
+	end)
+
 	return mDemographics
 end
 
@@ -444,10 +410,10 @@ function Templates.policy(player: Player): Midas
 	local mPolicy = Midas.new(player, "Policy")
 	task.spawn(function()
 		local policyInfo = PolicyService:GetPolicyInfoForPlayerAsync(player)
-		mPolicy.Lootboxes = policyInfo.ArePaidRandomItemsRestricted
-		mPolicy.AllowedLinks = policyInfo.AllowedExternalLinkReferences
-		mPolicy.Trading = policyInfo.IsPaidItemTradingAllowed
-		mPolicy.China = policyInfo.IsSubjectToChinaPolicies
+		mPolicy:SetState("Lootboxes", function() return policyInfo.ArePaidRandomItemsRestricted end)
+		mPolicy:SetState("AllowedLinks", function() return policyInfo.AllowedExternalLinkReferences end)
+		mPolicy:SetState("Trading", function() return policyInfo.IsPaidItemTradingAllowed end)
+		mPolicy:SetState("China", function() return policyInfo.IsSubjectToChinaPolicies end)
 	end)
 	return mPolicy
 end
@@ -455,9 +421,9 @@ end
 function Templates.clientPerformance(player: Player): Midas
 	local mClientPerformance = Midas.new(player, "Performance/Client")
 	mClientPerformance:SetRoundingPrecision(0)
-	mClientPerformance.Ping = function()
+	mClientPerformance:SetState("Ping", function()
 		return math.clamp(player:GetNetworkPing(), 0, 10^6)
-	end
+	end)
 
 	local frames = 0
 	local duration = 0
@@ -469,9 +435,10 @@ function Templates.clientPerformance(player: Player): Midas
 			duration -= delta
 		end)
 	end))
-	mClientPerformance.FPS = function()
+	mClientPerformance:SetState("FPS", function()
 		return frames/duration
-	end
+	end)
+
 	mClientPerformance._Maid:GiveTask(game.GraphicsQualityChangeRequest:Connect(function(increase)
 		if increase then
 			mClientPerformance:Fire("Graphics/Increase")
@@ -488,33 +455,33 @@ end
 function Templates.settings(player: Player): Midas
 	local gameSettings = UserSettings():GetService("UserGameSettings")
 	local mSettings = Midas.new(player, "Settings")
-	mSettings.ComputerMovementMode = function()
+	mSettings:SetState("ComputerMovementMode", function()
 		return gameSettings.ComputerMovementMode.Name
-	end
-	mSettings.ControlMode = function()
+	end)
+	mSettings:SetState("ControlMode", function()
 		return gameSettings.ControlMode.Name
-	end
-	mSettings.MasterVolume = function()
+	end)
+	mSettings:SetState("MasterVolume", function()
 		return gameSettings.MasterVolume
-	end
-	mSettings.MouseSensitivity = function()
+	end)
+	mSettings:SetState("MouseSensitivity", function()
 		return gameSettings.MouseSensitivity
-	end
-	mSettings.RotationType = function()
+	end)
+	mSettings:SetState("RotationType", function()
 		return gameSettings.RotationType.Name
-	end
-	mSettings.SavedQualityLevel = function()
+	end)
+	mSettings:SetState("SavedQualityLevel", function()
 		return gameSettings.SavedQualityLevel.Value
-	end
-	mSettings.TouchCameraMovementMode = function()
+	end)
+	mSettings:SetState("TouchCameraMovementMode", function()
 		return gameSettings.TouchCameraMovementMode.Value
-	end
-	mSettings.TouchMovementMode = function()
+	end)
+	mSettings:SetState("TouchMovementMode", function()
 		return gameSettings.TouchMovementMode.Value
-	end
-	mSettings.VignetteEnabled = function()
+	end)
+	mSettings:SetState("VignetteEnabled", function()
 		return gameSettings.VignetteEnabled
-	end
+	end)
 	return mSettings
 end
 

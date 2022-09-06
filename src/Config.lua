@@ -1,18 +1,4 @@
-local RunService = game:GetService("RunService")
-if RunService:IsServer() then
-	return {
-		Chances = {},
-		VIP = {
-			Users = {},
-			Groups = {},
-		},
-		Gamepasses = {
-			Test = 123,
-		},
-		Version = 12,
-	}
-else
-	return {
-
-	}
-end
+return {
+	Version = 13, --Internal versioning for midas framework
+	SendDeltaState = true, --Send just the changes of state, not the entirety
+}

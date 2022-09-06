@@ -12,48 +12,14 @@ local _Signal = require(_Packages.Signal)
 local Config = require(_Package.Config)
 local PlayFab = require(_Package.PlayFab)
 local Network = require(_Package.Network)
+local Types = require(_Package.Types)
 
-type Midas = {}
+type State = Types.State
+type Midas = Types.Midas
+export type Profile = Types.Profile
+export type TeleportDataEntry = Types.TeleportDataEntry
 
 local REGISTRY: {[number]: Profile} = {}
-
-export type TeleportDataEntry = {
-	_Prev: {[string]: any},
-	_SessionId: string,
-	_PlayerId: string,
-}
-
-export type Profile = {
-	_Maid: _Maid.Maid,
-	Player: Player,
-	Instance: Instance,
-	EventsPerMinute: number,
-	TimeDifference: number,
-	_IsAlive: boolean,
-	_ConstructionTick: number,
-	_IsTeleporting: boolean,
-	_WasTeleported: boolean,
-	_Index: number,
-	_Midaii: {[string]: Midas},
-	_Prev: {},
-	_SessionId: string?,
-	_PlayerId: string?,
-	Destroy: (self: Profile) -> nil,
-	_Fire: (self: Profile, eventFullPath: string, delta: {[string]: any}, tags: {string}, timestamp: number) -> nil,
-	_Format: (self: Profile, midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number, timestamp: number) -> ({[string]: any}, string),
-	FireSeries: (self: Profile, midas: Midas, eventName: string, timeStamp: string, eventIndex: number, includeEndEvent: boolean) -> _Signal.Signal,
-	Fire: (self: Profile, midas: Midas, eventName: string, timestamp: string, eventIndex: number, duration: number?) -> nil, 
-	HasPath: (self: Profile, midas: Midas, path: string) -> boolean,
-	DestroyPath: (self: Profile, path: string) -> nil,
-	DestroyMidas: (self: Profile, path: string) -> nil,
-	SetMidas: (self: Profile, midas: Midas) -> nil,
-	_Export: (self: Profile) -> TeleportDataEntry,
-	Teleport: (self: Profile) -> nil,
-	new: (player: Player) -> Profile,
-	get:(userId: number) -> Profile?,
-	getProfilesFolder: () -> Folder,
-	__index: Profile,
-}
 
 local Profile: Profile = {} :: any
 Profile.__index = Profile
@@ -100,7 +66,7 @@ end
 
 function writeDelta(path: string, value: any, delta, old)
 	local lastValue = readPath(old, path)
-	if lastValue ~= value then
+	if lastValue ~= value or Config.SendDeltaState == false then
 		writePath(delta, path, value)
 		writePath(old, path, value)
 	end
@@ -123,11 +89,11 @@ function Profile:Destroy()
 	return nil
 end
 
-function Profile:_Fire(eventFullPath: string, delta: {[string]: any}, tags: {string}, timestamp: number)
+function Profile:_Fire(eventFullPath: string, delta: {[string]: any}, tags: {[string]: boolean}, timestamp: string)
 	self.EventsPerMinute += 1
 	
 	task.delay(60, function()
-		if self ~= nil and self._ServerPerformanceMidas ~= nil then
+		if self ~= nil and self._IsAlive ~= nil then
 			self.EventsPerMinute -= 1
 		end
 	end)
@@ -136,11 +102,14 @@ function Profile:_Fire(eventFullPath: string, delta: {[string]: any}, tags: {str
 
 	while self._IsAlive and self._PlayerId == nil do task.wait(0.1) end
 
-	PlayFab:Fire(self._PlayerId, eventFullPath, delta, tags, timestamp)
+	local pId = self._PlayerId
+	assert(pId ~= nil)
+
+	PlayFab:Fire(pId, eventFullPath, delta, tags, timestamp)
 	return nil
 end
 
-function Profile:_Format(midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number?, timestamp: number): ({[string]: any}, string)
+function Profile:_Format(midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number?, timestamp: string): ({[string]: any}, string)
 	self._Index += 1
 
 	delta.Index = {
@@ -167,13 +136,13 @@ function Profile:FireSeries(midas: Midas, eventName: string, timestamp: string, 
 		if output then
 			for k, v in pairs(output) do
 				local fullPath = p.."/"..k
-				writeDelta(fullPath, v, deltaStates, self._Prev)
+				writeDelta(fullPath, v, deltaStates, self._PreviousStates)
 			end
 		end
 	end
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, timestamp)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, nil, timestamp)
 
 	local maid = _Maid.new()
 	self._Maid:GiveTask(maid)
@@ -184,7 +153,7 @@ function Profile:FireSeries(midas: Midas, eventName: string, timestamp: string, 
 	maid:GiveTask(trigger:Connect(function(duration)
 		if hasFired == true then return end
 		deltaStates.Duration = duration
-		if includeEndEvent and midas.Living == true then
+		if includeEndEvent and midas._IsAlive == true then
 			self:_Fire(eventFullPath.."Start", deltaStates, midas._Tags, timestamp)
 			self:Fire(midas, eventName.."Finish", midas:GetUTC(), eventIndex, duration)
 		else
@@ -207,7 +176,7 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 		if output then
 			for k, v in pairs(output) do
 				local fullPath = p.."/"..k
-				writeDelta(fullPath, v, deltaStates, self._Prev)
+				writeDelta(fullPath, v, deltaStates, self._PreviousStates)
 			end
 		end
 	end
@@ -218,9 +187,10 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timeStamp)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timestamp)
 
-	self:_Fire(eventFullPath, deltaStates, midas._Tags, timeStamp)
+	self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
+	return nil
 end
 
 function Profile:HasPath(midas: Midas, path: string): boolean
@@ -230,12 +200,12 @@ function Profile:HasPath(midas: Midas, path: string): boolean
 end
 
 function Profile:DestroyPath(path: string): nil
-	local pLen = string.len(path)
 	for k, midas in pairs(self._Midaii) do
 		if self:HasPath(midas, path) then
 			self:DestroyMidas(k)
 		end
 	end
+	return nil
 end
 
 function Profile:DestroyMidas(path: string): nil
@@ -243,45 +213,51 @@ function Profile:DestroyMidas(path: string): nil
 	if midas then
 		midas:Destroy()
 	end
+	return nil
 end
 
 function Profile:SetMidas(midas)
 	local path = midas:GetPath()
 	self._Midaii[path] = midas
 
-	midas.Instance.Parent = self.Instance
-
-	for kPath, vChance in pairs(Config.Chances) do
-		if self:HasPath(midas, kPath) then
-			midas:SetChance(vChance)
-		end
-	end
+	local mInst = midas.Instance
+	assert(mInst ~= nil)
+	mInst.Parent = self.Instance
 
 	self._Maid[path] = midas
-	self._Maid[path.."_Destroy"] = midas.Destroying:Connect(function()
+	self._Maid[path.."_Destroy"] = midas.OnDestroy:Connect(function()
 		self._Midaii[path] = nil
 	end)
 
-	return self
+	return nil
 end
 
 function Profile.getProfilesFolder(): Folder
 	return ProfilesFolder
 end
 
-function Profile:_Export()
+function Profile:_Export(): TeleportDataEntry
+	local sId = self._SessionId
+	local pId = self._PlayerId
+	assert(sId ~= nil and pId ~= nil)
+
 	return {
-		_Prev = self._Prev,
-		_SessionId = self._SessionId,
-		_PlayerId = self._PlayerId,
+		_PreviousStates = self._PreviousStates,
+		_SessionId = sId,
+		_PlayerId = pId,
 	}
 end
 
-function Profile:Teleport()
+function Profile:Teleport(mExit: Midas?): TeleportDataEntry
 	self._IsTeleporting = true
 	local output = self:_Export()
-	self._mExit:Fire("Teleport")
+	
+	if mExit then
+		mExit:Fire("Teleport")
+	end
+
 	self:Destroy()
+	
 	return output
 end
 
@@ -289,6 +265,26 @@ function Profile.new(player: Player): Profile
 	local inst = Instance.new("Folder")
 	inst.Name = tostring(player.UserId)
 	inst.Parent = ProfilesFolder
+
+
+
+	local joinData = player:GetJoinData()
+	local teleportData = joinData.TeleportData
+
+	local prev = {}
+	local wasTeleported = false
+	local sId: string, pId: string
+	if teleportData == nil or teleportData.MidasAnalyticsData == nil then
+		prev = {}
+		local userId = player.UserId
+		sId, pId = PlayFab:Register(userId)
+	else
+		wasTeleported = true
+		local midasData = teleportData.MidasAnalyticsData
+		prev = midasData._PreviousStates
+		sId = midasData._SessionId
+		pId = midasData._PlayerId
+	end
 
 	local self = setmetatable({
 		_Maid = _Maid.new(),
@@ -299,27 +295,13 @@ function Profile.new(player: Player): Profile
 		TimeDifference = 0,
 		_ConstructionTick = tick(),
 		_IsTeleporting = false,
-		_WasTeleported = false,
+		_WasTeleported = wasTeleported,
 		_Index = 0,
 		_Midaii = {},
-		_Prev = {},
-		_SessionId = nil,
-		_PlayerId = nil,
+		_PreviousStates = prev,
+		_SessionId = sId,
+		_PlayerId = pId,
 	}, Profile)
-
-	local joinData = player:GetJoinData()
-	local teleportData = joinData.TeleportData
-
-	if teleportData == nil or teleportData.MidasAnalyticsData == nil then
-		self._Prev = {}
-		self._SessionId, self._PlayerId = PlayFab:Register(tostring(self.Player.UserId))
-	else
-		self._WasTeleported = true
-		local midasData = teleportData.MidasAnalyticsData
-		self._Prev = midasData._Prev
-		self._SessionId = midasData._SessionId
-		self._PlayerId = midasData._PlayerId
-	end
 
 	local preExistingProfile: Profile? = REGISTRY[self.Player.UserId]
 	if preExistingProfile then
@@ -368,7 +350,6 @@ if RunService:IsServer() then
 		end
 	end)	
 end
-
 
 if RunService:IsServer() then
 	local DestroyMidas = Network.getRemoteEvent("DestroyMidas")

@@ -11,75 +11,21 @@ local _Math = require(_Packages.Math)
 -- Modules
 local Network = require(_Package.Network)
 local Profile = require(_Package.Profile)
+local Types = require(_Package.Types)
 
-type Profile = Profile.Profile
+type State = Types.State
+type Profile = Types.Profile
+export type Midas = Types.Midas
 
 -- Remote Events
 local ConstructMidas = Network.getRemoteEvent("ConstructMidas")
 local DestroyMidas = Network.getRemoteEvent("DestroyMidas")
 
-type State = (() -> any) & {get: () -> any} & {Get: () -> any}
-
-export type Midas = {
-	Instance: Folder?,
-	Loaded: boolean,
-
-	OnLoad: _Signal.Signal,
-	OnDestroy: _Signal.Signal,
-	OnEvent: _Signal.Signal,
-
-	_Maid: _Maid.Maid,
-
-	_Profile: Profile?,
-	_Path:string,
-	_Player: Player,
-	
-	_OnClientFire: RemoteEvent?,
-	_ClientRegister: RemoteEvent?,
-	_GetRenderOutput: RemoteFunction?,
-
-	_IsAlive: boolean,
-	_RoundingPrecision: number,
-	_Chance: number,
-	_IsClientManaged: boolean,
-
-	_Tags: {[string]: boolean},
-	_Conditions: {[string]: () -> boolean},
-	_States: {[string]: State},
-	_FirstFireTick: {[string]: number},
-	_LastFireTick: {[string]: number},
-	_SeriesSignal: {[string]: _Signal.Signal},
-	_Index: {[string]: number},
-	_Repetitions: {[string]: number},
-	__index: (self: Midas, index: any) -> any?,
-	__newindex: (self: Midas, index: any, value: State) -> nil,
-
-	Destroy: (self: Midas) -> nil,
-	SetTag: (self: Midas, tag: string) -> nil,
-	RemoveTag: (self: Midas, tag: string) -> nil,
-	SetCondition: (self: Midas, key: string, func: () -> boolean) -> nil,
-	GetPath: (self: Midas) -> string,
-	SetRoundingPrecision: (self: Midas, exp: number?) -> nil,
-	Compile: (self: Midas) -> {[string]: any}?,
-	GetUTC: (self: Midas, offset: number?) -> string,
-	CanFire: (self: Midas) -> boolean,
-	Fire: (self: Midas,eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
-	SetChance: (self: Midas, val: number) -> nil,
-	GetKeyCount: (self: Midas) -> number,
-	new: (player: Player, path: string) -> Midas,
-	_Compile: (self: Midas) -> {[string]: any}?,
-	_FireSeries: (self: Midas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
-	_FireEvent: (self: Midas, eventName: string, utc: string) -> nil,
-	_Fire: (self: Midas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
-	_Load: (self: Midas, player: Player, path: string, profile: Profile?, maid: _Maid.Maid, onLoad: _Signal.Signal) -> nil,
-
-}
-
 -- Class
 local Midas: Midas = {} :: any
 
 function Midas:__index(index: any): any?
-	local states = rawget(self, "_States")
+	local s: any = rawget(self, "_States"); local states: {any} = s
 	assert(states ~= nil and typeof(states) == "table")
 
 	if rawget(self,index) ~= nil then
@@ -93,38 +39,32 @@ function Midas:__index(index: any): any?
 	return states[index]
 end
 
-function Midas:__newindex(index, newState)
-	if rawget(self, index) ~= nil then 
-		rawset(self, index, newState) 
-		return
-	end
-
-	local states = rawget(self, "_States")
+function Midas:SetState(key: string, newState: State)
+	local s: any = rawget(self, "_States"); local states: {[string]: State} = s
 	assert(states ~= nil and typeof(states) == "table")
 
-	local function stateToFunction(state: State)
+	local function stateToFunction(state: State): any
 		if type(state) == "function" then
 			return state
 		elseif type(state) == "table" then
-			if state.get then
+			local stateObj: any = state
+			if stateObj.get then
 				return function()
-					return state:get()
+					return stateObj:get()
 				end
-			elseif state.Get then
+			elseif stateObj.Get then
 				return function()
-					return state:Get()
+					return stateObj:Get()
 				end
 			end
 		end
+		error("Bad state")
 	end
 	
-	local func = stateToFunction(newState)
-	if func then
-		states[index] = func
-	else
-		states[index] = tostring(newState)
-	end
-	rawset(self, "_keyCount", rawget(Midas,"GetKeyCount")(self))
+	states[key] = stateToFunction(newState)
+	
+	local keyCount = Midas.GetKeyCount(self :: any)
+	rawset(self, "_KeyCount", keyCount :: any)
 	return nil
 end
 
@@ -229,7 +169,9 @@ function Midas:_Compile(): {[string]: any}?
 			if v == nil then
 				output[k] = "nil"
 			elseif type(v) == "function" then
-				output[k] = round(v())
+				local vFun: any = v
+				local vOut = vFun()
+				output[k] = round(vOut)
 			elseif type(v) == "string" then
 				output[k] = v
 			else
@@ -321,6 +263,7 @@ function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number,
 
 		task.wait(waitDuration)
 		local currentTick = tick()
+		
 		local signal = self._SeriesSignal[eventName]
 		local lastTick = self._LastFireTick[eventName]
 		local firstFire = self._FirstFireTick[eventName]
@@ -423,7 +366,7 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 	end
 	assert(inst ~= nil)
 	maid:GiveTask(inst)
-	rawset(self, "Instance", inst)
+	rawset(self, "Instance", inst :: any)
 	
 	if RunService:IsServer() then
 
@@ -434,8 +377,8 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		maid:GiveTask(self._ClientRegister.OnServerEvent:Connect(function(eventPlayer: Player)
 
 			if eventPlayer == player then
-
-				if not rawget(self, "Loaded") then rawget(self, "LoadSignal"):Wait() end
+				local onLoad: any = rawget(self, "OnLoad")
+				if not rawget(self, "Loaded") then onLoad:Wait() end
 				self._IsClientManaged = true
 			end
 		end))
@@ -511,6 +454,7 @@ function Midas.new(player: Player, path: string): Midas
 		_IsAlive = true,
 		_RoundingPrecision = 1,
 		_Chance = 1,
+		_KeyCount = 0,
 		_IsClientManaged = RunService:IsClient(),
 
 		_Tags = {},

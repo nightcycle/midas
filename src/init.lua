@@ -13,21 +13,35 @@ local PlayFab = require(_Package.PlayFab)
 local Midas = require(_Package.Midas)
 local Profile = require(_Package.Profile)
 local Templates = require(_Package.Templates)
+local Types = require(_Package.Types)
 
-export type Midas = Midas.Midas
-export type TeleportDataEntry = Profile.TeleportDataEntry
-type Profile = Profile.Profile
+export type Midas = Types.Midas
+export type TeleportDataEntry = Types.TeleportDataEntry
+type Profile = Types.Profile
 
-local Service = {}
-Service.__type = "Analytics"
+type Interface = {
+	__index: Interface,
+	Midas: (self: Interface, player: Player, path: string) -> Midas,
+	GetConfig: (self: Interface) -> {[string]: any},
+	LoadDefault: (self: Interface, player: Player) -> nil,
+	InsertTeleportDataEntry: (self: Interface, player: Player, teleportData: {[any]: any}?) -> {
+		MidasAnalyticsData: TeleportDataEntry,
+		[any]: any
+	},
+	SetIsDeltaStateSent: (self: Interface, enabled: boolean) -> nil,
+	init: (titleId: string, devSecretKey: string) -> nil,
+}
+
+local Service: Interface = {} :: any
 Service.__index = Service
 
 function Service:Midas(player: Player, eventKeyPath: string): Midas
 	return Midas.new(player, eventKeyPath)
 end
 
-function Service:GetConfig()
-	return Config
+function Service:SetIsDeltaStateSent(enabled: boolean)
+	Config.SendDeltaState = enabled
+	return nil
 end
 
 function Service:LoadDefault(player: Player)
@@ -54,6 +68,7 @@ function Service:LoadDefault(player: Player)
 		Templates.clientPerformance(player)
 		Templates.settings(player)
 	end
+	return nil
 end
 
 function Service:InsertTeleportDataEntry(player: Player, teleportData: {[any]: any}?): {
@@ -75,7 +90,7 @@ end
 function Service.init(titleId: string, devSecretKey: string)
 	assert(RunService:IsServer(), "Bad domain")
 	PlayFab.init(titleId, devSecretKey)
-	return Service
+	return nil
 end
 
 return Service

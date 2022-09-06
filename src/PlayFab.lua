@@ -18,12 +18,19 @@ local TITLE_ID: string?
 local DEV_SECRET_KEY: string?
 
 -- Class
-local PlayFab = {}
+export type PlayFab = {
+	Register: (self: PlayFab, userId: number) -> (string, string),
+	Fire: (self: PlayFab, pId: string, eventName: string, data: {[string]: any}, tags: {[string]: boolean}, timeStamp: string) -> nil,
+	init: (titleId: string, devSecretKey: string) -> nil,
+}
+
+local PlayFab: PlayFab = {} :: any
 
 type HttpResponse = {
 	code: number,
 	data: {[string]: any},
 }
+
 
 function getURL(path: string): string
 	assert(TITLE_ID ~= nil, "Bad Title Id")
@@ -64,7 +71,7 @@ function post(url: string, headers: {[string]: any}, body: {[string]: any}, atte
 	end
 end
 
-function PlayFab:Fire(pId, eventName, data, tags, timeStamp)
+function PlayFab:Fire(pId: string, eventName: string, data: {[string]: any}, tags: {[string]: boolean}, timeStamp: string): nil
 	assert(RunService:IsServer(), "PlayFab API can only be called on server")
 
 	-- Yield until TITLE_ID has been set
@@ -92,6 +99,7 @@ function PlayFab:Fire(pId, eventName, data, tags, timeStamp)
 		
 		post(url, headers, body)
 	end)
+	return nil
 end
 
 function PlayFab:Register(userId: number): (string, string)
@@ -125,6 +133,7 @@ function PlayFab.init(titleId: string, devSecretKey: string)
 	assert(RunService:IsServer(), "PlayFab API can only be called on server")
 	TITLE_ID = titleId
 	DEV_SECRET_KEY = devSecretKey
+	return nil
 end
 
 return PlayFab
