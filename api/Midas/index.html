@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="generator" content="Docusaurus v2.0.0-beta.21">
+<title data-rh="true">Midas | Midas</title><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://nightcycle.github.io/midas/api/Midas"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Midas | Midas"><meta data-rh="true" name="description" content="The heart of the entire framework, allowing for decentralized recording and organizing of in-game state and events.
+Allows for the binding of state to the midas object."><meta data-rh="true" property="og:description" content="The heart of the entire framework, allowing for decentralized recording and organizing of in-game state and events.
+Allows for the binding of state to the midas object."><link data-rh="true" rel="icon" href="/midas/media/favicon.ico"><link data-rh="true" rel="canonical" href="https://nightcycle.github.io/midas/api/Midas"><link data-rh="true" rel="alternate" href="https://nightcycle.github.io/midas/api/Midas" hreflang="en"><link data-rh="true" rel="alternate" href="https://nightcycle.github.io/midas/api/Midas" hreflang="x-default"><link rel="stylesheet" href="/midas/assets/css/styles.4fbc2966.css">
+<link rel="preload" href="/midas/assets/js/runtime~main.943014e7.js" as="script">
+<link rel="preload" href="/midas/assets/js/main.a703ccda.js" as="script">
+</head>
+<body class="navigation-with-keyboard">
+<script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
+<div role="region"><a href="#" class="skipToContent_fXgn">Skip to main content</a></div><nav class="navbar navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><button aria-label="Navigation bar toggle" class="navbar__toggle clean-btn" type="button" tabindex="0"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/midas/"><b class="navbar__title text--truncate">Midas</b></a><a class="navbar__item navbar__link" href="/midas/docs/intro">Docs</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/midas/api/">API</a></div><div class="navbar__items navbar__items--right"><a href="https://github.com/nightcycle/midas" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_lCJq"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="Switch between dark and light mode (currently light mode)" aria-label="Switch between dark and light mode (currently light mode)"><svg viewBox="0 0 24 24" width="24" height="24" class="lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" class="darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg></button></div><div class="searchBox_ZlJk"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input type="search" id="search_input_react" placeholder="Press S to Search..." aria-label="Search" class="navbar__search-input search-bar"></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div class="main-wrapper docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/midas/api/Interface">​Interface</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" href="/midas/api/Midas">​Midas</a></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Midas</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>
+  The heart of the entire framework, allowing for decentralized recording and organizing of in-game state and events.
+  Allows for the binding of state to the midas object.
+</p>
+</div></header><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a class="hash-link" href="#functions" title="Direct link to heading">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Destroy"><code style="text-decoration:none">Destroy</code><a class="hash-link" href="#Destroy" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L60"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">Destroy</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Destroys the midas object</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="SetTag"><code style="text-decoration:none">SetTag</code><a class="hash-link" href="#SetTag" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L86"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">SetTag</code><code>(</code><code>key<!-- -->: </code><code class="blue_P4bS">string</code><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>Adds a tag to all future events from the midas object.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="RemoveTag"><code style="text-decoration:none">RemoveTag</code><a class="hash-link" href="#RemoveTag" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L92"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">RemoveTag</code><code>(</code><code>key<!-- -->: </code><code class="blue_P4bS">string</code><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>Removes tag from all future events from the midas object.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="SetCondition"><code style="text-decoration:none">SetCondition</code><a class="hash-link" href="#SetCondition" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L98"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">SetCondition</code><code>(</code><div class="inset_uKQm"><div><code>key<!-- -->: </code><code class="blue_P4bS">string</code><code>,</code></div><div><code>func<!-- -->: </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="blue_P4bS">boolean</code></div></div><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>Allows for the binding of fire condition blockers. If any return false the midas will not fire.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="SetRoundingPrecision"><code style="text-decoration:none">SetRoundingPrecision</code><a class="hash-link" href="#SetRoundingPrecision" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L109"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">SetRoundingPrecision</code><code>(</code><code>exp<!-- -->: </code><code class="blue_P4bS">number?</code><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>
+  Returns the hierarchy path the midas object was created under.
+  Sets the rounding precision of all numbers and vectors to 10^exp paramter. If not exponent parameter is provided it defaults to 0.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Compile"><code style="text-decoration:none">Compile</code><a class="hash-link" href="#Compile" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L184"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">Compile</code><code>(</code><code>) → </code><code class="purple_ieR2">{</code><span><code>[</code><code class="blue_P4bS">string</code><code>]</code></span><code>: </code><code class="blue_P4bS">any</code><code class="purple_ieR2">}</code><code class="blue_P4bS">?</code><code class="op_lSLc">-</code><code class="op_lSLc">-</code><code class="blue_P4bS">server</code><code class="blue_P4bS">only</code></div><div>
+<p>Creates a dictionary of values resulting from invoking the bound state functions / objects.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="GetUTC"><code style="text-decoration:none">GetUTC</code><a class="hash-link" href="#GetUTC" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L225"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">GetUTC</code><code>(</code><code>offset<!-- -->: </code><code class="blue_P4bS">number?</code><code>) → </code><code class="blue_P4bS">string</code></div><div>
+<p>Returns a UTC format compliant timestamp string from the current tick. An optional offset can be applied to this in seconds.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="CanFire"><code style="text-decoration:none">CanFire</code><a class="hash-link" href="#CanFire" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L235"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">CanFire</code><code>(</code><code>) → </code><code class="blue_P4bS">boolean</code></div><div>
+<p>Determines if a midas object meets all the bound conditions.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Fire"><code style="text-decoration:none">Fire</code><a class="hash-link" href="#Fire" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L304"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">Fire</code><code>(</code><div class="inset_uKQm"><div><code>eventName<!-- -->: </code><code class="blue_P4bS">string</code><code>,</code></div><div><code>seriesDuration<!-- -->: </code><code class="blue_P4bS">number?</code><code>,</code></div><div><code>includeEndEvent<!-- -->: </code><code class="blue_P4bS">boolean?</code></div></div><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="SetChance"><code style="text-decoration:none">SetChance</code><a class="hash-link" href="#SetChance" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L321"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">SetChance</code><code>(</code><code>val<!-- -->: </code><code class="blue_P4bS">number</code><code>) → </code><code class="blue_P4bS">nil</code></div><div>
+<p>Forces the midas object to roll the dice before firing future events. Default is 1, which will always fire the event.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="GetBoundStateCount"><code style="text-decoration:none">GetBoundStateCount</code><a class="hash-link" href="#GetBoundStateCount" title="Direct link to heading">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/Midas.lua#L328"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">GetBoundStateCount</code><code>(</code><code>) → </code><code class="blue_P4bS">number</code></div><div>
+<p>Gets the number of states currently bound to the midas object.</p>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;Destroy&quot;,
+            &quot;desc&quot;: &quot;Destroys the midas object&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 60,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SetTag&quot;,
+            &quot;desc&quot;: &quot;Adds a tag to all future events from the midas object.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;key&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 86,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;RemoveTag&quot;,
+            &quot;desc&quot;: &quot;Removes tag from all future events from the midas object.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;key&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 92,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SetCondition&quot;,
+            &quot;desc&quot;: &quot;Allows for the binding of fire condition blockers. If any return false the midas will not fire.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;key&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;func&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;() -&gt; boolean&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 98,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SetRoundingPrecision&quot;,
+            &quot;desc&quot;: &quot;Returns the hierarchy path the midas object was created under.\nSets the rounding precision of all numbers and vectors to 10^exp paramter. If not exponent parameter is provided it defaults to 0.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;exp&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 109,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Compile&quot;,
+            &quot;desc&quot;: &quot;Creates a dictionary of values resulting from invoking the bound state functions / objects. &quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;{[string]: any}? --server only\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 184,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;GetUTC&quot;,
+            &quot;desc&quot;: &quot;Returns a UTC format compliant timestamp string from the current tick. An optional offset can be applied to this in seconds.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;offset&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 225,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;CanFire&quot;,
+            &quot;desc&quot;: &quot;Determines if a midas object meets all the bound conditions.&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 235,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Fire&quot;,
+            &quot;desc&quot;: &quot;Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;eventName&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;seriesDuration&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;includeEndEvent&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;boolean?&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 304,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;SetChance&quot;,
+            &quot;desc&quot;: &quot;Forces the midas object to roll the dice before firing future events. Default is 1, which will always fire the event.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;val&quot;,
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;nil\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 321,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;GetBoundStateCount&quot;,
+            &quot;desc&quot;: &quot;Gets the number of states currently bound to the midas object.&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;number\r\n&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 328,
+                &quot;path&quot;: &quot;src/Midas.lua&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [],
+    &quot;name&quot;: &quot;Midas&quot;,
+    &quot;desc&quot;: &quot;The heart of the entire framework, allowing for decentralized recording and organizing of in-game state and events.\nAllows for the binding of state to the midas object.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 30,
+        &quot;path&quot;: &quot;src/Midas.lua&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#CanFire" class="table-of-contents__link toc-highlight">:CanFire</a></li><li><a href="#Compile" class="table-of-contents__link toc-highlight">:Compile</a></li><li><a href="#Destroy" class="table-of-contents__link toc-highlight">:Destroy</a></li><li><a href="#Fire" class="table-of-contents__link toc-highlight">:Fire</a></li><li><a href="#GetBoundStateCount" class="table-of-contents__link toc-highlight">:GetBoundStateCount</a></li><li><a href="#GetUTC" class="table-of-contents__link toc-highlight">:GetUTC</a></li><li><a href="#RemoveTag" class="table-of-contents__link toc-highlight">:RemoveTag</a></li><li><a href="#SetChance" class="table-of-contents__link toc-highlight">:SetChance</a></li><li><a href="#SetCondition" class="table-of-contents__link toc-highlight">:SetCondition</a></li><li><a href="#SetRoundingPrecision" class="table-of-contents__link toc-highlight">:SetRoundingPrecision</a></li><li><a href="#SetTag" class="table-of-contents__link toc-highlight">:SetTag</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2022 Nightcycle Studios. Built with Moonwave and Docusaurus</div></div></div></footer></div>
+<script src="/midas/assets/js/runtime~main.943014e7.js"></script>
+<script src="/midas/assets/js/main.a703ccda.js"></script>
+</body>
+</html>
