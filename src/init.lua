@@ -1,5 +1,6 @@
 --!strict
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
 -- Packages
 local _Package = script
@@ -14,64 +15,85 @@ local Midas = require(_Package.Midas)
 local Profile = require(_Package.Profile)
 local Templates = require(_Package.Templates)
 local Types = require(_Package.Types)
+local Network = require(_Package.Network)
+
+-- Remote Events
+local GetInitialConfig = Network.getRemoteFunction("GetInitialMidasConfig")
+local UpdateConfig = Network.getRemoteEvent("UpdateMidasConfig")
 
 export type Midas = Types.Midas
 export type TeleportDataEntry = Types.TeleportDataEntry
 type Profile = Types.Profile
-
+type ConfigurationData = Types.ConfigurationData
 type Interface = {
 	__index: Interface,
-	Midas: (self: Interface, player: Player, path: string) -> Midas,
-	GetConfig: (self: Interface) -> {[string]: any},
-	LoadDefault: (self: Interface, player: Player) -> nil,
+	GetMidas: (self: Interface, player: Player, path: string) -> Midas,
+	_Connect: (self: Interface, player: Player) -> nil,
 	InsertTeleportDataEntry: (self: Interface, player: Player, teleportData: {[any]: any}?) -> {
 		MidasAnalyticsData: TeleportDataEntry,
 		[any]: any
 	},
-	SetIsDeltaStateSent: (self: Interface, enabled: boolean) -> nil,
+	GetEventSignal: (self: Interface) -> _Signal.Signal,
+	Configure: (self: Interface, config: ConfigurationData) -> nil,
 	init: (titleId: string, devSecretKey: string) -> nil,
 }
 
-local Service: Interface = {} :: any
-Service.__index = Service
+--- @class Interface
+--- The front-facing module used to integrate a game with the Midas library.
+local Interface: Interface = {} :: any
+Interface.__index = Interface
 
-function Service:Midas(player: Player, eventKeyPath: string): Midas
-	return Midas.new(player, eventKeyPath)
-end
-
-function Service:SetIsDeltaStateSent(enabled: boolean)
-	Config.SendDeltaState = enabled
-	return nil
-end
-
-function Service:LoadDefault(player: Player)
+--- Returns a midas configured for that path. If one already exists for that path it will provide that one.
+function Interface:GetMidas(player: Player, path: string): Midas
 	local profile = Profile.get(player.UserId)
-	assert(profile ~= nil)
-
-	if RunService:IsServer() then
-		Templates.join(player, profile._WasTeleported)
-		Templates.chat(player)	
-		Templates.population(player)
-		Templates.serverPerformance(player, function() return profile.TimeDifference end, function() return profile.EventsPerMinute end)
-		Templates.market(player)
-		Templates.exit(player, function() return profile._IsTeleporting end)
-
-		-- Track character properties
-		local function loadCharacter(character: Model)
-			profile:SetMidas(Templates.character(character))
+	if profile then
+		local existingMidas = profile:GetMidas(path)
+		if existingMidas then
+			return existingMidas
 		end
-		profile._Maid:GiveTask(player.CharacterAdded:Connect(loadCharacter))
-		if player.Character then loadCharacter(player.Character) end
-	else
-		Templates.demographics(player)
-		Templates.policy(player)
-		Templates.clientPerformance(player)
-		Templates.settings(player)
 	end
+	return Midas.new(player, path)
+end
+
+--- Allows for the replacement of the default config table, changing the behavior of the framework.
+--- @server
+function Interface:Configure(deltaConfig: ConfigurationData): nil
+	assert(RunService:IsServer(), "Bad domain")
+	-- Overwrites the shared keys with new data.
+	local function writeDelta(target: {[string]: any}, change: {[string]: any})
+		for k, v in pairs(change) do
+			if typeof(v) == "table" then
+				writeDelta(target[k], v)
+			else
+				target[k] = v
+			end
+		end	
+	end
+	writeDelta(Config, deltaConfig)
+
+	UpdateConfig:FireAllClients(Config)
+
 	return nil
 end
 
-function Service:InsertTeleportDataEntry(player: Player, teleportData: {[any]: any}?): {
+-- Make sure client always has the most up-to-date config
+if not RunService:IsServer() then
+	local function rewriteConfig(newConfig: {[string]: any})
+		for k, v in pairs(newConfig) do
+			Config[k] = v
+		end
+	end
+	UpdateConfig.OnClientEvent:Connect(rewriteConfig)
+	rewriteConfig(GetInitialConfig:InvokeServer())
+else
+	GetInitialConfig.OnServerInvoke = function(player: Player)
+		return Config
+	end
+end
+
+--- When a player is being teleported, pass the teleport data prior to teleporting them through this API. This will ensure the session is tracked as continuing.
+--- @server
+function Interface:InsertTeleportDataEntry(player: Player, teleportData: {[any]: any}?): {
 	MidasAnalyticsData: TeleportDataEntry,
 	[any]: any
 }
@@ -87,10 +109,71 @@ function Service:InsertTeleportDataEntry(player: Player, teleportData: {[any]: a
 	return teleportData
 end
 
-function Service.init(titleId: string, devSecretKey: string)
+--- Provides a pseudo-RBXScriptSignal which will fire whenever an event is sent via HttpService. 
+--- When the Signal is fired it will provide the playerId, path, data, tags, and timestamp in that order.
+--- @server
+function Interface:GetEventSignal(): _Signal.Signal
+	assert(RunService:IsServer(), "Bad domain")
+	return PlayFab.OnFire
+end
+
+--- Call this on the server to connect PlayFab prior to firing any events.
+--- @server
+function Interface.init(titleId: string, devSecretKey: string): nil
 	assert(RunService:IsServer(), "Bad domain")
 	PlayFab.init(titleId, devSecretKey)
 	return nil
 end
 
-return Service
+-- Connect players to framework when they enter
+function initPlayer(player: Player)
+	if RunService:IsServer() then
+		local profile = Profile.new(player)
+		assert(profile ~= nil)
+		Templates.join(player, profile._WasTeleported)
+		Templates.chat(player)	
+		Templates.population(player)
+		Templates.serverPerformance(player, function() return profile.TimeDifference end, function() return profile.EventsPerMinute end)
+		Templates.market(player)
+		Templates.exit(player, function() return profile._IsTeleporting end)
+
+		-- Track character properties
+		local function loadCharacter(character: Model)
+			local mCharacter = Templates.character(character)
+			if mCharacter then
+				profile:SetMidas(mCharacter)
+			end
+		end
+		profile._Maid:GiveTask(player.CharacterAdded:Connect(loadCharacter))
+		if player.Character then loadCharacter(player.Character) end
+	else
+		Templates.demographics(player)
+		Templates.policy(player)
+		Templates.clientPerformance(player)
+		Templates.settings(player)
+	end
+	return nil
+end
+
+if RunService:IsServer() then
+	Players.PlayerAdded:Connect(initPlayer)
+	task.spawn(function()
+		for i, player in ipairs(Players:GetChildren()) do
+			initPlayer(player)
+		end
+	end)
+	
+	Players.PlayerRemoving:Connect(function(player: Player)
+		local profile = Profile.get(player.UserId)
+		if profile then
+			task.delay(15, function()
+				profile:Destroy()
+			end)
+		end
+	end)	
+else
+	initPlayer(game.Players.LocalPlayer)
+end
+
+
+return Interface

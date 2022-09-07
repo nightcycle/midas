@@ -14,14 +14,17 @@ local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
 
 -- Modules
+local Config = require(_Package.Config)
 local Midas = require(_Package.Midas)
+local Types = require(_Package.Types)
 
-export type Midas = Midas.Midas
+type Midas = Types.Midas
 
 local Templates = {}
 Templates.__index = {}
 
-function Templates.join(player: Player, wasTeleportedIn: boolean): Midas
+function Templates.join(player: Player, wasTeleportedIn: boolean): Midas?
+	if not Config.Templates.Join then return end
 	assert(RunService:IsServer(), "Bad domain")
 	local mJoin = Midas.new(player, "Join")
 	if wasTeleportedIn then
@@ -32,7 +35,8 @@ function Templates.join(player: Player, wasTeleportedIn: boolean): Midas
 	return mJoin
 end
 
-function Templates.chat(player: Player): Midas
+function Templates.chat(player: Player): Midas?
+	if not Config.Templates.Chat then return end
 	assert(RunService:IsServer(), "Bad domain")
 	local mChat = Midas.new(player, "Chat")
 	local lastMessage: string?
@@ -46,7 +50,8 @@ function Templates.chat(player: Player): Midas
 	return mChat
 end
 
-function Templates.character(character: Model): Midas
+function Templates.character(character: Model): Midas?
+	if not Config.Templates.Character then return end
 	assert(RunService:IsServer(), "Bad domain")
 	local player = Players:GetPlayerFromCharacter(character)
 	assert(player ~= nil)
@@ -127,7 +132,8 @@ function Templates.character(character: Model): Midas
 	return mCharacter
 end
 
-function Templates.population(player: Player): Midas
+function Templates.population(player: Player): Midas?
+	if not Config.Templates.Population then return end
 	assert(RunService:IsServer(), "Bad domain")
 	local mPopulation = Midas.new(player, "Population")
 	mPopulation:SetState("Total", function()
@@ -207,7 +213,8 @@ function Templates.population(player: Player): Midas
 	return mPopulation
 end
 
-function Templates.serverPerformance(player: Player, getTimeDifference: () -> number, getEventsPerMinute: () -> number): Midas
+function Templates.serverPerformance(player: Player, getTimeDifference: () -> number, getEventsPerMinute: () -> number): Midas?
+	if not Config.Templates.ServerPerformance then return end
 	assert(RunService:IsServer(), "Bad domain")
 	local mServerPerformance = Midas.new(player, "Performance/Server")
 	mServerPerformance:SetRoundingPrecision(0)
@@ -316,7 +323,8 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 	return mServerPerformance
 end
 
-function Templates.market(player: Player)
+function Templates.market(player: Player): Midas?
+	if not Config.Templates.Market then return end
 	assert(RunService:IsServer(), "Bad domain")
 
 	local mMarket = Midas.new(player, "Spending")
@@ -347,7 +355,8 @@ function Templates.market(player: Player)
 	return mMarket
 end
 
-function Templates.exit(player: Player, getIfTeleporting: () -> boolean): Midas
+function Templates.exit(player: Player, getIfTeleporting: () -> boolean): Midas?
+	if not Config.Templates.Exit then return end
 	assert(RunService:IsServer(), "Bad domain")
 
 	local mExit = Midas.new(player, "Exit")
@@ -363,7 +372,8 @@ function Templates.exit(player: Player, getIfTeleporting: () -> boolean): Midas
 	return mExit
 end
 
-function Templates.demographics(player: Player): Midas
+function Templates.demographics(player: Player): Midas?
+	if not Config.Templates.Demographics then return end
 	assert(RunService:IsClient(), "Bad domain")
 	local localizationService = game:GetService("LocalizationService")
 
@@ -406,7 +416,8 @@ function Templates.demographics(player: Player): Midas
 	return mDemographics
 end
 
-function Templates.policy(player: Player): Midas
+function Templates.policy(player: Player): Midas?
+	if not Config.Templates.Policy then return end
 	local mPolicy = Midas.new(player, "Policy")
 	task.spawn(function()
 		local policyInfo = PolicyService:GetPolicyInfoForPlayerAsync(player)
@@ -418,7 +429,8 @@ function Templates.policy(player: Player): Midas
 	return mPolicy
 end
 
-function Templates.clientPerformance(player: Player): Midas
+function Templates.clientPerformance(player: Player): Midas?
+	if not Config.Templates.ClientPerformance then return end
 	local mClientPerformance = Midas.new(player, "Performance/Client")
 	mClientPerformance:SetRoundingPrecision(0)
 	mClientPerformance:SetState("Ping", function()
@@ -452,7 +464,8 @@ function Templates.clientPerformance(player: Player): Midas
 	return mClientPerformance
 end
 
-function Templates.settings(player: Player): Midas
+function Templates.settings(player: Player): Midas?
+	if not Config.Templates.Settings then return end
 	local gameSettings = UserSettings():GetService("UserGameSettings")
 	local mSettings = Midas.new(player, "Settings")
 	mSettings:SetState("ComputerMovementMode", function()

@@ -21,25 +21,13 @@ export type Midas = Types.Midas
 local ConstructMidas = Network.getRemoteEvent("ConstructMidas")
 local DestroyMidas = Network.getRemoteEvent("DestroyMidas")
 
--- Class
+--- @class Midas
+--- The heart of the entire framework, allowing for decentralized recording and organizing of in-game state and events.
 local Midas: Midas = {} :: any
+Midas.__index = Midas
 
-function Midas:__index(index: any): any?
-	local s: any = rawget(self, "_States"); local states: {any} = s
-	assert(states ~= nil and typeof(states) == "table")
-
-	if rawget(self,index) ~= nil then
-		return rawget(self,index)
-	end
-
-	if rawget(Midas,index) ~= nil then
-		return rawget(Midas,index)
-	end
-
-	return states[index]
-end
-
-function Midas:SetState(key: string, newState: State)
+--- Allows for the binding of state to the midas object.
+function Midas:SetState(key: string, state: State)
 	local s: any = rawget(self, "_States"); local states: {[string]: State} = s
 	assert(states ~= nil and typeof(states) == "table")
 
@@ -61,13 +49,14 @@ function Midas:SetState(key: string, newState: State)
 		error("Bad state")
 	end
 	
-	states[key] = stateToFunction(newState)
+	states[key] = stateToFunction(state)
 	
-	local keyCount = Midas.GetKeyCount(self :: any)
+	local keyCount = Midas.GetBoundStateCount(self :: any)
 	rawset(self, "_KeyCount", keyCount :: any)
 	return nil
 end
 
+--- Destroys the midas object
 function Midas:Destroy()
 	if not self._IsAlive then return end
 	self._IsAlive = false
@@ -93,27 +82,32 @@ function Midas:Destroy()
 	return nil
 end
 
+--- Adds a tag to all future events from the midas object.
 function Midas:SetTag(key: string): nil
 	self._Tags[key] = true
 	return nil
 end
 
+--- Removes tag from all future events from the midas object.
 function Midas:RemoveTag(key: string): nil
 	self._Tags[key] = nil
 	return nil
 end
 
+--- Allows for the binding of fire condition blockers. If any return false the midas will not fire.
 function Midas:SetCondition(key: string, func: () -> boolean): nil
 	self._Conditions[key] = func
 	return nil
 end
 
+--- Returns the hierarchy path the midas object was created under.
 function Midas:GetPath(): string
 	return self._Path
 end
 
+--- Sets the rounding precision of all numbers and vectors to 10^exp paramter. If not exponent parameter is provided it defaults to 0.
 function Midas:SetRoundingPrecision(exp: number?): nil
-	self._RoundingPrecision = exp or 1
+	self._RoundingPrecision = exp or 0
 	return nil
 end
 
@@ -186,6 +180,7 @@ function Midas:_Compile(): {[string]: any}?
 	return output
 end
 
+--- Creates a dictionary of values resulting from invoking the bound state functions / objects. 
 function Midas:Compile(): {[string]: any}? --server only
 
 	assert(RunService:IsServer() == true, "Compile can only be called on server")
@@ -226,6 +221,7 @@ function Midas:Compile(): {[string]: any}? --server only
 	return nil
 end
 
+--- Returns a UTC format compliant timestamp string from the current tick. An optional offset can be applied to this in seconds.
 function Midas:GetUTC(offset: number?): string
 	offset = offset or 0
 	assert(offset ~= nil)
@@ -235,6 +231,7 @@ function Midas:GetUTC(offset: number?): string
 	return utc.Year.."-"..utc.Month.."-"..utc.Day.." "..utc.Hour..":"..utc.Minute..":"..utc.Second.."."..utc.Millisecond
 end
 
+--- Determines if a midas object meets all the bound conditions.
 function Midas:CanFire(): boolean
 	local allTrue = true
 	for k, func in pairs(self._Conditions) do
@@ -303,6 +300,7 @@ function Midas:_Fire(eventName: string, utc, seriesDuration: number?, includeEnd
 	return nil
 end
 
+--- Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.
 function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent: boolean?): nil
 	task.spawn(function()
 		local utc = self:GetUTC()
@@ -319,13 +317,15 @@ function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent:
 	return nil
 end
 
+--- Forces the midas object to roll the dice before firing future events. Default is 1, which will always fire the event.
 function Midas:SetChance(val: number): nil
 	if not self.Loaded then self.OnLoad:Wait() end
 	self._Chance = val
 	return nil
 end
 
-function Midas:GetKeyCount(): number
+--- Gets the number of states currently bound to the midas object.
+function Midas:GetBoundStateCount(): number
 	local count = 0
 	for k, v in pairs(self._States) do
 		count += 1

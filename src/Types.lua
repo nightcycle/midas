@@ -4,7 +4,7 @@ local _Packages = _Package.Parent
 local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
 
-export type State = (() -> any?) | {get: () -> any?} | {Get: () -> any?}
+export type State = () -> any?
 export type Midas = {
 	Instance: Folder?,
 	Loaded: boolean,
@@ -37,7 +37,7 @@ export type Midas = {
 	_Index: {[string]: number},
 	_Repetitions: {[string]: number},
 	_KeyCount: number,
-	__index: (self: Midas, index: any) -> any?,
+	__index: Midas,
 	__newindex: (self: Midas, index: any, value: State) -> nil,
 
 	SetState: (self: Midas, name: string, state: State) -> nil,
@@ -52,7 +52,7 @@ export type Midas = {
 	CanFire: (self: Midas) -> boolean,
 	Fire: (self: Midas,eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	SetChance: (self: Midas, val: number) -> nil,
-	GetKeyCount: (self: Midas) -> number,
+	GetBoundStateCount: (self: Midas) -> number,
 	new: (player: Player, path: string) -> Midas,
 	_Compile: (self: Midas) -> {[string]: any}?,
 	_FireSeries: (self: Midas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
@@ -60,7 +60,6 @@ export type Midas = {
 	_Fire: (self: Midas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	_Load: (self: Midas, player: Player, path: string, profile: Profile?, maid: _Maid.Maid, onLoad: _Signal.Signal) -> nil,
 }
-
 
 export type Profile = {
 	_Maid: _Maid.Maid,
@@ -84,6 +83,7 @@ export type Profile = {
 	HasPath: (self: Profile, midas: Midas, path: string) -> boolean,
 	DestroyPath: (self: Profile, path: string) -> nil,
 	DestroyMidas: (self: Profile, path: string) -> nil,
+	GetMidas: (self: Profile, path: string) -> Midas?,
 	SetMidas: (self: Profile, midas: Midas) -> nil,
 	Teleport: (self: Profile, mExit: Midas?) -> TeleportDataEntry,
 	new: (player: Player) -> Profile,
@@ -92,6 +92,30 @@ export type Profile = {
 	_Fire: (self: Profile, eventFullPath: string, delta: {[string]: any}, tags: {[string]: boolean}, timestamp: string) -> nil,
 	_Format: (self: Profile, midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number?, timestamp: string) -> ({[string]: any}, string),
 	_Export: (self: Profile) -> TeleportDataEntry,
+}
+
+
+
+--- @type ConfigurationData {Version: string,SendDeltaState: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,},}
+--- @within Interface
+
+export type ConfigurationData = {
+	Version: string,
+	SendDeltaState: boolean,
+	SendDataToPlayFab: boolean,
+	Templates: {
+		Join: boolean,
+		Chat: boolean,
+		Population: boolean,
+		ServerPerformance: boolean,
+		Market: boolean,
+		Exit: boolean,
+		Character: boolean,
+		Demographics: boolean,
+		Policy: boolean,
+		ClientPerformance: boolean,
+		Settings: boolean,
+	},
 }
 
 export type TeleportDataEntry = {

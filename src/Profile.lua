@@ -1,6 +1,5 @@
 --!strict
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
 
 -- Packages
 local _Package = script.Parent
@@ -216,6 +215,10 @@ function Profile:DestroyMidas(path: string): nil
 	return nil
 end
 
+function Profile:GetMidas(path: string): Midas?
+	return self._Midaii[path]
+end
+
 function Profile:SetMidas(midas)
 	local path = midas:GetPath()
 	self._Midaii[path] = midas
@@ -330,25 +333,6 @@ function Profile.get(userId: number)
 		end
 	end
 	return getProfile(userId)
-end
-
-if RunService:IsServer() then
-
-	Players.PlayerAdded:Connect(Profile.new)
-	task.spawn(function()
-		for i, player in ipairs(Players:GetChildren()) do
-			Profile.new(player)
-		end
-	end)
-	
-	Players.PlayerRemoving:Connect(function(player: Player)
-		local profile = Profile.get(player.UserId)
-		if profile then
-			task.delay(15, function()
-				profile:Destroy()
-			end)
-		end
-	end)	
 end
 
 if RunService:IsServer() then
