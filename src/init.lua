@@ -7,6 +7,7 @@ local _Package = script
 local _Packages = _Package.Parent
 local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
+local Network = require(_Packages.Network)
 
 -- Modules
 local Config = require(_Package.Config)
@@ -15,7 +16,6 @@ local Midas = require(_Package.Midas)
 local Profile = require(_Package.Profile)
 local Templates = require(_Package.Templates)
 local Types = require(_Package.Types)
-local Network = require(_Package.Network)
 
 -- Remote Events
 local GetInitialConfig = Network.getRemoteFunction("GetInitialMidasConfig")
@@ -45,7 +45,7 @@ Interface.__index = Interface
 
 --- Returns a midas configured for that path. If one already exists for that path it will provide that one.
 function Interface:GetMidas(player: Player, path: string): Midas
-	local profile = Profile.get(player.UserId)
+	local profile = if RunService:IsServer() then Profile.get(player.UserId) else nil
 	if profile then
 		local existingMidas = profile:GetMidas(path)
 		if existingMidas then

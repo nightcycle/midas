@@ -47,7 +47,7 @@ function post(url: string, headers: {[string]: any}, body: {[string]: any}, atte
 
 	local size = string.len(HttpService:JSONEncode(body))
 	if RunService:IsStudio() then
-		print("Firing "..body.EventName, "(", size, "):", body)
+		print("Firing "..tostring(body.EventName), "(", size, "):", body)
 	end
 
 	local success, _msg = pcall(function()

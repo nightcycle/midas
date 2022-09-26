@@ -7,9 +7,9 @@ local _Packages = _Package.Parent
 local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
 local _Math = require(_Packages.Math)
+local Network = require(_Packages.Network)
 
 -- Modules
-local Network = require(_Package.Network)
 local Profile = require(_Package.Profile)
 local Types = require(_Package.Types)
 
@@ -286,7 +286,7 @@ function Midas:_FireEvent(eventName: string, utc: string): nil
 	return nil
 end
 
-function Midas:_Fire(eventName: string, utc, seriesDuration: number?, includeEndEvent: boolean?): nil
+function Midas:_Fire(eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?): nil
 	if RunService:IsServer() then
 		if seriesDuration ~= nil then
 			self:_FireSeries(eventName, utc, seriesDuration, includeEndEvent)
@@ -345,8 +345,11 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		inst.Parent = profile.Instance
 		
 	else -- Client tries to find existing instance
-		
-		local profFolder = Profile.getProfilesFolder()
+	
+		-- Get profile folder
+		local profFolders = Profile.getProfilesFolder()
+		local profFolder = profFolders:WaitForChild(tostring(player.UserId), 5)
+		assert(profFolder ~= nil)
 
 		if time() < 15 then --give more slack when everything's loading in
 			inst = profFolder:WaitForChild(path, 2) :: any?
@@ -404,7 +407,6 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		maid:GiveTask(self._GetRenderOutput)
 
 	else
-
 		--register to server instance
 		self._OnClientFire = Network.getRemoteEvent("OnClientFire", inst)
 		self._ClientRegister = Network.getRemoteEvent("ClientRegister", inst)
@@ -422,12 +424,13 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		end
 
 	end
+	onLoad:Fire()
 	return nil
 end
 
 function Midas.new(player: Player, path: string): Midas
-	local profile: Profile? = if RunService:IsServer() then Profile.get(player.UserId) else nil
-	
+	local profile = if RunService:IsServer() then Profile.get(player.UserId) else nil
+
 	-- Construct instance.
 	local maid =  _Maid.new()
 	

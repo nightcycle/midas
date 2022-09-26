@@ -1,7 +1,7 @@
 [package]
 name = "nightcycle/midas"
 description = "Turn every game you touch to gold with a comprehensive analytics suite!"
-version = "0.2.3"
+version = "1.0.1"
 authors = ["CJ Oyer <coyer@nightcycle.us>"]
 realm = "shared"
 registry = "https://github.com/upliftgames/wally-index"
@@ -13,3 +13,4 @@ Draw = "nightcycle/draw@^1.0.5"
 Signal = "nightcycle/signal@^1.0.2"
 Maid = "nightcycle/maid@^1.0.4"
 Fetchu  = "nightcycle/fetchu@^1.0.1"
+Network = "nightcycle/network-util@^1.2.0"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # A sample Bash script
 echo Starting Sourcemap Update	# This is a comment, too!
-rojo sourcemap test.project.json --output sourcemap.json
+rojo sourcemap demo.project.json --output sourcemap.json
 echo Restarting Rojo
-rojo serve
+rojo serve demo.project.json
 echo Done

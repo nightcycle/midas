@@ -101,20 +101,20 @@ export type Profile = {
 
 export type ConfigurationData = {
 	Version: string,
-	SendDeltaState: boolean,
-	SendDataToPlayFab: boolean,
+	SendDeltaState: boolean?,
+	SendDataToPlayFab: boolean?,
 	Templates: {
-		Join: boolean,
-		Chat: boolean,
-		Population: boolean,
-		ServerPerformance: boolean,
-		Market: boolean,
-		Exit: boolean,
-		Character: boolean,
-		Demographics: boolean,
-		Policy: boolean,
-		ClientPerformance: boolean,
-		Settings: boolean,
+		Join: boolean?,
+		Chat: boolean?,
+		Population: boolean?,
+		ServerPerformance: boolean?,
+		Market: boolean?,
+		Exit: boolean?,
+		Character: boolean?,
+		Demographics: boolean?,
+		Policy: boolean?,
+		ClientPerformance: boolean?,
+		Settings: boolean?,
 	},
 }
 

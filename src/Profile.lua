@@ -6,11 +6,11 @@ local _Package = script.Parent
 local _Packages = _Package.Parent
 local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
+local Network = require(_Packages.Network)
 
 -- Modules
 local Config = require(_Package.Config)
 local PlayFab = require(_Package.PlayFab)
-local Network = require(_Package.Network)
 local Types = require(_Package.Types)
 
 type State = Types.State
@@ -326,13 +326,13 @@ function Profile.get(userId: number)
 		local result: Profile? = REGISTRY[userId] :: any
 
 		if result == nil then
-			task.wait(0.1)
+			task.wait(0.2)
 			return getProfile(attempt + 1)
 		else
 			return result
 		end
 	end
-	return getProfile(userId)
+	return getProfile()
 end
 
 if RunService:IsServer() then
