@@ -105,12 +105,14 @@ export type Profile = {
 	_PlayerId: string?,
 	__index: Profile,
 	Destroy: (self: Profile) -> nil,
+	IncrementIndex: (self: Profile) -> number,
 	FireSeries: (
 		self: Profile,
 		midas: PrivateMidas,
 		eventName: string,
 		timeStamp: string,
 		eventIndex: number,
+		index: number,
 		includeEndEvent: boolean
 	) -> _Signal.Signal,
 	Fire: (
@@ -119,6 +121,7 @@ export type Profile = {
 		eventName: string,
 		timestamp: string,
 		eventIndex: number,
+		index: number,
 		duration: number?
 	) -> nil,
 	HasPath: (self: Profile, midas: PrivateMidas, path: string) -> boolean,
@@ -142,9 +145,10 @@ export type Profile = {
 		midas: PrivateMidas,
 		eventName: string,
 		delta: { [string]: any },
-		eventIndex: number,
+		eventIndex: number?,
 		duration: number?,
-		timestamp: string
+		timestamp: string,
+		index: number
 	) -> ({ [string]: any }, string),
 	_Export: (self: Profile) -> TeleportDataEntry,
 }

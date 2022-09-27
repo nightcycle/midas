@@ -52,7 +52,11 @@ function post(url: string, headers: { [string]: any }, body: { [string]: any }, 
 
 	local size = string.len(HttpService:JSONEncode(body))
 	if RunService:IsStudio() and Config.PrintEventsInStudio then
-		print("Firing " .. tostring(body.EventName), "(", size, "):", body)
+		local index = 0
+		if body.Body and body.Body.State and body.Body.State.Index and body.Body.State.Index.Total then
+			index = body.Body.State.Index.Total
+		end
+		print("Firing " .. tostring(body.EventName), "[", index, "]", "(", size, "):", body)
 	end
 
 	local success, _msg = pcall(function()

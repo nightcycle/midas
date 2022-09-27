@@ -282,7 +282,7 @@ function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number,
 	if self._LastFireTick[eventName] == nil then
 		assert(self._Profile ~= nil)
 		self._SeriesSignal[eventName] =
-			self._Profile:FireSeries(self, eventName, utc, self._Index[eventName], includeEndEvent)
+			self._Profile:FireSeries(self, eventName, utc, self._Index[eventName], self._Profile:IncrementIndex(), includeEndEvent)
 	end
 	self._FirstFireTick[eventName] = self._FirstFireTick[eventName] or t
 	self._LastFireTick[eventName] = t
@@ -314,7 +314,7 @@ function Midas:_FireEvent(eventName: string, utc: string): nil
 	self._Index[eventName] = self._Index[eventName] or 0
 	self._Index[eventName] += 1
 	assert(self._Profile ~= nil)
-	self._Profile:Fire(self, eventName, utc, self._Index[eventName])
+	self._Profile:Fire(self, eventName, utc, self._Index[eventName], self._Profile:IncrementIndex())
 	return nil
 end
 

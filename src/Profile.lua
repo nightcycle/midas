@@ -126,15 +126,15 @@ function Profile:_Format(
 	midas: Midas,
 	eventName: string,
 	delta: { [string]: any },
-	eventIndex: number,
+	eventIndex: number?,
 	duration: number?,
-	timestamp: string
+	timestamp: string,
+	index: number
 ): ({ [string]: any }, string)
 	log("_format", midas._Player, eventName)
-	self._Index += 1
 
 	delta.Index = {
-		Total = self._Index,
+		Total = index,
 		Event = eventIndex,
 	}
 
@@ -149,11 +149,17 @@ function Profile:_Format(
 	return delta, "User/" .. eventFullPath
 end
 
+function Profile:IncrementIndex(): number
+	self._Index += 1
+	return self._Index
+end
+
 function Profile:FireSeries(
 	midas: Midas,
 	eventName: string,
 	timestamp: string,
 	eventIndex: number,
+	index: number,
 	includeEndEvent: boolean
 ): _Signal.Signal
 	log("fire series", midas._Player, eventName)
@@ -170,7 +176,7 @@ function Profile:FireSeries(
 	end
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, nil, timestamp)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, nil, timestamp, index)
 
 	local maid = _Maid.new()
 	self._Maid:GiveTask(maid)
@@ -198,7 +204,7 @@ function Profile:FireSeries(
 end
 
 --shoot it out to server
-function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventIndex: number, duration: number?): nil
+function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventIndex: number, index: number, duration: number?): nil
 	log("fire", midas._Player, eventName)
 	local deltaStates = {}
 
@@ -219,7 +225,7 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timestamp)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timestamp, index)
 
 	self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
 	return nil
