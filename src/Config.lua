@@ -22,6 +22,8 @@ local Config: Types.ConfigurationData = {
 		Policy = true,
 		ClientPerformance = true,
 		Settings = true,
+		ServerIssues = true,
+		ClientIssues = true,
 	},
 }
 

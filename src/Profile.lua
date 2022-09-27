@@ -14,7 +14,7 @@ local PlayFab = require(_Package.PlayFab)
 local Types = require(_Package.Types)
 
 type State = Types.State
-type Midas = Types.Midas
+type Midas = Types.PrivateMidas
 export type Profile = Types.Profile
 export type TeleportDataEntry = Types.TeleportDataEntry
 
@@ -139,7 +139,8 @@ function Profile:_Format(
 	}
 
 	delta.Duration = math.round(1000 * (duration or 0)) / 1000
-	local path = midas:GetPath()
+	local path = midas.Path
+
 	local eventFullPath = path .. "/" .. eventName
 
 	if eventName == "Empty" then
@@ -158,7 +159,7 @@ function Profile:FireSeries(
 	log("fire series", midas._Player, eventName)
 	local deltaStates = {}
 	for p, midas in pairs(self._Midaii) do
-		local output = midas:Compile()
+		local output = midas:_Compile()
 
 		if output then
 			for k, v in pairs(output) do
@@ -185,7 +186,7 @@ function Profile:FireSeries(
 		deltaStates.Duration = math.round(1000 * duration) / 1000
 		if includeEndEvent and midas._IsAlive == true then
 			self:_Fire(eventFullPath .. "Start", deltaStates, midas._Tags, timestamp)
-			self:Fire(midas, eventName .. "Finish", midas:GetUTC(), eventIndex, duration)
+			self:Fire(midas, eventName .. "Finish", midas:_GetUTC(), eventIndex, duration)
 		else
 			self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
 		end
@@ -202,8 +203,8 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 	local deltaStates = {}
 
 	for p, midas in pairs(self._Midaii) do
-		log("getting compile for " .. tostring(midas._Path), midas._Player, eventName)
-		local output = midas:Compile()
+		log("getting compile for " .. tostring(midas.Path), midas._Player, eventName)
+		local output = midas:_Compile()
 		if output then
 			for k, v in pairs(output) do
 				local fullPath = p .. "/" .. k
@@ -225,7 +226,7 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 end
 
 function Profile:HasPath(midas: Midas, path: string): boolean
-	local mPath = midas:GetPath()
+	local mPath = midas.Path
 	local pLen = string.len(path)
 	return string.find(mPath, path) and path == string.sub(mPath, 1, pLen)
 end
@@ -255,7 +256,7 @@ function Profile:GetMidas(path: string): Midas?
 end
 
 function Profile:SetMidas(midas)
-	local path = midas:GetPath()
+	local path = midas.Path
 	self._Midaii[path] = midas
 
 	local mInst = midas.Instance
@@ -263,7 +264,7 @@ function Profile:SetMidas(midas)
 	mInst.Parent = self.Instance
 
 	self._Maid[path] = midas
-	self._Maid[path .. "_Destroy"] = midas.OnDestroy:Connect(function()
+	self._Maid[path .. "_Destroy"] = midas._OnDestroy:Connect(function()
 		self._Midaii[path] = nil
 	end)
 

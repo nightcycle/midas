@@ -16,7 +16,7 @@ local Types = require(_Package.Types)
 
 type State = Types.State
 type Profile = Types.Profile
-export type Midas = Types.Midas
+export type Midas = Types.PrivateMidas
 
 -- Remote Events
 local ConstructMidas = Network.getRemoteEvent("ConstructMidas")
@@ -69,7 +69,7 @@ function Midas:Destroy()
 	if not self._IsAlive then
 		return
 	end
-	log("destroy", self._Player, self._Path)
+	log("destroy", self.Player, self.Path)
 	self._IsAlive = false
 
 	if RunService:IsServer() then
@@ -78,9 +78,9 @@ function Midas:Destroy()
 			signal:Fire()
 		end
 	else
-		DestroyMidas:FireServer(self._Path)
+		DestroyMidas:FireServer(self.Path)
 	end
-	self.OnDestroy:Fire()
+	self._OnDestroy:Fire()
 
 	self._Maid:Destroy()
 
@@ -111,21 +111,15 @@ function Midas:SetCondition(key: string, func: () -> boolean): nil
 	return nil
 end
 
---- Returns the hierarchy path the midas object was created under.
-function Midas:GetPath(): string
-	log("get path", self._Player, self._Path)
-	return self._Path
-end
-
 --- Sets the rounding precision of all numbers and vectors to 10^exp paramter. If not exponent parameter is provided it defaults to 0.
 function Midas:SetRoundingPrecision(exp: number?): nil
 	self._RoundingPrecision = exp or 0
 	return nil
 end
 
-function Midas:_Compile(): { [string]: any }?
-	log("_compile", self._Player, self._Path)
-	if not self.Loaded then
+function Midas:_HandleCompile(): { [string]: any }?
+	log("_compile", self.Player, self.Path)
+	if not self._Loaded then
 		return
 	end
 	local roundHistory = {}
@@ -196,8 +190,8 @@ function Midas:_Compile(): { [string]: any }?
 end
 
 --- Creates a dictionary of values resulting from invoking the bound state functions / objects.
-function Midas:Compile(): { [string]: any }? --server only
-	log("compile", self._Player, self._Path)
+function Midas:_Compile(): { [string]: any }? --server only
+	log("compile", self.Player, self.Path)
 	assert(RunService:IsServer() == true, "Compile can only be called on server")
 	if self._Chance < math.random() then
 		return
@@ -205,16 +199,16 @@ function Midas:Compile(): { [string]: any }? --server only
 
 	local output
 	if self._IsClientManaged then
-		if not self._Player:GetAttribute("IsExiting") then
-			log("invoking client", self._Player, self._Path)
+		if not self.Player:GetAttribute("IsExiting") then
+			log("invoking client", self.Player, self.Path)
 			assert(self._GetRenderOutput ~= nil)
-			output = self._GetRenderOutput:InvokeClient(self._Player)
+			output = self._GetRenderOutput:InvokeClient(self.Player)
 		else
-			log("client not found", self._Player, self._Path)
+			log("client not found", self.Player, self.Path)
 			return
 		end
 	else
-		output = self:_Compile()
+		output = self:_HandleCompile()
 	end
 
 	if output then
@@ -246,7 +240,7 @@ function Midas:Compile(): { [string]: any }? --server only
 end
 
 --- Returns a UTC format compliant timestamp string from the current tick. An optional offset can be applied to this in seconds.
-function Midas:GetUTC(offset: number?): string
+function Midas:_GetUTC(offset: number?): string
 	offset = offset or 0
 	assert(offset ~= nil)
 	local unixTime = (DateTime.now().UnixTimestampMillis / 1000) + offset
@@ -279,7 +273,7 @@ function Midas:CanFire(): boolean
 end
 
 function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?): nil
-	log("_fire series", self._Player, eventName)
+	log("_fire series", self.Player, eventName)
 	assert(RunService:IsServer(), "Bad domain")
 	waitDuration = waitDuration or 15
 	includeEndEvent = if includeEndEvent == nil then false else includeEndEvent
@@ -315,7 +309,7 @@ function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number,
 end
 
 function Midas:_FireEvent(eventName: string, utc: string): nil
-	log("_fire event", self._Player, eventName)
+	log("_fire event", self.Player, eventName)
 	assert(RunService:IsServer(), "Bad domain")
 	self._Index[eventName] = self._Index[eventName] or 0
 	self._Index[eventName] += 1
@@ -325,7 +319,7 @@ function Midas:_FireEvent(eventName: string, utc: string): nil
 end
 
 function Midas:_Fire(eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?): nil
-	log("_fire", self._Player, eventName)
+	log("_fire", self.Player, eventName)
 	if RunService:IsServer() then
 		if seriesDuration ~= nil then
 			self:_FireSeries(eventName, utc, seriesDuration, includeEndEvent)
@@ -341,20 +335,23 @@ end
 
 --- Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.
 function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent: boolean?): nil
-	log("fire", self._Player, eventName)
+	log("fire", self.Player, eventName)
 	task.spawn(function()
-		local utc = self:GetUTC()
-		if not self.Loaded then
-			self.OnLoad:Wait()
+		local utc = self:_GetUTC()
+		if not self._Loaded then
+			log("yielding until load", self.Player, eventName)
+			self._OnLoad:Wait()
 		end
-		if self.Loaded == false then
+		if self._Loaded == false then
 			task.wait(1)
+			log("trying to fire again", self.Player, eventName)
 			self:Fire(eventName, seriesDuration, includeEndEvent)
 		else
 			if eventName == nil then
 				eventName = "Event"
 			end
 			if self:CanFire() == false then
+				log("can't fire, returning", self.Player, eventName)
 				return
 			end
 			self:_Fire(eventName, utc, seriesDuration, includeEndEvent)
@@ -365,8 +362,8 @@ end
 
 --- Forces the midas object to roll the dice before firing future events. Default is 1, which will always fire the event.
 function Midas:SetChance(val: number): nil
-	if not self.Loaded then
-		self.OnLoad:Wait()
+	if not self._Loaded then
+		self._OnLoad:Wait()
 	end
 	self._Chance = val
 	return nil
@@ -425,8 +422,8 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		maid:GiveTask(self._ClientRegister.OnServerEvent:Connect(function(eventPlayer: Player)
 			if eventPlayer == player then
 				log("register", player, path)
-				local onLoad: any = rawget(self, "OnLoad")
-				if not rawget(self, "Loaded") then
+				local onLoad: any = rawget(self, "_OnLoad")
+				if not rawget(self, "_Loaded") then
 					onLoad:Wait()
 				end
 				self._IsClientManaged = true
@@ -442,7 +439,7 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 				function(eventPlayer: Player, eventName: string, utc: string, reps: number)
 					if eventPlayer == player then
 						log("client fired", player, path)
-						if not rawget(self, "Loaded") then
+						if not rawget(self, "_Loaded") then
 							onLoad:Wait()
 						end
 						Midas._Fire(self :: any, eventName, utc, reps)
@@ -466,17 +463,17 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		assert(self._GetRenderOutput ~= nil)
 		self._GetRenderOutput.OnClientInvoke = function()
 			log("render invoke", player, path)
-			if not rawget(self, "Loaded") then
+			if not rawget(self, "_Loaded") then
 				onLoad:Wait()
 			end
-			return Midas._Compile(self :: any)
+			return Midas._HandleCompile(self :: any)
 		end
 	end
 	onLoad:Fire()
 	return nil
 end
 
-function Midas.new(player: Player, path: string): Midas
+function Midas._new(player: Player, path: string): Midas
 	local profile = if RunService:IsServer() then Profile.get(player.UserId) else nil
 	log("new", player, path)
 
@@ -495,16 +492,16 @@ function Midas.new(player: Player, path: string): Midas
 	local self = {
 		["Instance"] = nil,
 
-		Loaded = false,
-		OnLoad = onLoad,
-		OnDestroy = onDestroy,
-		OnEvent = onEvent,
+		_Loaded = false,
+		_OnLoad = onLoad,
+		_OnDestroy = onDestroy,
+		_OnEvent = onEvent,
 
 		_Maid = maid,
 
 		_Profile = profile,
-		_Path = path,
-		_Player = player,
+		Path = path,
+		Player = player,
 		_PlayerName = player.Name,
 
 		_IsAlive = true,
@@ -525,9 +522,9 @@ function Midas.new(player: Player, path: string): Midas
 
 	setmetatable(self, Midas)
 
-	maid:GiveTask(self.OnLoad:Connect(function()
+	maid:GiveTask(self._OnLoad:Connect(function()
 		log("loaded", player, path)
-		rawset(self :: any, "Loaded", true)
+		rawset(self :: any, "_Loaded", true)
 	end))
 
 	task.spawn(function()
@@ -547,7 +544,7 @@ end
 if RunService:IsServer() then
 	ConstructMidas.OnServerEvent:Connect(function(player, eventKeyPath)
 		log("server construct", player, eventKeyPath)
-		Midas.new(player, eventKeyPath)
+		Midas._new(player, eventKeyPath)
 	end)
 end
 

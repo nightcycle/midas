@@ -1,0 +1,31 @@
+// run in data explorer
+// configuration
+let PLAYER_COUNT = 5000;
+// UTC time range limits, can be modified with precision if you need to break up a 
+let TIME_RANGE_START = datetime(2022-09-21 16:00:00.000000);
+let TIME_RANGE_END = datetime_add("day", 7, TIME_RANGE_START);
+// get list of initial player entity ids
+let players = ['events.all']
+    | where Timestamp > TIME_RANGE_START
+    | where Timestamp < TIME_RANGE_END
+    | where Entity_Type == "player"
+    | summarize count() by Entity_Id
+    | limit PLAYER_COUNT
+    | project-keep Entity_Id
+;
+// get final list of data matching the entity ids
+let events = ['events.all']
+    | join kind = rightouter(
+        players
+    ) on Entity_Id
+    | where FullName_Namespace != "com.playfab"
+;
+// clean-up results in table for exporting
+events
+| project-keep EventData
+| extend DATA = EventData["State"]
+| extend TIMESTAMP = EventData["Timestamp"]
+| extend VERSION = EventData["Version"]
+| extend EVENT_ID = EventData["EventId"]
+| project-away EventData
+;

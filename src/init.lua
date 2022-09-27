@@ -21,7 +21,8 @@ local Types = require(_Package.Types)
 local GetInitialConfig = Network.getRemoteFunction("GetInitialMidasConfig")
 local UpdateConfig = Network.getRemoteEvent("UpdateMidasConfig")
 
-export type Midas = Types.Midas
+export type Midas = Types.PublicMidas
+export type PrivateMidas = Types.PrivateMidas
 export type TeleportDataEntry = Types.TeleportDataEntry
 type Profile = Types.Profile
 type ConfigurationData = Types.ConfigurationData
@@ -53,10 +54,10 @@ function Interface:GetMidas(player: Player, path: string): Midas
 	if profile then
 		local existingMidas = profile:GetMidas(path)
 		if existingMidas then
-			return existingMidas
+			return existingMidas :: any
 		end
 	end
-	return Midas.new(player, path)
+	return Midas._new(player, path) :: any
 end
 
 --- Allows for the replacement of the default config table, changing the behavior of the framework.
@@ -149,12 +150,12 @@ function initPlayer(player: Player)
 		Templates.exit(player, function()
 			return profile._IsTeleporting
 		end)
-
+		Templates.serverIssues(player)
 		-- Track character properties
 		local function loadCharacter(character: Model)
 			local mCharacter = Templates.character(character)
 			if mCharacter then
-				profile:SetMidas(mCharacter)
+				profile:SetMidas(mCharacter :: any)
 			end
 		end
 		profile._Maid:GiveTask(player.CharacterAdded:Connect(loadCharacter))
@@ -166,7 +167,9 @@ function initPlayer(player: Player)
 		Templates.policy(player)
 		Templates.clientPerformance(player)
 		Templates.settings(player)
+		Templates.clientIssues(player)
 	end
+
 	return nil
 end
 

@@ -5,19 +5,51 @@ local _Maid = require(_Packages.Maid)
 local _Signal = require(_Packages.Signal)
 
 export type State = () -> any?
-export type Midas = {
+
+export type PublicMidas = {
+	Player: Player,
+	Path: string,
+	SetState: (self: PublicMidas, name: string, state: State) -> nil,
+	Destroy: (self: PublicMidas) -> nil,
+	SetTag: (self: PublicMidas, tag: string) -> nil,
+	RemoveTag: (self: PublicMidas, tag: string) -> nil,
+	SetCondition: (self: PublicMidas, key: string, func: () -> boolean) -> nil,
+	GetPath: (self: PublicMidas) -> string,
+	SetRoundingPrecision: (self: PublicMidas, exp: number?) -> nil,
+	CanFire: (self: PublicMidas) -> boolean,
+	Fire: (self: PublicMidas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	SetChance: (self: PublicMidas, val: number) -> nil,
+	GetBoundStateCount: (self: PublicMidas) -> number,
+}
+
+export type PrivateMidas = {
+	_Loaded: boolean,
+	_OnLoad: _Signal.Signal,
+	_OnDestroy: _Signal.Signal,
+	_OnEvent: _Signal.Signal,
+	
+	SetState: (self: PrivateMidas, name: string, state: State) -> nil,
+	Destroy: (self: PrivateMidas) -> nil,
+	SetTag: (self: PrivateMidas, tag: string) -> nil,
+	RemoveTag: (self: PrivateMidas, tag: string) -> nil,
+	SetCondition: (self: PrivateMidas, key: string, func: () -> boolean) -> nil,
+	SetRoundingPrecision: (self: PrivateMidas, exp: number?) -> nil,
+	_Compile: (self: PrivateMidas) -> { [string]: any }?,
+	_HandleCompile: (self: PrivateMidas) -> { [string]: any }?,
+	_GetUTC: (self: PrivateMidas, offset: number?) -> string,
+	CanFire: (self: PrivateMidas) -> boolean,
+	Fire: (self: PrivateMidas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	SetChance: (self: PrivateMidas, val: number) -> nil,
+	GetBoundStateCount: (self: PrivateMidas) -> number,
+
 	Instance: Folder?,
-	Loaded: boolean,
-
-	OnLoad: _Signal.Signal,
-	OnDestroy: _Signal.Signal,
-	OnEvent: _Signal.Signal,
-
+	
 	_Maid: _Maid.Maid,
 
 	_Profile: Profile?,
-	_Path: string,
+	Path: string,
 	_Player: Player,
+	Player: Player,
 	_PlayerName: string,
 	
 	_OnClientFire: RemoteEvent?,
@@ -38,29 +70,15 @@ export type Midas = {
 	_Index: { [string]: number },
 	_Repetitions: { [string]: number },
 	_KeyCount: number,
-	__index: Midas,
-	__newindex: (self: Midas, index: any, value: State) -> nil,
+	__index: PrivateMidas,
+	__newindex: (self: PrivateMidas, index: any, value: State) -> nil,
 
-	SetState: (self: Midas, name: string, state: State) -> nil,
-	Destroy: (self: Midas) -> nil,
-	SetTag: (self: Midas, tag: string) -> nil,
-	RemoveTag: (self: Midas, tag: string) -> nil,
-	SetCondition: (self: Midas, key: string, func: () -> boolean) -> nil,
-	GetPath: (self: Midas) -> string,
-	SetRoundingPrecision: (self: Midas, exp: number?) -> nil,
-	Compile: (self: Midas) -> { [string]: any }?,
-	GetUTC: (self: Midas, offset: number?) -> string,
-	CanFire: (self: Midas) -> boolean,
-	Fire: (self: Midas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
-	SetChance: (self: Midas, val: number) -> nil,
-	GetBoundStateCount: (self: Midas) -> number,
-	new: (player: Player, path: string) -> Midas,
-	_Compile: (self: Midas) -> { [string]: any }?,
-	_FireSeries: (self: Midas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
-	_FireEvent: (self: Midas, eventName: string, utc: string) -> nil,
-	_Fire: (self: Midas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	_new: (player: Player, path: string) -> PrivateMidas,
+	_FireSeries: (self: PrivateMidas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
+	_FireEvent: (self: PrivateMidas, eventName: string, utc: string) -> nil,
+	_Fire: (self: PrivateMidas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	_Load: (
-		self: Midas,
+		self: PrivateMidas,
 		player: Player,
 		path: string,
 		profile: Profile?,
@@ -68,6 +86,7 @@ export type Midas = {
 		onLoad: _Signal.Signal
 	) -> nil,
 }
+
 
 export type Profile = {
 	_Maid: _Maid.Maid,
@@ -80,7 +99,7 @@ export type Profile = {
 	_IsTeleporting: boolean,
 	_WasTeleported: boolean,
 	_Index: number,
-	_Midaii: { [string]: Midas },
+	_Midaii: { [string]: PrivateMidas },
 	_PreviousStates: {},
 	_SessionId: string?,
 	_PlayerId: string?,
@@ -88,7 +107,7 @@ export type Profile = {
 	Destroy: (self: Profile) -> nil,
 	FireSeries: (
 		self: Profile,
-		midas: Midas,
+		midas: PrivateMidas,
 		eventName: string,
 		timeStamp: string,
 		eventIndex: number,
@@ -96,18 +115,18 @@ export type Profile = {
 	) -> _Signal.Signal,
 	Fire: (
 		self: Profile,
-		midas: Midas,
+		midas: PrivateMidas,
 		eventName: string,
 		timestamp: string,
 		eventIndex: number,
 		duration: number?
 	) -> nil,
-	HasPath: (self: Profile, midas: Midas, path: string) -> boolean,
+	HasPath: (self: Profile, midas: PrivateMidas, path: string) -> boolean,
 	DestroyPath: (self: Profile, path: string) -> nil,
 	DestroyMidas: (self: Profile, path: string) -> nil,
-	GetMidas: (self: Profile, path: string) -> Midas?,
-	SetMidas: (self: Profile, midas: Midas) -> nil,
-	Teleport: (self: Profile, mExit: Midas?) -> TeleportDataEntry,
+	GetMidas: (self: Profile, path: string) -> PrivateMidas?,
+	SetMidas: (self: Profile, midas: PrivateMidas) -> nil,
+	Teleport: (self: Profile, mExit: PrivateMidas?) -> TeleportDataEntry,
 	new: (player: Player) -> Profile,
 	get: (userId: number) -> Profile?,
 	getProfilesFolder: () -> Folder,
@@ -120,7 +139,7 @@ export type Profile = {
 	) -> nil,
 	_Format: (
 		self: Profile,
-		midas: Midas,
+		midas: PrivateMidas,
 		eventName: string,
 		delta: { [string]: any },
 		eventIndex: number,
@@ -130,7 +149,7 @@ export type Profile = {
 	_Export: (self: Profile) -> TeleportDataEntry,
 }
 
---- @type ConfigurationData {Version: string,SendDeltaState: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,},}
+--- @type ConfigurationData {Version: string,SendDeltaState: boolean,PrintLog: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,ServerIssues:boolean, ClientIssues:boolean},}
 --- @within Interface
 
 export type ConfigurationData = {
@@ -151,6 +170,8 @@ export type ConfigurationData = {
 		Policy: boolean?,
 		ClientPerformance: boolean?,
 		Settings: boolean?,
+		ServerIssues: boolean?,
+		ClientIssues: boolean?,
 	},
 }
 
