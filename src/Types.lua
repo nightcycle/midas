@@ -16,8 +16,9 @@ export type Midas = {
 	_Maid: _Maid.Maid,
 
 	_Profile: Profile?,
-	_Path:string,
+	_Path: string,
 	_Player: Player,
+	_PlayerName: string,
 	
 	_OnClientFire: RemoteEvent?,
 	_ClientRegister: RemoteEvent?,
@@ -28,14 +29,14 @@ export type Midas = {
 	_Chance: number,
 	_IsClientManaged: boolean,
 
-	_Tags: {[string]: boolean},
-	_Conditions: {[string]: () -> boolean},
-	_States: {[string]: State},
-	_FirstFireTick: {[string]: number},
-	_LastFireTick: {[string]: number},
-	_SeriesSignal: {[string]: _Signal.Signal},
-	_Index: {[string]: number},
-	_Repetitions: {[string]: number},
+	_Tags: { [string]: boolean },
+	_Conditions: { [string]: () -> boolean },
+	_States: { [string]: State },
+	_FirstFireTick: { [string]: number },
+	_LastFireTick: { [string]: number },
+	_SeriesSignal: { [string]: _Signal.Signal },
+	_Index: { [string]: number },
+	_Repetitions: { [string]: number },
 	_KeyCount: number,
 	__index: Midas,
 	__newindex: (self: Midas, index: any, value: State) -> nil,
@@ -47,18 +48,25 @@ export type Midas = {
 	SetCondition: (self: Midas, key: string, func: () -> boolean) -> nil,
 	GetPath: (self: Midas) -> string,
 	SetRoundingPrecision: (self: Midas, exp: number?) -> nil,
-	Compile: (self: Midas) -> {[string]: any}?,
+	Compile: (self: Midas) -> { [string]: any }?,
 	GetUTC: (self: Midas, offset: number?) -> string,
 	CanFire: (self: Midas) -> boolean,
-	Fire: (self: Midas,eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	Fire: (self: Midas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	SetChance: (self: Midas, val: number) -> nil,
 	GetBoundStateCount: (self: Midas) -> number,
 	new: (player: Player, path: string) -> Midas,
-	_Compile: (self: Midas) -> {[string]: any}?,
+	_Compile: (self: Midas) -> { [string]: any }?,
 	_FireSeries: (self: Midas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
 	_FireEvent: (self: Midas, eventName: string, utc: string) -> nil,
 	_Fire: (self: Midas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
-	_Load: (self: Midas, player: Player, path: string, profile: Profile?, maid: _Maid.Maid, onLoad: _Signal.Signal) -> nil,
+	_Load: (
+		self: Midas,
+		player: Player,
+		path: string,
+		profile: Profile?,
+		maid: _Maid.Maid,
+		onLoad: _Signal.Signal
+	) -> nil,
 }
 
 export type Profile = {
@@ -72,14 +80,28 @@ export type Profile = {
 	_IsTeleporting: boolean,
 	_WasTeleported: boolean,
 	_Index: number,
-	_Midaii: {[string]: Midas},
+	_Midaii: { [string]: Midas },
 	_PreviousStates: {},
 	_SessionId: string?,
 	_PlayerId: string?,
 	__index: Profile,
 	Destroy: (self: Profile) -> nil,
-	FireSeries: (self: Profile, midas: Midas, eventName: string, timeStamp: string, eventIndex: number, includeEndEvent: boolean) -> _Signal.Signal,
-	Fire: (self: Profile, midas: Midas, eventName: string, timestamp: string, eventIndex: number, duration: number?) -> nil, 
+	FireSeries: (
+		self: Profile,
+		midas: Midas,
+		eventName: string,
+		timeStamp: string,
+		eventIndex: number,
+		includeEndEvent: boolean
+	) -> _Signal.Signal,
+	Fire: (
+		self: Profile,
+		midas: Midas,
+		eventName: string,
+		timestamp: string,
+		eventIndex: number,
+		duration: number?
+	) -> nil,
 	HasPath: (self: Profile, midas: Midas, path: string) -> boolean,
 	DestroyPath: (self: Profile, path: string) -> nil,
 	DestroyMidas: (self: Profile, path: string) -> nil,
@@ -87,22 +109,36 @@ export type Profile = {
 	SetMidas: (self: Profile, midas: Midas) -> nil,
 	Teleport: (self: Profile, mExit: Midas?) -> TeleportDataEntry,
 	new: (player: Player) -> Profile,
-	get:(userId: number) -> Profile?,
+	get: (userId: number) -> Profile?,
 	getProfilesFolder: () -> Folder,
-	_Fire: (self: Profile, eventFullPath: string, delta: {[string]: any}, tags: {[string]: boolean}, timestamp: string) -> nil,
-	_Format: (self: Profile, midas: Midas, eventName: string, delta: {[string]: any}, eventIndex: number, duration: number?, timestamp: string) -> ({[string]: any}, string),
+	_Fire: (
+		self: Profile,
+		eventFullPath: string,
+		delta: { [string]: any },
+		tags: { [string]: boolean },
+		timestamp: string
+	) -> nil,
+	_Format: (
+		self: Profile,
+		midas: Midas,
+		eventName: string,
+		delta: { [string]: any },
+		eventIndex: number,
+		duration: number?,
+		timestamp: string
+	) -> ({ [string]: any }, string),
 	_Export: (self: Profile) -> TeleportDataEntry,
 }
 
-
-
---- @type ConfigurationData {Version: string,SendDeltaState: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,},}
+--- @type ConfigurationData {Version: string,SendDeltaState: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,},}
 --- @within Interface
 
 export type ConfigurationData = {
 	Version: string,
 	SendDeltaState: boolean?,
 	SendDataToPlayFab: boolean?,
+	PrintEventsInStudio: boolean?,
+	PrintLog: boolean?,
 	Templates: {
 		Join: boolean?,
 		Chat: boolean?,
@@ -119,7 +155,7 @@ export type ConfigurationData = {
 }
 
 export type TeleportDataEntry = {
-	_PreviousStates: {[string]: any},
+	_PreviousStates: { [string]: any },
 	_SessionId: string,
 	_PlayerId: string,
 }

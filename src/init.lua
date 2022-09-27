@@ -29,9 +29,13 @@ type Interface = {
 	__index: Interface,
 	GetMidas: (self: Interface, player: Player, path: string) -> Midas,
 	_Connect: (self: Interface, player: Player) -> nil,
-	InsertTeleportDataEntry: (self: Interface, player: Player, teleportData: {[any]: any}?) -> {
+	InsertTeleportDataEntry: (
+		self: Interface,
+		player: Player,
+		teleportData: { [any]: any }?
+	) -> {
 		MidasAnalyticsData: TeleportDataEntry,
-		[any]: any
+		[any]: any,
 	},
 	GetEventSignal: (self: Interface) -> _Signal.Signal,
 	Configure: (self: Interface, config: ConfigurationData) -> nil,
@@ -60,14 +64,14 @@ end
 function Interface:Configure(deltaConfig: ConfigurationData): nil
 	assert(RunService:IsServer(), "Bad domain")
 	-- Overwrites the shared keys with new data.
-	local function writeDelta(target: {[string]: any}, change: {[string]: any})
+	local function writeDelta(target: { [string]: any }, change: { [string]: any })
 		for k, v in pairs(change) do
 			if typeof(v) == "table" then
 				writeDelta(target[k], v)
 			else
 				target[k] = v
 			end
-		end	
+		end
 	end
 	writeDelta(Config, deltaConfig)
 
@@ -78,7 +82,7 @@ end
 
 -- Make sure client always has the most up-to-date config
 if not RunService:IsServer() then
-	local function rewriteConfig(newConfig: {[string]: any})
+	local function rewriteConfig(newConfig: { [string]: any })
 		for k, v in pairs(newConfig) do
 			Config[k] = v
 		end
@@ -93,9 +97,12 @@ end
 
 --- When a player is being teleported, pass the teleport data prior to teleporting them through this API. This will ensure the session is tracked as continuing.
 --- @server
-function Interface:InsertTeleportDataEntry(player: Player, teleportData: {[any]: any}?): {
+function Interface:InsertTeleportDataEntry(
+	player: Player,
+	teleportData: { [any]: any }?
+): {
 	MidasAnalyticsData: TeleportDataEntry,
-	[any]: any
+	[any]: any,
 }
 	assert(RunService:IsServer(), "Bad domain")
 	teleportData = teleportData or {}
@@ -109,7 +116,7 @@ function Interface:InsertTeleportDataEntry(player: Player, teleportData: {[any]:
 	return teleportData
 end
 
---- Provides a pseudo-RBXScriptSignal which will fire whenever an event is sent via HttpService. 
+--- Provides a pseudo-RBXScriptSignal which will fire whenever an event is sent via HttpService.
 --- When the Signal is fired it will provide the playerId, path, data, tags, and timestamp in that order.
 --- @server
 function Interface:GetEventSignal(): _Signal.Signal
@@ -131,11 +138,17 @@ function initPlayer(player: Player)
 		local profile = Profile.new(player)
 		assert(profile ~= nil)
 		Templates.join(player, profile._WasTeleported)
-		Templates.chat(player)	
+		Templates.chat(player)
 		Templates.population(player)
-		Templates.serverPerformance(player, function() return profile.TimeDifference end, function() return profile.EventsPerMinute end)
+		Templates.serverPerformance(player, function()
+			return profile.TimeDifference
+		end, function()
+			return profile.EventsPerMinute
+		end)
 		Templates.market(player)
-		Templates.exit(player, function() return profile._IsTeleporting end)
+		Templates.exit(player, function()
+			return profile._IsTeleporting
+		end)
 
 		-- Track character properties
 		local function loadCharacter(character: Model)
@@ -145,7 +158,9 @@ function initPlayer(player: Player)
 			end
 		end
 		profile._Maid:GiveTask(player.CharacterAdded:Connect(loadCharacter))
-		if player.Character then loadCharacter(player.Character) end
+		if player.Character then
+			loadCharacter(player.Character)
+		end
 	else
 		Templates.demographics(player)
 		Templates.policy(player)
@@ -162,7 +177,7 @@ if RunService:IsServer() then
 			initPlayer(player)
 		end
 	end)
-	
+
 	Players.PlayerRemoving:Connect(function(player: Player)
 		local profile = Profile.get(player.UserId)
 		if profile then
@@ -170,10 +185,9 @@ if RunService:IsServer() then
 				profile:Destroy()
 			end)
 		end
-	end)	
+	end)
 else
 	initPlayer(game.Players.LocalPlayer)
 end
-
 
 return Interface

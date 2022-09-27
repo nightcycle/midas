@@ -7,6 +7,8 @@ local Config: Types.ConfigurationData = {
 	Version = "0.0.0",
 	SendDeltaState = false, --Send just the changes of state, not the entirety
 	SendDataToPlayFab = true,
+	PrintEventsInStudio = true,
+	PrintLog = false,
 	Templates = {
 		Join = true,
 		Chat = true,
@@ -22,6 +24,5 @@ local Config: Types.ConfigurationData = {
 		Settings = true,
 	},
 }
-
 
 return Config

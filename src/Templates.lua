@@ -21,57 +21,84 @@ local Types = require(_Package.Types)
 
 type Midas = Types.Midas
 
+function log(message: string, player: Player?, path: string?)
+	if Config.PrintLog then
+		print("[", player, "]", "[templates]", "[", path, "]", ":", message)
+	end
+end
+
+--Class definition
 local Templates = {}
 Templates.__index = {}
 
 function Templates.join(player: Player, wasTeleportedIn: boolean): Midas?
-	if not Config.Templates.Join then return end
+	if not Config.Templates.Join then
+		return
+	end
+
 	assert(RunService:IsServer(), "Bad domain")
 	local mJoin = Midas.new(player, "Join")
+	log("loaded", player, mJoin._Path)
 	if wasTeleportedIn then
+		log("firing teleport", player, mJoin._Path)
 		mJoin:Fire("Teleport")
 	else
+		log("firing enter", player, mJoin._Path)
 		mJoin:Fire("Enter")
 	end
 	return mJoin
 end
 
 function Templates.chat(player: Player): Midas?
-	if not Config.Templates.Chat then return end
+	if not Config.Templates.Chat then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
+
 	local mChat = Midas.new(player, "Chat")
+	log("loaded", player, mChat._Path)
+
 	local lastMessage: string?
 
 	task.spawn(function()
-		mChat:SetState("LastMessage", function() return lastMessage end)
+		mChat:SetState("LastMessage", function()
+			return lastMessage
+		end)
 
 		mChat._Maid:GiveTask(player.Chatted:Connect(function(msg)
 			lastMessage = string.sub(msg, 140)
 			mChat:Fire("Spoke")
 		end))
 	end)
-	
+
 	return mChat
 end
 
 function Templates.character(character: Model): Midas?
-	if not Config.Templates.Character then return end
+	if not Config.Templates.Character then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
 	local player = Players:GetPlayerFromCharacter(character)
 	assert(player ~= nil)
 
 	local maid = _Maid.new()
 
-	maid:GiveTask(character.Destroying:Connect(function()
-		maid:Destroy()
-	end))
 
 	local mCharacter = Midas.new(player, "Character")
 	mCharacter:SetRoundingPrecision(1)
 
+	maid:GiveTask(character.Destroying:Connect(function()
+		log("character destroying", player, mCharacter._Path)
+		maid:Destroy()
+	end))
+
+
 	local isDead = false
 	task.spawn(function()
-		mCharacter:SetState("IsDead", function() return isDead end)
+		mCharacter:SetState("IsDead", function()
+			return isDead
+		end)
 		mCharacter:SetState("Height", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
@@ -79,67 +106,71 @@ function Templates.character(character: Model): Midas?
 			assert(humDesc ~= nil)
 			return humDesc.HeightScale
 		end)
-	
+
 		mCharacter:SetState("Mass", function()
 			local primaryPart = character.PrimaryPart
 			assert(primaryPart ~= nil)
 			return primaryPart.AssemblyMass
 		end)
-	
+
 		mCharacter:SetState("WalkSpeed", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
 			return humanoid.WalkSpeed
 		end)
-	
+
 		mCharacter:SetState("Position", function()
 			local primaryPart = character.PrimaryPart
 			assert(primaryPart ~= nil)
 			return Vector2.new(primaryPart.Position.X, primaryPart.Position.Z)
 		end)
-	
+
 		mCharacter:SetState("Altitude", function()
 			local primaryPart = character.PrimaryPart
 			assert(primaryPart ~= nil)
 			return primaryPart.Position.Y
 		end)
-	
+
 		mCharacter:SetState("JumpPower", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
 			return humanoid.WalkSpeed
 		end)
-	
+
 		mCharacter:SetState("Health", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
 			return humanoid.Health
 		end)
-	
+
 		mCharacter:SetState("MaxHealth", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
 			return humanoid.MaxHealth
 		end)
-	
+
 		local deaths = 0
-	
-		mCharacter:SetState("Deaths", function() return deaths end)
+
+		mCharacter:SetState("Deaths", function()
+			return deaths
+		end)
 		local humanoid = character:WaitForChild("Humanoid", 15)
 		assert(humanoid ~= nil and humanoid:IsA("Humanoid"), "Bad humanoid")
-	
+
 		maid:GiveTask(humanoid.Died:Connect(function()
 			deaths += 1
 			mCharacter:Fire("Died")
 			isDead = true
 		end))
 	end)
-	
+
 	return mCharacter
 end
 
 function Templates.population(player: Player): Midas?
-	if not Config.Templates.Population then return end
+	if not Config.Templates.Population then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
 	local mPopulation = Midas.new(player, "Population")
 
@@ -157,10 +188,10 @@ function Templates.population(player: Player): Midas?
 			end
 			return count
 		end)
-		
-		local friendPages = Players:GetFriendsAsync(player.UserId)
+
 		local friends = {}
 		task.spawn(function()
+			local friendPages = Players:GetFriendsAsync(player.UserId)
 			local function iterPageItems(pages)
 				return coroutine.wrap(function()
 					local pagenum = 1
@@ -180,9 +211,11 @@ function Templates.population(player: Player): Midas?
 				friends[item.Id] = true
 			end
 		end)
-	
+
 		local peakFriends = 0
-		mPopulation:SetState("PeakFriends", function() return peakFriends end)
+		mPopulation:SetState("PeakFriends", function()
+			return peakFriends
+		end)
 		mPopulation:SetState("Friends", function()
 			local count = 0
 			for i, plr in ipairs(game.Players:GetChildren()) do
@@ -193,7 +226,7 @@ function Templates.population(player: Player): Midas?
 			peakFriends = math.max(peakFriends, count)
 			return count
 		end)
-	
+
 		-- end
 		mPopulation:SetState("SpeakingDistance", function()
 			local count = 0
@@ -218,12 +251,18 @@ function Templates.population(player: Player): Midas?
 			return count
 		end)
 	end)
-	
+
 	return mPopulation
 end
 
-function Templates.serverPerformance(player: Player, getTimeDifference: () -> number, getEventsPerMinute: () -> number): Midas?
-	if not Config.Templates.ServerPerformance then return end
+function Templates.serverPerformance(
+	player: Player,
+	getTimeDifference: () -> number,
+	getEventsPerMinute: () -> number
+): Midas?
+	if not Config.Templates.ServerPerformance then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
 	local mServerPerformance = Midas.new(player, "Performance/Server")
 	mServerPerformance:SetRoundingPrecision(0)
@@ -232,7 +271,7 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 			local timeDifference = getTimeDifference()
 			local eventsPerMinute = getEventsPerMinute()
 			if timeDifference < 60 then
-				return 60*eventsPerMinute/timeDifference
+				return 60 * eventsPerMinute / timeDifference
 			else
 				return eventsPerMinute
 			end
@@ -241,10 +280,10 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 			return math.round(time())
 		end)
 		mServerPerformance:SetState("HeartRate", function()
-			return math.clamp(math.round(1/StatService.HeartbeatTimeMs), 0, 6000)
+			return math.clamp(math.round(1 / StatService.HeartbeatTimeMs), 0, 6000)
 		end)
 		mServerPerformance:SetState("Instances", function()
-			return math.round(StatService.InstanceCount/1000)*1000
+			return math.round(StatService.InstanceCount / 1000) * 1000
 		end)
 		mServerPerformance:SetState("MovingParts", function()
 			return StatService.InstanceCount
@@ -328,14 +367,16 @@ function Templates.serverPerformance(player: Player, getTimeDifference: () -> nu
 			return StatService:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Navigation)
 		end)
 		mServerPerformance:SetState("PlayerHTTPLimit", function()
-			return 500/#Players:GetChildren()
+			return 500 / #Players:GetChildren()
 		end)
 	end)
 	return mServerPerformance
 end
 
 function Templates.market(player: Player): Midas?
-	if not Config.Templates.Market then return end
+	if not Config.Templates.Market then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
 
 	local mMarket = Midas.new(player, "Spending")
@@ -344,39 +385,53 @@ function Templates.market(player: Player): Midas?
 	local gamepasses = 0
 
 	task.spawn(function()
-		mMarket:SetState("Products", function() return products end)
-		mMarket:SetState("Gamepasses", function() return gamepasses end)
+		mMarket:SetState("Products", function()
+			return products
+		end)
+		mMarket:SetState("Gamepasses", function()
+			return gamepasses
+		end)
 		mMarket:SetState("Spending", function()
 			return products + gamepasses
 		end)
-	
-		mMarket._Maid:GiveTask(MarketplaceService.PromptPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
-			if plr ~= player and success then
-				local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)
-				mMarket:Fire("Purchase/Product/"..itemInfo.Name)
-				products += itemInfo.PriceInRobux
-			end
-		end))
-		mMarket._Maid:GiveTask(MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
-			if plr ~= player and success then
-				local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
-				mMarket:Fire("Purchase/Gamepass/"..itemInfo.Name)
-				gamepasses += itemInfo.Gamepasses
-			end
-		end))
+
+		mMarket._Maid:GiveTask(
+			MarketplaceService.PromptPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
+				if plr ~= player and success then
+					local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)
+					mMarket:Fire("Purchase/Product/" .. itemInfo.Name)
+					products += itemInfo.PriceInRobux
+				end
+			end)
+		)
+		mMarket._Maid:GiveTask(
+			MarketplaceService.PromptGamePassPurchaseFinished:Connect(
+				function(plr: Player, id: number, success: boolean)
+					if plr ~= player and success then
+						local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
+						mMarket:Fire("Purchase/Gamepass/" .. itemInfo.Name)
+						gamepasses += itemInfo.Gamepasses
+					end
+				end
+			)
+		)
 	end)
-	
+
 	return mMarket
 end
 
 function Templates.exit(player: Player, getIfTeleporting: () -> boolean): Midas?
-	if not Config.Templates.Exit then return end
+	if not Config.Templates.Exit then
+		return
+	end
 	assert(RunService:IsServer(), "Bad domain")
 
 	local mExit = Midas.new(player, "Exit")
 	task.spawn(function()
 		mExit._Maid:GiveTask(game.Players.PlayerRemoving:Connect(function(remPlayer: Player)
-			if remPlayer == player and getIfTeleporting() == false then
+			local isTeleporting = getIfTeleporting()
+			if remPlayer == player and isTeleporting == false then
+				remPlayer:SetAttribute("IsExiting", true)
 				mExit:Fire("Quit")
 				mExit._Maid:Destroy()
 			end
@@ -390,7 +445,9 @@ function Templates.exit(player: Player, getIfTeleporting: () -> boolean): Midas?
 end
 
 function Templates.demographics(player: Player): Midas?
-	if not Config.Templates.Demographics then return end
+	if not Config.Templates.Demographics then
+		return
+	end
 	assert(RunService:IsClient(), "Bad domain")
 	local localizationService = game:GetService("LocalizationService")
 
@@ -398,38 +455,60 @@ function Templates.demographics(player: Player): Midas?
 	mDemographics:SetRoundingPrecision(0)
 
 	task.spawn(function()
-		mDemographics:SetState("AccountAge", function() return player.AccountAge end)
-		mDemographics:SetState("RobloxLangugage", function() return localizationService.RobloxLocaleId end)
-		mDemographics:SetState("SystemLanguage", function() return localizationService.SystemLocaleId end)
-		mDemographics:SetState("Platform/Accelerometer", function() return UserInputService.VREnabled end)
-		mDemographics:SetState("Platform/Gamepad", function() return UserInputService.GamepadConnected end)
-		mDemographics:SetState("Platform/Gyroscope", function() return UserInputService.GyroscopeEnabled end)
-		mDemographics:SetState("Platform/Keyboard", function() return UserInputService.KeyboardEnabled end)
-		mDemographics:SetState("Platform/Mouse", function() return UserInputService.MouseEnabled end)
-		mDemographics:SetState("Platform/TouchEnabled", function() return UserInputService.TouchEnabled end)
-		mDemographics:SetState("Platform/VCEnabled", function() return VoiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId) end)
-		mDemographics:SetState("Platform/ScreenSize", function() return game.Workspace.CurrentCamera.ViewportSize.Magnitude end)
+		mDemographics:SetState("AccountAge", function()
+			return player.AccountAge
+		end)
+		mDemographics:SetState("RobloxLangugage", function()
+			return localizationService.RobloxLocaleId
+		end)
+		mDemographics:SetState("SystemLanguage", function()
+			return localizationService.SystemLocaleId
+		end)
+		mDemographics:SetState("Platform/Accelerometer", function()
+			return UserInputService.VREnabled
+		end)
+		mDemographics:SetState("Platform/Gamepad", function()
+			return UserInputService.GamepadConnected
+		end)
+		mDemographics:SetState("Platform/Gyroscope", function()
+			return UserInputService.GyroscopeEnabled
+		end)
+		mDemographics:SetState("Platform/Keyboard", function()
+			return UserInputService.KeyboardEnabled
+		end)
+		mDemographics:SetState("Platform/Mouse", function()
+			return UserInputService.MouseEnabled
+		end)
+		mDemographics:SetState("Platform/TouchEnabled", function()
+			return UserInputService.TouchEnabled
+		end)
+		mDemographics:SetState("Platform/VCEnabled", function()
+			return VoiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId)
+		end)
+		mDemographics:SetState("Platform/ScreenSize", function()
+			return game.Workspace.CurrentCamera.ViewportSize.Magnitude
+		end)
 		mDemographics:SetState("Platform/ScreenRatio", function()
 			local size = game.Workspace.CurrentCamera.ViewportSize
 			local x = size.X
 			local y = size.Y
-			local ratio = y/x
-			if ratio == 16/10 then
+			local ratio = y / x
+			if ratio == 16 / 10 then
 				return "16:10"
-			elseif ratio == 16/9 then
+			elseif ratio == 16 / 9 then
 				return "16:9"
-			elseif ratio == 5/4 then
+			elseif ratio == 5 / 4 then
 				return "5:4"
-			elseif ratio == 5/3 then
+			elseif ratio == 5 / 3 then
 				return "5:3"
-			elseif ratio == 3/2 then
+			elseif ratio == 3 / 2 then
 				return "3:2"
-			elseif ratio == 4/3 then
+			elseif ratio == 4 / 3 then
 				return "4:3"
-			elseif ratio == 9/16 then
+			elseif ratio == 9 / 16 then
 				return "9:16"
 			end
-			return (math.round(100/ratio)/100)..":1"
+			return (math.round(100 / ratio) / 100) .. ":1"
 		end)
 	end)
 
@@ -437,28 +516,43 @@ function Templates.demographics(player: Player): Midas?
 end
 
 function Templates.policy(player: Player): Midas?
-	if not Config.Templates.Policy then return end
+	if not Config.Templates.Policy then
+		return
+	end
 	local mPolicy = Midas.new(player, "Policy")
+	log("created policy midas", player, mPolicy._Path)
 	task.spawn(function()
+		log("getting policy info", player, mPolicy._Path)
 		local policyInfo = PolicyService:GetPolicyInfoForPlayerAsync(player)
-		mPolicy:SetState("Lootboxes", function() return policyInfo.ArePaidRandomItemsRestricted end)
-		mPolicy:SetState("AllowedLinks", function() return policyInfo.AllowedExternalLinkReferences end)
-		mPolicy:SetState("Trading", function() return policyInfo.IsPaidItemTradingAllowed end)
-		mPolicy:SetState("China", function() return policyInfo.IsSubjectToChinaPolicies end)
+		log("got policy info", player, mPolicy._Path)
+		mPolicy:SetState("Lootboxes", function()
+			return policyInfo.ArePaidRandomItemsRestricted
+		end)
+		mPolicy:SetState("AllowedLinks", function()
+			return policyInfo.AllowedExternalLinkReferences
+		end)
+		mPolicy:SetState("Trading", function()
+			return policyInfo.IsPaidItemTradingAllowed
+		end)
+		mPolicy:SetState("China", function()
+			return policyInfo.IsSubjectToChinaPolicies
+		end)
 	end)
 	return mPolicy
 end
 
 function Templates.clientPerformance(player: Player): Midas?
-	if not Config.Templates.ClientPerformance then return end
+	if not Config.Templates.ClientPerformance then
+		return
+	end
 	local mClientPerformance = Midas.new(player, "Performance/Client")
 	mClientPerformance:SetRoundingPrecision(0)
 
 	task.spawn(function()
 		mClientPerformance:SetState("Ping", function()
-			return math.clamp(player:GetNetworkPing(), 0, 10^6)
+			return math.clamp(player:GetNetworkPing(), 0, 10 ^ 6)
 		end)
-	
+
 		local frames = 0
 		local duration = 0
 		mClientPerformance._Maid:GiveTask(RunService.RenderStepped:Connect(function(delta)
@@ -470,9 +564,9 @@ function Templates.clientPerformance(player: Player): Midas?
 			end)
 		end))
 		mClientPerformance:SetState("FPS", function()
-			return frames/duration
+			return frames / duration
 		end)
-	
+
 		mClientPerformance._Maid:GiveTask(game.GraphicsQualityChangeRequest:Connect(function(increase)
 			if increase then
 				mClientPerformance:Fire("Graphics/Increase")
@@ -486,7 +580,9 @@ function Templates.clientPerformance(player: Player): Midas?
 end
 
 function Templates.settings(player: Player): Midas?
-	if not Config.Templates.Settings then return end
+	if not Config.Templates.Settings then
+		return
+	end
 	local gameSettings = UserSettings():GetService("UserGameSettings")
 
 	local mSettings = Midas.new(player, "Settings")
@@ -517,9 +613,8 @@ function Templates.settings(player: Player): Midas?
 			return gameSettings.VignetteEnabled
 		end)
 	end)
-	
+
 	return mSettings
 end
 
 return Templates
-
