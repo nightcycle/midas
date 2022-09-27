@@ -1,17 +1,21 @@
-from asyncore import write
-from email import header
-from sqlite3 import Date
+from xmlrpc.client import DateTime
 import numpy
 import pandas
 import fastparquet
 import os
 import json
 import copy
+import toml
+import datetime
 
+CONFIG = toml.load("./format.toml")
+RECURSIVE_FILL_DOWN_ENABLED = CONFIG["recursive_fill_down_enabled"]
 INPUT_PATH = "./dashboard/input"
-INPUT_EVENTS_PATH = INPUT_PATH + "/events"
+INPUT_EVENTS_PATH = INPUT_PATH + "/event"
 OUTPUT_PATH = "./dashboard/output"
-OUTPUT_EVENTS_PATH = OUTPUT_PATH + "/events"
+OUTPUT_EVENTS_PATH = OUTPUT_PATH + "/event"
+OUTPUT_KPI_PATH = OUTPUT_PATH + "/kpi"
+SECONDS_IN_DAY = 24 * 60 * 60
 
 eventExports = os.listdir(INPUT_EVENTS_PATH)
 
@@ -47,19 +51,19 @@ def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
 class Event: 
 
 	def __init__(self, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, version: str, data: dict[str, any]):
-		self.SESSION_ID = sessionId
-		self.USER_ID = userId
-		self.PLACE_ID = placeId
-		self.INDEX = index
-		self.EVENT_ID = eventId
-		self.TIMESTAMP = timestamp
-		self.VERSION = version
-		self.DATA = data
-		self.IS_SEQUENTIAL = False
+		self.SessionId = sessionId
+		self.UserId = userId
+		self.PlaceId = placeId
+		self.Index = index
+		self.EventId = eventId
+		self.Timestamp = timestamp
+		self.Version = version
+		self.Data = data
+		self.IsSequential = False
 	
 	def __lt__(self, other):
-		t1 = self.INDEX
-		t2 = other.INDEX
+		t1 = self.Index
+		t2 = other.Index
 		return t1 < t2
 
 sessionEventLists: dict[str, list[Event]] = {}
@@ -86,8 +90,8 @@ for index in eventSource.index.values:
 			version = getCell("VERSION", index),
 			data = getRowData(index) or {},
 		)
-		if not event.EVENT_ID in eventRegistry:
-			eventRegistry[event.EVENT_ID] = event
+		if not event.EventId in eventRegistry:
+			eventRegistry[event.EventId] = event
 			sessionEventList.append(event)
 
 		# Update registry
@@ -117,18 +121,21 @@ def fillDownEventData(previous: Event, current: Event):
 
 		return curData
 
-	for key in current.DATA:
-		val = current.DATA[key]
-		if type(val) == dict and key in previous.DATA:
-			current.DATA[key] = fillDown(current.DATA[key], previous.DATA[key])
+	for key in previous.Data:
+		val = previous.Data[key]
+		if not key in current.Data:
+			current.Data[key] = {}
+
+		if type(val) == dict:
+			current.Data[key] = fillDown(current.Data[key], previous.Data[key])
 
 def totalFillDownEventData(sessionEventList: list[Event], current: Event, targetIndex: int):
 	for previous in sessionEventList:
-		if previous.INDEX == targetIndex:
+		if previous.Index == targetIndex:
 			fillDownEventData(previous, current)
-			if targetIndex > 0:
-				totalFillDownEventData(sessionEventList, current, targetIndex-1)
-				return
+			break
+	if targetIndex > 1:
+		totalFillDownEventData(sessionEventList, current, targetIndex-1)
 
 
 # Sort session events by timestamp
@@ -137,14 +144,17 @@ for sessionId in sessionEventLists:
 	print("Formatting session: "+str(sessionId))
 	sessionEventList.sort()
 	for previous, current in zip(sessionEventList, sessionEventList[1:]):
-		if current.INDEX == 1:
-			current.IS_SEQUENTIAL = True
+		if current.Index == 1:
+			current.IsSequential = True
 
-		if previous != None and previous.INDEX == current.INDEX - 1:
-			current.IS_SEQUENTIAL = True
-			assert(previous.INDEX == current.INDEX - 1)
-			fillDownEventData(previous, current)
-			# totalFillDownEventData(sessionEventList, current, current.INDEX - 1)
+		if previous != None and previous.Index == current.Index - 1:
+			current.IsSequential = True
+			assert(previous.Index == current.Index - 1)
+
+			if RECURSIVE_FILL_DOWN_ENABLED == False:
+				fillDownEventData(previous, current)
+			else:
+				totalFillDownEventData(sessionEventList, current, current.Index - 1)
 
 
 def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
@@ -162,27 +172,24 @@ def createTable(category: str):
 		sessionEventList = sessionEventLists[sessionId]
 		for event in sessionEventList:
 			rowFinal = {
-				"SESSION_ID": event.SESSION_ID,
-				"USER_ID": event.USER_ID,
-				"PLACE_ID": event.PLACE_ID,
-				"EVENT_ID": event.EVENT_ID,
-				"TIMESTAMP": event.TIMESTAMP,
-				"VERSION": event.VERSION,
-				"INDEX": event.INDEX,
-				"IS_SEQUENTIAL": event.IS_SEQUENTIAL
+				"SESSION_ID": event.SessionId,
+				"USER_ID": event.UserId,
+				"PLACE_ID": event.PlaceId,
+				"EVENT_ID": event.EventId,
+				"TIMESTAMP": event.Timestamp,
+				"VERSION": event.Version,
+				"INDEX": event.Index,
+				"IS_SEQUENTIAL": event.IsSequential
 			}
 
-			if category in event.DATA and event.DATA[category] != None:
-				flattenTable(event.DATA[category], "", rowFinal)
+			if category in event.Data and event.Data[category] != None:
+				flattenTable(event.Data[category], "", rowFinal)
 
 			dataList.append(rowFinal)
 
 	tableDataFrame = pandas.DataFrame(dataList)
 	tablePath = OUTPUT_EVENTS_PATH+"/"+category.lower()
-
-	tableDataFrame.to_csv(tablePath+".csv")
-	tableCSV = pandas.read_csv(tablePath+".csv")
-	tableCSV.to_parquet(tablePath+".parquet", engine="fastparquet")
+	tableDataFrame.to_parquet(tablePath+".parquet", engine="fastparquet")
 
 #Assemble state categories from data
 dataCategoriesStorage = {}
@@ -203,6 +210,7 @@ for k in dataCategoriesStorage:
 for category in dataCategories:
 	createTable(category)
 
+# Calculate survival rate
 missingEventCount = 0
 foundEventCount = 0
 for sessionId in sessionEventLists:
@@ -210,21 +218,196 @@ for sessionId in sessionEventLists:
 	sessionEventList = sessionEventLists[sessionId]
 	for event in sessionEventList:
 		foundEventCount += 1
-		if event.IS_SEQUENTIAL == False:
+		if event.IsSequential == False:
 			highestPriorEvent = None
 			for previous in sessionEventList:
-				if highestPriorEvent == None and previous.INDEX < event.INDEX:
+				if highestPriorEvent == None and previous.Index < event.Index:
 					highestPriorEvent = previous
-				elif highestPriorEvent != None and highestPriorEvent.INDEX < previous.INDEX and previous.INDEX < event.INDEX:
+				elif highestPriorEvent != None and highestPriorEvent.Index < previous.Index and previous.Index < event.Index:
 					highestPriorEvent = previous
 
 			if highestPriorEvent != None:
-				missingEventCount += event.INDEX - highestPriorEvent.INDEX - 1
+				missingEventCount += event.Index - highestPriorEvent.Index - 1
 totalEventCount = missingEventCount + foundEventCount
 		
 eventSuccessRate = foundEventCount / totalEventCount
 
 print("Event Survival Rate: "+str(round(eventSuccessRate*1000)/10)+"%")
+
+def getSecondsBetweenDateTimes(finish: DateTime, start: DateTime):
+	difference = finish - start
+	datetime.timedelta(0, 8, 562000)
+	mins, seconds = divmod(difference.days * SECONDS_IN_DAY + difference.seconds, 60)
+	return mins * 60 + seconds
+# define session and user classes
+
+class Session: 
+
+	def __init__(self, events: list[Event]):
+		firstEvent = events[0]
+		lastEvent = events[len(events)-1]
+
+		self.SessionId = firstEvent.SessionId
+		self.UserId = firstEvent.UserId
+		self.Events = events
+		self.Timestamp = firstEvent.Timestamp
+		self.Version = firstEvent.Version
+
+		# Get duration
+		self.StartDateTime = datetime.datetime.strptime(firstEvent.Timestamp, '%Y-%m-%dT%H:%M:%S.0000000Z')
+		self.FinishDateTime = datetime.datetime.strptime(lastEvent.Timestamp, '%Y-%m-%dT%H:%M:%S.0000000Z')
+		self.Duration = getSecondsBetweenDateTimes(self.FinishDateTime, self.StartDateTime)
+		self.Revenue = 0
+		for event in events:
+			if "Spending" in event.Data:
+				spendingData = event.Data["Spending"]
+				if "Spending" in spendingData:
+					self.Revenue = max(self.Revenue, spendingData["Spending"])
+
+		self.Index = -1
+	
+	def __lt__(self, other):
+		t1 = self.StartDateTime
+		t2 = other.StartDateTime
+		return t1 < t2
+
+
+class User:
+
+	def __init__(self, sessions: list[Session]):
+		sessions.sort()
+
+		firstSession = sessions[0]
+
+		self.UserId = firstSession.UserId
+		self.Sessions = sessions
+		self.Timestamp = firstSession.Timestamp
+		self.StartDateTime = firstSession.StartDateTime
+
+		lastSession = sessions[len(sessions)-1]
+		self.LastDateTime = lastSession.FinishDateTime
+		
+		self.Revenue = 0
+		self.Duration = 0
+	
+		index = 0
+		for session in sessions:
+			index += 1
+			session.Index = index
+			self.Revenue += session.Revenue
+			self.Duration += session.Duration
+
+		def getSessionsCountBetween(start: DateTime, finish: DateTime):
+			sessionsBetween = []
+
+			for session in sessions:
+				if session.StartDateTime >= start and session.StartDateTime <= finish:
+					sessionsBetween.append(session)
+
+			return sessionsBetween
+
+		def getRetentionStatus(day: int):
+			start = self.StartDateTime + datetime.timedelta(days=day)
+			finish = start + datetime.timedelta(days=1)
+			return len(getSessionsCountBetween(start, finish)) > 0
+
+		self.Retained = [
+			getRetentionStatus(0),
+			getRetentionStatus(1),
+			getRetentionStatus(2),	
+			getRetentionStatus(3),	
+			getRetentionStatus(4),	
+			getRetentionStatus(5),
+			getRetentionStatus(6),
+			getRetentionStatus(7),
+		]
+
+		self.Index = -1
+
+	def __lt__(self, other):
+		t1 = self.StartDateTime
+		t2 = other.StartDateTime
+		return t1 < t2
+
+print("Constructing session objects")
+sessions: list[Session] = []
+for sessionId in sessionEventLists:
+	sessions.append(Session(sessionEventLists[sessionId]))
+
+userSessionLists: dict[str, list[Session]] = {}
+for session in sessions:
+	userId = session.UserId
+	if not userId in userSessionLists:
+		userSessionLists[userId] = []
+
+	userSessionList = userSessionLists[userId]
+	userSessionList.append(session)
+
+print("Constructing user objects")
+users: list[User] = []
+for userId in userSessionLists:
+	users.append(User(userSessionLists[userId]))
+
+users.sort()
+
+userIndex = 0
+for user in users:
+	userIndex += 1
+	user.Index = userIndex
+
+# create user and session tables
+print("Constructing session table")
+
+sessionDataList = []
+for session in sessions:
+
+	rowFinal = {
+		"SESSION_ID": session.SessionId,
+		"USER_ID": session.UserId,
+		"TIMESTAMP": session.Timestamp,
+		"VERSION": session.Version,
+		"INDEX": session.Index,
+		"EVENT_COUNT": len(session.Events),
+		"REVENUE": session.Revenue,
+		"DURATION": session.Duration,
+	}
+
+	sessionDataList.append(rowFinal)
+
+sessionTableDataFrame = pandas.DataFrame(sessionDataList)
+sessionTableDataFrame.to_parquet(OUTPUT_KPI_PATH+"/sessions.parquet", engine="fastparquet")
+
+print("Constructing user table")
+
+userDataList = []
+for user in users:
+
+	rowFinal = {
+		"USER_ID": user.UserId,
+		"TIMESTAMP": user.Timestamp,
+		"INDEX": user.Index,
+		"SESSION_COUNT": len(user.Sessions),
+		"REVENUE": user.Revenue,
+		"DURATION": user.Duration,
+		"D0_RETAINED": user.Retained[0],
+		"D1_RETAINED": user.Retained[1],
+		"D2_RETAINED": user.Retained[2],
+		"D3_RETAINED": user.Retained[3],
+		"D4_RETAINED": user.Retained[4],
+		"D5_RETAINED": user.Retained[5],
+		"D6_RETAINED": user.Retained[6],
+		"D7_RETAINED": user.Retained[7],		
+	}
+
+	userDataList.append(rowFinal)
+
+userTableDataFrame = pandas.DataFrame(userDataList)
+userTableDataFrame.to_parquet(OUTPUT_KPI_PATH+"/users.parquet", engine="fastparquet")
+
+# experience table
+
+#
+
 
 print("Done")
 # eventSource.to_parquet(OUTPUT_EVENTS_PATH+'/main.parquet', engine='fastparquet')
