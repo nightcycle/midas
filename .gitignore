@@ -7,3 +7,6 @@ out
 build
 demo
 export.toml
+*.parquet
+*.csv
+*.csv
