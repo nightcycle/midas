@@ -1,1 +1,9 @@
-recursive_fill_down_enabled = true
+[fill_down]
+enabled = false
+recursive = true
+
+[input]
+path = "./dashboard/input"
+
+[output]
+path = "./dashboard/output"

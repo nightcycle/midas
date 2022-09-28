@@ -9,12 +9,20 @@ import toml
 import datetime
 
 CONFIG = toml.load("./format.toml")
-RECURSIVE_FILL_DOWN_ENABLED = CONFIG["recursive_fill_down_enabled"]
-INPUT_PATH = "./dashboard/input"
+
+FILL_DOWN_CONFIG = CONFIG["fill_down"]
+RECURSIVE_FILL_DOWN_ENABLED = FILL_DOWN_CONFIG["recursive"]
+FILL_DOWN_ENABLED = FILL_DOWN_CONFIG["enabled"]
+
+INPUT_CONFIG = CONFIG["input"]
+INPUT_PATH = INPUT_CONFIG["path"]
 INPUT_EVENTS_PATH = INPUT_PATH + "/event"
-OUTPUT_PATH = "./dashboard/output"
+
+OUTPUT_CONFIG = CONFIG["output"]
+OUTPUT_PATH = OUTPUT_CONFIG["path"]
 OUTPUT_EVENTS_PATH = OUTPUT_PATH + "/event"
 OUTPUT_KPI_PATH = OUTPUT_PATH + "/kpi"
+
 SECONDS_IN_DAY = 24 * 60 * 60
 
 eventExports = os.listdir(INPUT_EVENTS_PATH)
@@ -50,13 +58,14 @@ def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
 
 class Event: 
 
-	def __init__(self, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, version: str, data: dict[str, any]):
+	def __init__(self, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, versionText: str, version: dict[str, int | str], data: dict[str, any]):
 		self.SessionId = sessionId
 		self.UserId = userId
 		self.PlaceId = placeId
 		self.Index = index
 		self.EventId = eventId
 		self.Timestamp = timestamp
+		self.VersionText = versionText
 		self.Version = version
 		self.Data = data
 		self.IsSequential = False
@@ -80,22 +89,24 @@ for index in eventSource.index.values:
 		sessionEventList = sessionEventLists[sessionId]
 
 		# Package up an event
-		event = Event(
-			sessionId = sessionId,
-			userId = getRowCategoryDataValue(index, "Id", "User"),
-			placeId = getRowCategoryDataValue(index, "Id", "Place"),
-			index = getRowCategoryDataValue(index, "Index", "Total"),
-			eventId = getCell("EVENT_ID", index),
-			timestamp = getCell("TIMESTAMP", index),
-			version = getCell("VERSION", index),
-			data = getRowData(index) or {},
-		)
-		if not event.EventId in eventRegistry:
-			eventRegistry[event.EventId] = event
-			sessionEventList.append(event)
+		if type(getRowCategoryDataValue(index, "Index", "Total")) == int:
+			event = Event(
+				sessionId = sessionId,
+				userId = getRowCategoryDataValue(index, "Id", "User"),
+				placeId = getRowCategoryDataValue(index, "Id", "Place"),
+				index = getRowCategoryDataValue(index, "Index", "Total"),
+				eventId = getCell("EVENT_ID", index),
+				timestamp = getCell("TIMESTAMP", index),
+				versionText = getCell("VERSION_TEXT", index),
+				version = json.loads(getCell("VERSION", index)),
+				data = getRowData(index) or {},
+			)
+			if not event.EventId in eventRegistry:
+				eventRegistry[event.EventId] = event
+				sessionEventList.append(event)
 
-		# Update registry
-		sessionEventLists[sessionId] = sessionEventList
+			# Update registry
+			sessionEventLists[sessionId] = sessionEventList
 
 # fill down event data when previous index is available
 def fillDownEventData(previous: Event, current: Event): 
@@ -155,10 +166,11 @@ for sessionId in sessionEventLists:
 			current.IsSequential = True
 			assert(previous.Index == current.Index - 1)
 
-			if RECURSIVE_FILL_DOWN_ENABLED == False:
-				fillDownEventData(previous, current)
-			else:
-				totalFillDownEventData(sessionEventList, current, current.Index - 1, 0)
+			if FILL_DOWN_ENABLED == True:
+				if RECURSIVE_FILL_DOWN_ENABLED == False:
+					fillDownEventData(previous, current)
+				else:
+					totalFillDownEventData(sessionEventList, current, current.Index - 1, 0)
 
 
 def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
@@ -181,16 +193,30 @@ def createTable(category: str):
 	for sessionId in sessionEventLists:
 		sessionEventList = sessionEventLists[sessionId]
 		for event in sessionEventList:
+
 			rowFinal = {
 				"SESSION_ID": event.SessionId,
 				"USER_ID": event.UserId,
 				"PLACE_ID": event.PlaceId,
 				"EVENT_ID": event.EventId,
 				"TIMESTAMP": event.Timestamp,
-				"VERSION": event.Version,
+				"VERSION.TEXT": event.VersionText,
+				"VERSION.MAJOR": event.Version["Major"],
+				"VERSION.MINOR": event.Version["Minor"],
+				"VERSION.PATCH": event.Version["Patch"],
+				"VERSION.BUILD": event.Version["Build"],
 				"INDEX": event.Index,
 				"IS_SEQUENTIAL": event.IsSequential
 			}
+
+			if "Hotfix" in event.Version:
+				rowFinal["VERSION.HOTFIX"] = event.Version["Hotfix"]
+
+			if "Tag" in event.Version:
+				rowFinal["VERSION.TAG"] = event.Version["Tag"]
+
+			if "TestGroup" in event.Version:
+				rowFinal["VERSION.TEST_GROUP"] = event.Version["TestGroup"]
 
 			if category in event.Data and event.Data[category] != None:
 				flattenTable(event.Data[category], "", rowFinal)
@@ -206,10 +232,12 @@ for datastring in eventSource["DATA"]:
 	data = json.loads(datastring)
 
 	for k in data:
-		if k != "Id":
+		if k != "Id" and k != "Version":
 			v = data[k]
 			if type(v) == dict:
 				dataCategoriesStorage[k] = True
+
+print(dataCategoriesStorage)
 
 dataCategories = []
 for k in dataCategoriesStorage:
@@ -249,6 +277,8 @@ def getSecondsBetweenDateTimes(finish: DateTime, start: DateTime):
 	return mins * 60 + seconds
 # define session and user classes
 
+def timestampToDateTime(timestamp: str):
+	return datetime.datetime.strptime(timestamp[0:23], '%Y-%m-%dT%H:%M:%S.%f')
 class Session: 
 
 	def __init__(self, events: list[Event]):
@@ -262,8 +292,8 @@ class Session:
 		self.Version = firstEvent.Version
 
 		# Get duration
-		self.StartDateTime = datetime.datetime.strptime(firstEvent.Timestamp, '%Y-%m-%dT%H:%M:%S.0000000Z')
-		self.FinishDateTime = datetime.datetime.strptime(lastEvent.Timestamp, '%Y-%m-%dT%H:%M:%S.0000000Z')
+		self.StartDateTime = timestampToDateTime(firstEvent.Timestamp)
+		self.FinishDateTime = timestampToDateTime(lastEvent.Timestamp)
 		self.Duration = getSecondsBetweenDateTimes(self.FinishDateTime, self.StartDateTime)
 		self.Revenue = 0
 		for event in events:
@@ -340,7 +370,12 @@ class User:
 print("Constructing session objects")
 sessions: list[Session] = []
 for sessionId in sessionEventLists:
-	sessions.append(Session(sessionEventLists[sessionId]))
+	print("SiD" + sessionId)
+	sessionList = sessionEventLists[sessionId]
+
+	if len(sessionList) > 0:
+		session = Session(sessionList)
+		sessions.append(session)
 
 userSessionLists: dict[str, list[Session]] = {}
 for session in sessions:

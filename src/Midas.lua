@@ -244,8 +244,10 @@ function Midas:_GetUTC(offset: number?): string
 	offset = offset or 0
 	assert(offset ~= nil)
 	local unixTime = (DateTime.now().UnixTimestampMillis / 1000) + offset
+
 	local dateTime: DateTime = DateTime.fromUnixTimestamp(unixTime)
 	local utc: any = dateTime:ToUniversalTime()
+
 	return utc.Year
 		.. "-"
 		.. utc.Month
@@ -258,7 +260,7 @@ function Midas:_GetUTC(offset: number?): string
 		.. ":"
 		.. utc.Second
 		.. "."
-		.. utc.Millisecond
+		.. math.round((unixTime - math.floor(unixTime))*1000)--utc.Millisecond
 end
 
 --- Determines if a midas object meets all the bound conditions.

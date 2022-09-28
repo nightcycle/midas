@@ -138,7 +138,17 @@ function Profile:_Format(
 		Event = eventIndex,
 	}
 
+	delta.Version = {
+		Major = Config.Version.Major,
+		Minor = Config.Version.Minor,
+		Patch = Config.Version.Patch,
+		Tag = Config.Version.Tag,
+		TestGroup = Config.Version.TestGroup,
+		Build = game.PlaceVersion
+	}
+
 	delta.Duration = math.round(1000 * (duration or 0)) / 1000
+	delta.IsStudio = RunService:IsStudio()
 	local path = midas.Path
 
 	local eventFullPath = path .. "/" .. eventName

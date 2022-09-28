@@ -113,13 +113,25 @@ function PlayFab:Fire(
 				["X-SecretKey"] = DEV_SECRET_KEY,
 			}
 
+			local versionText = "v"..Config.Version.Major.."."..Config.Version.Minor.."."..Config.Version.Patch
+			if Config.Version.Hotfix then
+				versionText ..= "."..Config.Version.Hotfix
+			end
+			if Config.Version.Tag then
+				versionText ..= "-"..Config.Version.Tag
+			end
+			if Config.Version.TestGroup then
+				versionText ..= "-"..Config.Version.TestGroup
+			end
+			versionText ..= "+"..game.PlaceVersion
+
 			local body = {
 				EventName = string.gsub(eventName, "/", ""),
 				PlayFabId = pId,
 				CustomTags = tags,
 				Timestamp = timeStamp,
 				Body = {
-					Version = Config.Version,
+					Version = versionText,
 					State = data or {},
 				},
 			}

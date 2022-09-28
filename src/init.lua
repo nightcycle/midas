@@ -68,6 +68,9 @@ function Interface:Configure(deltaConfig: ConfigurationData): nil
 	local function writeDelta(target: { [string]: any }, change: { [string]: any })
 		for k, v in pairs(change) do
 			if typeof(v) == "table" then
+				if target[k] == nil then
+					target[k] = {}
+				end
 				writeDelta(target[k], v)
 			else
 				target[k] = v
@@ -140,6 +143,7 @@ function initPlayer(player: Player)
 		assert(profile ~= nil)
 		Templates.join(player, profile._WasTeleported)
 		Templates.chat(player)
+		Templates.groups(player)
 		Templates.population(player)
 		Templates.serverPerformance(player, function()
 			return profile.TimeDifference

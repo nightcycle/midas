@@ -4,7 +4,11 @@ local _Packages = _Package.Parent
 local Types = require(_Package.Types)
 
 local Config: Types.ConfigurationData = {
-	Version = "0.0.0",
+	Version = {
+		Major = 0,
+		Minor = 0,
+		Patch = 0,
+	},
 	SendDeltaState = false, --Send just the changes of state, not the entirety
 	SendDataToPlayFab = true,
 	PrintEventsInStudio = true,
@@ -24,6 +28,11 @@ local Config: Types.ConfigurationData = {
 		Settings = true,
 		ServerIssues = true,
 		ClientIssues = true,
+		Group = {
+			RobloxEmployee = 1200769,
+			RobloxIntern = 2868472,
+			DevForum = 3514227,
+		},
 	},
 }
 

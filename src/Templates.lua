@@ -114,6 +114,12 @@ function Templates.character(character: Model): Midas?
 			return primaryPart.AssemblyMass
 		end)
 
+		mCharacter:SetState("State", function()
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			assert(humanoid ~= nil)
+			return humanoid:GetState().Name
+		end)
+
 		mCharacter:SetState("WalkSpeed", function()
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
@@ -512,6 +518,29 @@ function Templates.clientIssues(player: Player): Midas?
 	return mIssues :: any
 end
 
+function Templates.groups(player: Player): Midas?
+	if not Config.Templates.Group then
+		return
+	end
+
+	local mGroups = Midas._new(player, "Groups")
+	mGroups:SetRoundingPrecision(0)
+
+	task.spawn(function()
+		local groupConfig = Config.Templates.Group
+		assert(groupConfig ~= nil)
+		for groupName, groupId in pairs(groupConfig) do
+			local isInGroup = player:IsInGroup(groupId)
+			local role = if isInGroup then player:GetRoleInGroup(groupId) else "none"
+			mGroups:SetState(string.gsub(groupName, "%s", "_"), function()
+				return role
+			end)
+		end
+	end)
+
+	return mGroups :: any
+end
+
 function Templates.demographics(player: Player): Midas?
 	if not Config.Templates.Demographics then
 		return
@@ -519,7 +548,7 @@ function Templates.demographics(player: Player): Midas?
 	assert(RunService:IsClient(), "Bad domain")
 	local localizationService = game:GetService("LocalizationService")
 
-	local mDemographics = Midas._new(player, "Audience/Demographics")
+	local mDemographics = Midas._new(player, "Demographics")
 	mDemographics:SetRoundingPrecision(0)
 
 	task.spawn(function()

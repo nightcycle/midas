@@ -25,7 +25,8 @@ events
 | project-keep EventData
 | extend DATA = EventData["State"]
 | extend TIMESTAMP = EventData["Timestamp"]
-| extend VERSION = EventData["Version"]
+| extend VERSION = EventData["State"]["Version"]
+| extend VERSION_TEXT = EventData["Version"]
 | extend EVENT_ID = EventData["EventId"]
 | project-away EventData
 ;

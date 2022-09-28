@@ -87,7 +87,6 @@ export type PrivateMidas = {
 	) -> nil,
 }
 
-
 export type Profile = {
 	_Maid: _Maid.Maid,
 	Player: Player,
@@ -153,11 +152,18 @@ export type Profile = {
 	_Export: (self: Profile) -> TeleportDataEntry,
 }
 
---- @type ConfigurationData {Version: string,SendDeltaState: boolean,PrintLog: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,ServerIssues:boolean, ClientIssues:boolean},}
+--- @type ConfigurationData {Version: {Major: number,Minor: number,Patch: number,Hotfix: number?,Tag: string?,TestGroup: string?,},SendDeltaState: boolean,PrintLog: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,ServerIssues:boolean, ClientIssues:boolean, Group: {[string]: number}},}
 --- @within Interface
 
 export type ConfigurationData = {
-	Version: string,
+	Version: {
+		Major: number,
+		Minor: number,
+		Patch: number,
+		Hotfix: number?,
+		Tag: string?,
+		TestGroup: string?,
+	},
 	SendDeltaState: boolean?,
 	SendDataToPlayFab: boolean?,
 	PrintEventsInStudio: boolean?,
@@ -176,6 +182,7 @@ export type ConfigurationData = {
 		Settings: boolean?,
 		ServerIssues: boolean?,
 		ClientIssues: boolean?,
+		Group: {[string]: number}?,
 	},
 }
 
