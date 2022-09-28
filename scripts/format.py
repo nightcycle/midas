@@ -1,5 +1,4 @@
 from xmlrpc.client import DateTime
-import numpy
 import pandas
 import fastparquet
 import os
