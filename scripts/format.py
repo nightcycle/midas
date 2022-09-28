@@ -1,4 +1,5 @@
 from xmlrpc.client import DateTime
+from more_itertools import first
 import pandas
 import fastparquet
 import os
@@ -57,12 +58,13 @@ def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
 
 class Event: 
 
-	def __init__(self, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, versionText: str, version: dict[str, int | str], data: dict[str, any]):
+	def __init__(self, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, versionText: str, isStudio: bool, version: dict[str, int | str], data: dict[str, any]):
 		self.SessionId = sessionId
 		self.UserId = userId
 		self.PlaceId = placeId
 		self.Index = index
 		self.EventId = eventId
+		self.IsStudio = isStudio
 		self.Timestamp = timestamp
 		self.VersionText = versionText
 		self.Version = version
@@ -94,6 +96,7 @@ for index in eventSource.index.values:
 				userId = getRowCategoryDataValue(index, "Id", "User"),
 				placeId = getRowCategoryDataValue(index, "Id", "Place"),
 				index = getRowCategoryDataValue(index, "Index", "Total"),
+				isStudio = getRowCategoryData(index, "IsStudio"),
 				eventId = getCell("EVENT_ID", index),
 				timestamp = getCell("TIMESTAMP", index),
 				versionText = getCell("VERSION_TEXT", index),
@@ -204,6 +207,7 @@ def createTable(category: str):
 				"VERSION.MINOR": event.Version["Minor"],
 				"VERSION.PATCH": event.Version["Patch"],
 				"VERSION.BUILD": event.Version["Build"],
+				"IS_STUDIO": event.IsStudio,
 				"INDEX": event.Index,
 				"IS_SEQUENTIAL": event.IsSequential
 			}
@@ -231,7 +235,7 @@ for datastring in eventSource["DATA"]:
 	data = json.loads(datastring)
 
 	for k in data:
-		if k != "Id" and k != "Version":
+		if k != "Id" and k != "Version" and k != "IsStudio":
 			v = data[k]
 			if type(v) == dict:
 				dataCategoriesStorage[k] = True
@@ -289,6 +293,8 @@ class Session:
 		self.Events = events
 		self.Timestamp = firstEvent.Timestamp
 		self.Version = firstEvent.Version
+		self.VersionText = firstEvent.VersionText
+		self.IsStudio = firstEvent.IsStudio
 
 		# Get duration
 		self.StartDateTime = timestampToDateTime(firstEvent.Timestamp)
