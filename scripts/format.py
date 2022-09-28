@@ -129,13 +129,17 @@ def fillDownEventData(previous: Event, current: Event):
 		if type(val) == dict:
 			current.Data[key] = fillDown(current.Data[key], previous.Data[key])
 
-def totalFillDownEventData(sessionEventList: list[Event], current: Event, targetIndex: int):
+def totalFillDownEventData(sessionEventList: list[Event], current: Event, targetIndex: int, depth: int):
+	depth += 1
+	if depth > 100:
+		return
+
 	for previous in sessionEventList:
 		if previous.Index == targetIndex:
 			fillDownEventData(previous, current)
 			break
 	if targetIndex > 1:
-		totalFillDownEventData(sessionEventList, current, targetIndex-1)
+		totalFillDownEventData(sessionEventList, current, targetIndex-1, depth)
 
 
 # Sort session events by timestamp
@@ -154,7 +158,7 @@ for sessionId in sessionEventLists:
 			if RECURSIVE_FILL_DOWN_ENABLED == False:
 				fillDownEventData(previous, current)
 			else:
-				totalFillDownEventData(sessionEventList, current, current.Index - 1)
+				totalFillDownEventData(sessionEventList, current, current.Index - 1, 0)
 
 
 def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
@@ -164,6 +168,12 @@ def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
 			flattenTable(val, columnPrefix+key+".", row)
 		else:
 			row[(columnPrefix+key).upper()] = val
+
+def exportToParquet(path: str, dataList: list[dict[any]]):
+	tableDataFrame = pandas.DataFrame(dataList)
+	tableDataFrame.to_csv(path+".csv")
+	tableCSV = pandas.read_csv(path+".csv")
+	tableCSV.to_parquet(path+".parquet", engine="fastparquet")
 
 def createTable(category: str):
 	print("Constructing "+category)
@@ -187,9 +197,7 @@ def createTable(category: str):
 
 			dataList.append(rowFinal)
 
-	tableDataFrame = pandas.DataFrame(dataList)
-	tablePath = OUTPUT_EVENTS_PATH+"/"+category.lower()
-	tableDataFrame.to_parquet(tablePath+".parquet", engine="fastparquet")
+	exportToParquet(OUTPUT_EVENTS_PATH+"/"+category.lower(), dataList)
 
 #Assemble state categories from data
 dataCategoriesStorage = {}
@@ -306,20 +314,20 @@ class User:
 
 			return sessionsBetween
 
-		def getRetentionStatus(day: int):
+		def getRetentionStatus(day: int, threshold: int):
 			start = self.StartDateTime + datetime.timedelta(days=day)
 			finish = start + datetime.timedelta(days=1)
-			return len(getSessionsCountBetween(start, finish)) > 0
+			return len(getSessionsCountBetween(start, finish)) > threshold
 
 		self.Retained = [
-			getRetentionStatus(0),
-			getRetentionStatus(1),
-			getRetentionStatus(2),	
-			getRetentionStatus(3),	
-			getRetentionStatus(4),	
-			getRetentionStatus(5),
-			getRetentionStatus(6),
-			getRetentionStatus(7),
+			getRetentionStatus(0, 1),
+			getRetentionStatus(1, 0),
+			getRetentionStatus(2, 0),	
+			getRetentionStatus(3, 0),	
+			getRetentionStatus(4, 0),	
+			getRetentionStatus(5, 0),
+			getRetentionStatus(6, 0),
+			getRetentionStatus(7, 0),
 		]
 
 		self.Index = -1
@@ -374,8 +382,7 @@ for session in sessions:
 
 	sessionDataList.append(rowFinal)
 
-sessionTableDataFrame = pandas.DataFrame(sessionDataList)
-sessionTableDataFrame.to_parquet(OUTPUT_KPI_PATH+"/sessions.parquet", engine="fastparquet")
+exportToParquet(OUTPUT_KPI_PATH+"/sessions", sessionDataList)
 
 print("Constructing user table")
 
@@ -401,8 +408,7 @@ for user in users:
 
 	userDataList.append(rowFinal)
 
-userTableDataFrame = pandas.DataFrame(userDataList)
-userTableDataFrame.to_parquet(OUTPUT_KPI_PATH+"/users.parquet", engine="fastparquet")
+exportToParquet(OUTPUT_KPI_PATH+"/users", userDataList)
 
 # experience table
 
