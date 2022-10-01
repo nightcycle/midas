@@ -11,7 +11,7 @@ The online service PlayFab will allow you [100,000 users worth of data-storage f
 ## I don't want to use PlayFab
 Alright, all you technicall need is a CSV of data that meets this format:
 ```csv
-"DATA","TIMESTAMP","VERSION","VERSION_TEXT","EVENT_ID"
+"DATA","TIMESTAMP","VERSION","VERSION_TEXT","EVENT_ID", "EVENT",
 ```
 The header order doesn't matter. Here's what needs to be under each column
 - DATA: This should be an encoded JSON table provided in the body of the API post request at "State"
@@ -19,6 +19,7 @@ The header order doesn't matter. Here's what needs to be under each column
 - VERSION: An encoded JSON table provided within the DATA JSON table.
 - VERSION_TEXT: A readable version string provided at key "Version" in the API post request.
 - EVENT_ID: A 32 character string that is unique for each event.
+- EVENT: The name of the event fired.
 
 So long as whatever your method in results in a CSV file that fits the above conditions, you do not need to use PlayFab to use this Framework. If there is enough demand for a separate workflow that does this for you (for example, with GameAnalytics), I am not against adding it, I'm just unmotivated at this time.
 
