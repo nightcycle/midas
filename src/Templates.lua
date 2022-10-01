@@ -59,15 +59,17 @@ function Templates.chat(player: Player): Midas?
 	local mChat = Midas._new(player, "Chat")
 	log("loaded", player, mChat.Path)
 
-	local lastMessage: string?
 
 	task.spawn(function()
+		
+		local lastMessage: string?
+
 		mChat:SetState("LastMessage", function()
 			return lastMessage
 		end)
 
 		mChat._Maid:GiveTask(player.Chatted:Connect(function(msg)
-			lastMessage = string.sub(msg, 140)
+			lastMessage = string.sub(msg, 1, 140)
 			mChat:Fire("Spoke")
 		end))
 	end)
@@ -282,6 +284,9 @@ function Templates.serverPerformance(
 			else
 				return eventsPerMinute
 			end
+		end)
+		mServerPerformance:SetState("Ping", function()
+			return math.clamp(player:GetNetworkPing(), 0, 10 ^ 6)
 		end)
 		mServerPerformance:SetState("ServerTime", function()
 			return math.round(time())
