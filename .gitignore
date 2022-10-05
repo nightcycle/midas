@@ -9,4 +9,3 @@ demo
 export.toml
 *.parquet
 *.csv
-*.csv

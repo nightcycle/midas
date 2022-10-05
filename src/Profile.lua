@@ -185,6 +185,11 @@ function Profile:FireSeries(
 		end
 	end
 
+	deltaStates.Id = deltaStates.Id or {}
+	deltaStates.Id.Place = tostring(game.PlaceId)
+	deltaStates.Id.Session = tostring(self._SessionId)
+	deltaStates.Id.User = tostring(self.Player.UserId)
+
 	local eventFullPath
 	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, nil, timestamp, index)
 
