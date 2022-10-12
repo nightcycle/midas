@@ -34,16 +34,16 @@ let DATA_RANGE_END = datetime_add("hour", 1, DATA_RANGE_START);
         | extend DATA = EventData["State"]
         | where isnotempty(DATA)
         | extend ID_DATA = DATA["Id"]
-        | extend VERSION = tostring(DATA["Version"])
-        | where isnotempty(VERSION)
         | where isnotempty(ID_DATA)
         | extend USER_ID = tostring(ID_DATA["User"])
         | where isnotempty(USER_ID)
-        | extend SESSION_ID = tostring(ID_DATA["Session"])
-        | where isnotempty(SESSION_ID)
-        | extend EVENT = FullName_Name
-        | extend VERSION_TEXT = EventData["Version"]
-        | extend EVENT_ID = tostring(EventData["EventId"])
-        | project-keep TIMESTAMP, EVENT_ID, VERSION_TEXT, VERSION, DATA, EVENT, USER_ID
-    ) on USER_ID | where isnotempty(EVENT_ID)
-    | project-away USER_ID, USER_ID1
+    ) on USER_ID
+    | extend EVENT_ID = tostring(EventData["EventId"])
+    | where isnotempty(EVENT_ID)
+    | extend VERSION = tostring(DATA["Version"])
+    | where isnotempty(VERSION)
+    | extend SESSION_ID = tostring(ID_DATA["Session"])
+    | where isnotempty(SESSION_ID)
+    | extend EVENT = FullName_Name
+    | extend VERSION_TEXT = EventData["Version"]
+    | project-keep TIMESTAMP, EVENT_ID, VERSION_TEXT, VERSION, DATA, EVENT
