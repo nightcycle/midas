@@ -1,51 +1,49 @@
 // run in data explorer
 // configuration
+let TEST_START = datetime(2022-10-6 06:00:00.000000);
 // Used to create an initial player registry and reduce data-duplication
-let PERIOD_START = datetime(2022-10-6 06:00:00.000000);
-let PERIOD_END = datetime_add("day", 3, PERIOD_START);
+let USER_PERIOD_START = datetime_add("hour", 0, TEST_START);
+let USER_PERIOD_END = datetime_add("hour", 1, USER_PERIOD_START);
 // UTC time range limits, can be modified with precision if you need to break up a 
-let DATA_RANGE_START = datetime_add("hour", 0, PERIOD_START);
-let DATA_RANGE_END = datetime_add("hour", 4, DATA_RANGE_START);
-// get list of initial player entity ids
-let players = ['events.all']
-	| where FullName_Namespace != "com.playfab"
-	| where Entity_Type == "player"
-	| extend TIMESTAMP = todatetime(EventData["Timestamp"])
-	| where TIMESTAMP >= PERIOD_START
-	| where TIMESTAMP < PERIOD_END
-	| extend DATA = EventData["State"]
-	| where isnotempty(DATA)
-	| extend ID_DATA = DATA["Id"]
-	| where isnotempty(ID_DATA)
-	| extend USER_ID = tostring(ID_DATA["User"])
-	| summarize min(TIMESTAMP) by USER_ID
-	| project-rename TIMESTAMP = min_TIMESTAMP
-	| project-keep USER_ID, TIMESTAMP
-;
-// clean-up results in table for exporting
+let DATA_RANGE_START = datetime_add("hour", 0, USER_PERIOD_START);
+let DATA_RANGE_END = datetime_add("hour", 1, DATA_RANGE_START);
+// final query
 ['events.all']
-	| where FullName_Namespace != "com.playfab"
-	| where Entity_Type == "player"
-	| extend TIMESTAMP = todatetime(EventData["Timestamp"])
-	| where DATA_RANGE_START < TIMESTAMP
-	| where DATA_RANGE_END >= TIMESTAMP
-	| extend DATA = EventData["State"]
-	| where isnotempty(DATA)
-	| extend ID_DATA = DATA["Id"]
-	| extend VERSION = tostring(DATA["Version"])
-	| where isnotempty(VERSION)
-	| where isnotempty(ID_DATA)
-	| extend USER_ID = tostring(ID_DATA["User"])
-	| where isnotempty(USER_ID)
-	| extend SESSION_ID = tostring(ID_DATA["Session"])
-	| where isnotempty(SESSION_ID)
-	| extend EVENT = FullName_Name
-	| extend VERSION_TEXT = EventData["Version"]
-	| extend EVENT_ID = EventData["EventId"]
-	| project-keep TIMESTAMP, EVENT_ID, VERSION_TEXT, VERSION, DATA, USER_ID, SESSION_ID, EVENT
-	| join kind = leftouter players on USER_ID
-	| project-away USER_ID1, SESSION_ID, TIMESTAMP1
-	// | summarize EVENT_COUNT = count() by USER_ID
-	// | summarize sum(EVENT_COUNT)
-	| project-away USER_ID
-;
+| where FullName_Namespace != "com.playfab"
+| where Entity_Type == "player"
+| extend TIMESTAMP = todatetime(EventData["Timestamp"])
+| where TIMESTAMP >= USER_PERIOD_START
+| where TIMESTAMP < USER_PERIOD_END
+| where TIMESTAMP >= DATA_RANGE_START
+| where TIMESTAMP < DATA_RANGE_END
+| extend DATA = EventData["State"]
+| where isnotempty(DATA)
+| extend ID_DATA = DATA["Id"]
+| where isnotempty(ID_DATA)
+| extend USER_ID = tostring(ID_DATA["User"])
+| summarize min(TIMESTAMP) by USER_ID
+| project-rename TIMESTAMP = min_TIMESTAMP
+| project-keep USER_ID, TIMESTAMP
+| join kind=rightouter(
+    ['events.all']
+        | where FullName_Namespace != "com.playfab"
+        | where Entity_Type == "player"
+        | extend TIMESTAMP = todatetime(EventData["Timestamp"])
+        | where DATA_RANGE_START < TIMESTAMP
+        | where DATA_RANGE_END >= TIMESTAMP
+        | extend DATA = EventData["State"]
+        | where isnotempty(DATA)
+        | extend ID_DATA = DATA["Id"]
+        | extend VERSION = tostring(DATA["Version"])
+        | where isnotempty(VERSION)
+        | where isnotempty(ID_DATA)
+        | extend USER_ID = tostring(ID_DATA["User"])
+        | where isnotempty(USER_ID)
+        | extend SESSION_ID = tostring(ID_DATA["Session"])
+        | where isnotempty(SESSION_ID)
+        | extend EVENT = FullName_Name
+        | extend VERSION_TEXT = EventData["Version"]
+        | extend EVENT_ID = tostring(EventData["EventId"])
+        | project-keep TIMESTAMP, EVENT_ID, VERSION_TEXT, VERSION, DATA, EVENT, USER_ID
+    ) on USER_ID | where isnotempty(EVENT_ID)
+    | project-away USER_ID, USER_ID1
