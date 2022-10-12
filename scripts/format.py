@@ -240,7 +240,7 @@ def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
 def exportToParquet(path: str, dataList: list[dict[any]]):
 	tableDataFrame = pandas.DataFrame(dataList)
 	tableDataFrame.to_csv(path+".csv")
-	tableCSV = pandas.read_csv(path+".csv")
+	tableCSV = pandas.read_csv(path+".csv", low_memory=False)
 	tableCSV.to_parquet(path+".parquet", engine="fastparquet")
 
 def getRowFromEvent(event: Event, data: dict[str, any] | None):
