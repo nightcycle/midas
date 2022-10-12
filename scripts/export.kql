@@ -1,28 +1,26 @@
-// Used to specify where users should be found from
-let TEST_PERIOD_START = datetime(2022-10-6 06:00:00.000000);
+// run in data explorer
+// Used to create a list of relevant sessions
+let TEST_PERIOD_START = datetime(2022-10-6 11:00:00.000000);
 let TEST_PERIOD_END = datetime_add("day", 3, TEST_PERIOD_START);
 // Used to reduce the entire dataset into downloadable chunks
-let USER_START_INDEX = 0;
-let USER_FINISH_INDEX = USER_START_INDEX + 100;
+let USER_START_INDEX = 150*0    +   100*0   +     50*0;
+let USER_FINISH_INDEX = USER_START_INDEX + 150;
 // get a list of join events
 let joinEvents = materialize(
-	['events.all']
-	| where Timestamp >= TEST_PERIOD_START
-	| where Timestamp <= TEST_PERIOD_END
-	| where FullName_Name == "player_logged_in"
-	| extend USER_ID = tostring(EventData["PlatformUserId"])
-	| extend Entity_Id = tostring(EventData["EntityId"])
+    ['events.all']
+    | where Timestamp >= TEST_PERIOD_START
+    | where Timestamp <= TEST_PERIOD_END
+    | where FullName_Name == "player_logged_in"
+    | extend USER_ID = tostring(EventData["PlatformUserId"])
+    | extend Entity_Id = tostring(EventData["EntityId"])
 );
-// assemble a list of users
-let userFocusList = materialize(joinEvents
-	| summarize JOIN_TIMESTAMP = min(Timestamp) by USER_ID
-	| sort by JOIN_TIMESTAMP
-	| serialize USER_INDEX = row_number()
-	| where USER_INDEX > USER_START_INDEX
-	| where USER_INDEX <= USER_FINISH_INDEX
-);
-// assemble list of events
-userFocusList
+// assemble list of sessions
+joinEvents
+| summarize JOIN_TIMESTAMP = min(Timestamp) by USER_ID
+| sort by JOIN_TIMESTAMP
+| serialize USER_INDEX = row_number()
+| where USER_INDEX > USER_START_INDEX
+| where USER_INDEX <= USER_FINISH_INDEX
 | join kind=rightsemi joinEvents on USER_ID
 | join kind=rightsemi (
 	['events.all']
