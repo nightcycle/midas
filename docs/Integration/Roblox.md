@@ -16,7 +16,13 @@ In order to best support your workflow you can configure many different aspects 
 	local MidasAnalytics = require(WallyPackages.Midas)
 
 	MidasAnalytics:Configure({
-		Version = "0.1.0",
+		Version = {
+			Major = 1,
+			Minor = 0,
+			Patch = 0,
+			Hotfix = 2,
+			Tag = "Alpha",
+		},
 		SendDeltaState = false,
 		Templates = {
 			Join = true,

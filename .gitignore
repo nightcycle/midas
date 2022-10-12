@@ -9,3 +9,5 @@ demo
 export.toml
 *.parquet
 *.csv
+/dashboard/input
+/dashboard/output
