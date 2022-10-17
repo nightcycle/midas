@@ -93,6 +93,7 @@ export type Profile = {
 	Instance: Instance,
 	EventsPerMinute: number,
 	TimeDifference: number,
+	_IsLoaded: boolean,
 	_IsAlive: boolean,
 	_ConstructionTick: number,
 	_IsTeleporting: boolean,

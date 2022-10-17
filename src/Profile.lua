@@ -111,14 +111,18 @@ function Profile:_Fire(eventFullPath: string, delta: { [string]: any }, tags: { 
 
 	self.TimeDifference = tick() - self._ConstructionTick
 
-	while self._IsAlive and self._PlayerId == nil do
-		task.wait(0.1)
-	end
+	task.spawn(function()
+		local startTick = tick()
+		while self._IsLoaded == false and tick() - startTick > 60 do
+			task.wait(0.1)
+		end
+		assert(self._IsLoaded, "Profile still isn't loaded for "..tostring(eventFullPath))
+		local pId = self._PlayerId
+		assert(pId ~= nil)
+	
+		PlayFab:Fire(pId, eventFullPath, delta, tags, timestamp)
+	end)
 
-	local pId = self._PlayerId
-	assert(pId ~= nil)
-
-	PlayFab:Fire(pId, eventFullPath, delta, tags, timestamp)
 	return nil
 end
 
@@ -331,18 +335,7 @@ function Profile.new(player: Player): Profile
 
 	local prev = {}
 	local wasTeleported = false
-	local sId: string, pId: string
-	if teleportData == nil or teleportData.MidasAnalyticsData == nil then
-		prev = {}
-		local userId = player.UserId
-		sId, pId = PlayFab:Register(userId)
-	else
-		wasTeleported = true
-		local midasData = teleportData.MidasAnalyticsData
-		prev = midasData._PreviousStates
-		sId = midasData._SessionId
-		pId = midasData._PlayerId
-	end
+
 
 	local self = setmetatable({
 		_Maid = _Maid.new(),
@@ -353,13 +346,30 @@ function Profile.new(player: Player): Profile
 		TimeDifference = 0,
 		_ConstructionTick = tick(),
 		_IsTeleporting = false,
+		_IsLoaded = false,
 		_WasTeleported = wasTeleported,
 		_Index = 0,
 		_Midaii = {},
 		_PreviousStates = prev,
-		_SessionId = sId,
-		_PlayerId = pId,
+		_SessionId = nil :: string?,
+		_PlayerId = nil :: string?,
 	}, Profile)
+
+	local function load()
+		if teleportData == nil or teleportData.MidasAnalyticsData == nil then
+			prev = {}
+			local userId = player.UserId
+			self._SessionId, self._PlayerId = PlayFab:Register(userId)
+		else
+			wasTeleported = true
+			local midasData = teleportData.MidasAnalyticsData
+			prev = midasData._PreviousStates
+			self._SessionId = midasData._SessionId
+			self._PlayerId = midasData._PlayerId
+		end
+		self._IsLoaded = true
+	end
+	task.spawn(load)
 
 	local preExistingProfile: Profile? = REGISTRY[self.Player.UserId]
 	if preExistingProfile then
