@@ -245,7 +245,7 @@ function Templates.population(player: Player): Midas?
 			assert(pPrim ~= nil)
 			for i, plr in ipairs(game.Players:GetChildren()) do
 				if plr ~= player then
-					local char = plr.Char
+					local char = plr.Character
 					if char then
 						local prim = char.PrimaryPart
 						if prim then
