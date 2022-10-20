@@ -113,7 +113,7 @@ function Profile:_Fire(eventFullPath: string, delta: { [string]: any }, tags: { 
 
 	task.spawn(function()
 		local startTick = tick()
-		while self._IsLoaded == false and tick() - startTick > 60 do
+		while self._IsLoaded == false and tick() - startTick < 60 do
 			task.wait(0.1)
 		end
 		assert(self._IsLoaded, "Profile still isn't loaded for "..tostring(eventFullPath))
