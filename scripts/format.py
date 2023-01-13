@@ -344,15 +344,16 @@ def getSecondsBetweenDateTimes(finish: DateTime, start: DateTime):
 	datetime.timedelta(0, 8, 562000)
 	mins, seconds = divmod(difference.days * SECONDS_IN_DAY + difference.seconds, 60)
 	return mins * 60 + seconds
+	
 # define session and user classes
-
 def timestampToDateTime(timestamp: str):
 	# print(timestamp)
 	timestamp = timestamp.replace('Z', '')
 	if "." in timestamp:
 		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
 	else:
-		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')
+		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')\
+
 class Session: 
 
 	def __init__(self, events: list[Event]):
