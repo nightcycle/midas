@@ -9,16 +9,16 @@ local Players = game:GetService("Players")
 local LogService = game:GetService("LogService")
 
 -- Packages
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
-local _Network = require(_Packages.Network)
+local Package = script.Parent
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
+local _Network = require(Packages.Network)
 
 -- Modules
-local Config = require(_Package.Config)
-local Midas = require(_Package.Midas)
-local Types = require(_Package.Types)
+local Config = require(Package.Config)
+local Midas = require(Package.Midas)
+local Types = require(Package.Types)
 
 type Midas = Types.PrivateMidas
 
@@ -59,9 +59,7 @@ function Templates.chat(player: Player): Midas?
 	local mChat = Midas._new(player, "Chat")
 	log("loaded", player, mChat.Path)
 
-
 	task.spawn(function()
-		
 		local lastMessage: string?
 
 		mChat:SetState("LastMessage", function()
@@ -87,7 +85,6 @@ function Templates.character(character: Model): Midas?
 
 	local maid = _Maid.new()
 
-
 	local mCharacter = Midas._new(player, "Character")
 	mCharacter:SetRoundingPrecision(1)
 
@@ -95,7 +92,6 @@ function Templates.character(character: Model): Midas?
 		log("character destroying", player, mCharacter.Path)
 		maid:Destroy()
 	end))
-
 
 	local isDead = false
 	task.spawn(function()
@@ -106,7 +102,6 @@ function Templates.character(character: Model): Midas?
 			local humanoid = character:FindFirstChildOfClass("Humanoid")
 			assert(humanoid ~= nil)
 			local humDesc = humanoid:GetAppliedDescription()
-			assert(humDesc ~= nil)
 			return humDesc.HeightScale
 		end)
 
@@ -472,7 +467,7 @@ function Templates.serverIssues(player: Player): Midas?
 
 	mIssues._Maid:GiveTask(LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
 		if string.find(message, player.Name) then
-			if (messageType == Enum.MessageType.MessageError) then
+			if messageType == Enum.MessageType.MessageError then
 				message = string.gsub(message, player.Name, "{PLAYER}")
 				for i, plr in ipairs(game.Players:GetChildren()) do
 					if plr:IsA("Player") then
@@ -488,7 +483,6 @@ function Templates.serverIssues(player: Player): Midas?
 
 	return mIssues :: any
 end
-
 
 function Templates.clientIssues(player: Player): Midas?
 	if not Config.Templates.ClientIssues then
@@ -506,7 +500,7 @@ function Templates.clientIssues(player: Player): Midas?
 
 	mIssues._Maid:GiveTask(LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
 		-- if string.find(message, player.Name) then
-		if (messageType == Enum.MessageType.MessageError) then
+		if messageType == Enum.MessageType.MessageError then
 			message = string.gsub(message, player.Name, "{PLAYER}")
 			for i, plr in ipairs(game.Players:GetChildren()) do
 				if plr:IsA("Player") then

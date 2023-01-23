@@ -2,17 +2,17 @@
 local RunService = game:GetService("RunService")
 
 -- Packages
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
-local _Math = require(_Packages.Math)
-local Network = require(_Packages.Network)
+local Package = script.Parent
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
+local _Math = require(Packages.Math)
+local Network = require(Packages.Network)
 
 -- Modules
-local Config = require(_Package.Config)
-local Profile = require(_Package.Profile)
-local Types = require(_Package.Types)
+local Config = require(Package.Config)
+local Profile = require(Package.Profile)
+local Types = require(Package.Types)
 
 type State = Types.State
 type Profile = Types.Profile
@@ -212,7 +212,6 @@ function Midas:_Compile(): { [string]: any }? --server only
 	end
 
 	if output then
-		
 		local finalOutput: { [string]: any } = {}
 		for k, v in pairs(output) do
 			if typeof(v) == "Vector3" then
@@ -260,7 +259,7 @@ function Midas:_GetUTC(offset: number?): string
 		.. ":"
 		.. utc.Second
 		.. "."
-		.. math.round((unixTime - math.floor(unixTime))*1000)--utc.Millisecond
+		.. math.round((unixTime - math.floor(unixTime)) * 1000) --utc.Millisecond
 end
 
 --- Determines if a midas object meets all the bound conditions.
@@ -274,7 +273,13 @@ function Midas:CanFire(): boolean
 	return allTrue
 end
 
-function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?): nil
+function Midas:_FireSeries(
+	eventName: string,
+	data: { [string]: any }?,
+	utc: string,
+	waitDuration: number,
+	includeEndEvent: boolean?
+): nil
 	log("_fire series", self.Player, eventName)
 	assert(RunService:IsServer(), "Bad domain")
 	waitDuration = waitDuration or 15
@@ -283,8 +288,15 @@ function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number,
 	local t = tick()
 	if self._LastFireTick[eventName] == nil then
 		assert(self._Profile ~= nil)
-		self._SeriesSignal[eventName] =
-			self._Profile:FireSeries(self, eventName, utc, self._Index[eventName], self._Profile:IncrementIndex(), includeEndEvent)
+		self._SeriesSignal[eventName] = self._Profile:FireSeries(
+			self,
+			eventName,
+			data,
+			utc,
+			self._Index[eventName],
+			self._Profile:IncrementIndex(),
+			includeEndEvent
+		)
 	end
 	self._FirstFireTick[eventName] = self._FirstFireTick[eventName] or t
 	self._LastFireTick[eventName] = t
@@ -310,33 +322,44 @@ function Midas:_FireSeries(eventName: string, utc: string, waitDuration: number,
 	return nil
 end
 
-function Midas:_FireEvent(eventName: string, utc: string): nil
+function Midas:_FireEvent(eventName: string, data: { [string]: any }?, utc: string): nil
 	log("_fire event", self.Player, eventName)
 	assert(RunService:IsServer(), "Bad domain")
 	self._Index[eventName] = self._Index[eventName] or 0
 	self._Index[eventName] += 1
 	assert(self._Profile ~= nil)
-	self._Profile:Fire(self, eventName, utc, self._Index[eventName], self._Profile:IncrementIndex())
+	self._Profile:Fire(self, eventName, data, utc, self._Index[eventName], self._Profile:IncrementIndex())
 	return nil
 end
 
-function Midas:_Fire(eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?): nil
+function Midas:_Fire(
+	eventName: string,
+	data: { [string]: any }?,
+	utc: string,
+	seriesDuration: number?,
+	includeEndEvent: boolean?
+): nil
 	log("_fire", self.Player, eventName)
 	if RunService:IsServer() then
 		if seriesDuration ~= nil then
-			self:_FireSeries(eventName, utc, seriesDuration, includeEndEvent)
+			self:_FireSeries(eventName, data, utc, seriesDuration, includeEndEvent)
 		else
-			self:_FireEvent(eventName, utc)
+			self:_FireEvent(eventName, data, utc)
 		end
 	else
 		assert(self._OnClientFire ~= nil)
-		self._OnClientFire:FireServer(eventName, utc, seriesDuration)
+		self._OnClientFire:FireServer(eventName, data, utc, seriesDuration)
 	end
 	return nil
 end
 
 --- Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.
-function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent: boolean?): nil
+function Midas:Fire(
+	eventName: string,
+	data: { [string]: any }?,
+	seriesDuration: number?,
+	includeEndEvent: boolean?
+): nil
 	log("fire", self.Player, eventName)
 	task.spawn(function()
 		local utc = self:_GetUTC()
@@ -347,7 +370,7 @@ function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent:
 		if self._Loaded == false then
 			task.wait(1)
 			log("trying to fire again", self.Player, eventName)
-			self:Fire(eventName, seriesDuration, includeEndEvent)
+			self:Fire(eventName, data, seriesDuration, includeEndEvent)
 		else
 			if eventName == nil then
 				eventName = "Event"
@@ -356,7 +379,7 @@ function Midas:Fire(eventName: string, seriesDuration: number?, includeEndEvent:
 				log("can't fire, returning", self.Player, eventName)
 				return
 			end
-			self:_Fire(eventName, utc, seriesDuration, includeEndEvent)
+			self:_Fire(eventName, data, utc, seriesDuration, includeEndEvent)
 		end
 	end)
 	return nil
@@ -438,13 +461,13 @@ function Midas:_Load(player: Player, path: string, profile: Profile?, maid: _Mai
 		assert(self._OnClientFire ~= nil)
 		maid:GiveTask(
 			self._OnClientFire.OnServerEvent:Connect(
-				function(eventPlayer: Player, eventName: string, utc: string, reps: number)
+				function(eventPlayer: Player, eventName: string, data: { [string]: any }?, utc: string, reps: number)
 					if eventPlayer == player then
 						log("client fired", player, path)
 						if not rawget(self, "_Loaded") then
 							onLoad:Wait()
 						end
-						Midas._Fire(self :: any, eventName, utc, reps)
+						Midas._Fire(self :: any, eventName, data, utc, reps)
 					end
 				end
 			)

@@ -11,3 +11,4 @@ export.toml
 *.csv
 /dashboard/input
 /dashboard/output
+auth.toml

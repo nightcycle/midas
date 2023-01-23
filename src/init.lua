@@ -3,19 +3,19 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 -- Packages
-local _Package = script
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
-local Network = require(_Packages.Network)
+local Package = script
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
+local Network = require(Packages.Network)
 
 -- Modules
-local Config = require(_Package.Config)
-local PlayFab = require(_Package.PlayFab)
-local Midas = require(_Package.Midas)
-local Profile = require(_Package.Profile)
-local Templates = require(_Package.Templates)
-local Types = require(_Package.Types)
+local Config = require(Package.Config)
+local PlayFab = require(Package.PlayFab)
+local Midas = require(Package.Midas)
+local Profile = require(Package.Profile)
+local Templates = require(Package.Templates)
+local Types = require(Package.Types)
 
 -- Remote Events
 local GetInitialConfig = Network.getRemoteFunction("GetInitialMidasConfig")
@@ -25,8 +25,8 @@ export type Midas = Types.PublicMidas
 export type PrivateMidas = Types.PrivateMidas
 export type TeleportDataEntry = Types.TeleportDataEntry
 type Profile = Types.Profile
-type ConfigurationData = Types.ConfigurationData
-type Interface = {
+export type ConfigurationData = Types.ConfigurationData
+export type Interface = {
 	__index: Interface,
 	GetMidas: (self: Interface, player: Player, path: string) -> Midas,
 	_Connect: (self: Interface, player: Player) -> nil,

@@ -2,16 +2,16 @@
 local RunService = game:GetService("RunService")
 
 -- Packages
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
-local Network = require(_Packages.Network)
+local Package = script.Parent
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
+local Network = require(Packages.Network)
 
 -- Modules
-local Config = require(_Package.Config)
-local PlayFab = require(_Package.PlayFab)
-local Types = require(_Package.Types)
+local Config = require(Package.Config)
+local PlayFab = require(Package.PlayFab)
+local Types = require(Package.Types)
 
 type State = Types.State
 type Midas = Types.PrivateMidas
@@ -116,10 +116,10 @@ function Profile:_Fire(eventFullPath: string, delta: { [string]: any }, tags: { 
 		while self._IsLoaded == false and tick() - startTick < 60 do
 			task.wait(0.1)
 		end
-		assert(self._IsLoaded, "Profile still isn't loaded for "..tostring(eventFullPath))
+		assert(self._IsLoaded, "Profile still isn't loaded for " .. tostring(eventFullPath))
 		local pId = self._PlayerId
 		assert(pId ~= nil)
-	
+
 		PlayFab:Fire(pId, eventFullPath, delta, tags, timestamp)
 	end)
 
@@ -129,6 +129,7 @@ end
 function Profile:_Format(
 	midas: Midas,
 	eventName: string,
+	data: { [string]: any }?,
 	delta: { [string]: any },
 	eventIndex: number?,
 	duration: number?,
@@ -148,8 +149,9 @@ function Profile:_Format(
 		Patch = Config.Version.Patch,
 		Tag = Config.Version.Tag,
 		TestGroup = Config.Version.TestGroup,
-		Build = game.PlaceVersion
+		Build = game.PlaceVersion,
 	}
+
 
 	delta.Duration = math.round(1000 * (duration or 0)) / 1000
 	delta.IsStudio = RunService:IsStudio()
@@ -160,6 +162,24 @@ function Profile:_Format(
 	if eventName == "Empty" then
 		eventFullPath = path
 	end
+
+	if data then
+		local currentAccessPoint: {[string]: any} = delta
+		local keys = string.split(eventFullPath, "/")
+		for i, k in ipairs(keys) do
+			if i < #keys then
+				if not currentAccessPoint[k] then
+					currentAccessPoint[k] = {}
+				elseif typeof(currentAccessPoint[k]) ~= "table" then
+					currentAccessPoint["_"..k] = currentAccessPoint[k]
+					currentAccessPoint[k] = {}
+				end
+				currentAccessPoint = currentAccessPoint[k]
+			end
+		end
+		currentAccessPoint[keys[#keys]] = data
+	end
+
 	return delta, "User/" .. eventFullPath
 end
 
@@ -171,6 +191,7 @@ end
 function Profile:FireSeries(
 	midas: Midas,
 	eventName: string,
+	data: { [string]: any }?,
 	timestamp: string,
 	eventIndex: number,
 	index: number,
@@ -195,7 +216,7 @@ function Profile:FireSeries(
 	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, nil, timestamp, index)
+	deltaStates, eventFullPath = self:_Format(midas, eventName, data, deltaStates, eventIndex, nil, timestamp, index)
 
 	local maid = _Maid.new()
 	self._Maid:GiveTask(maid)
@@ -211,7 +232,7 @@ function Profile:FireSeries(
 		deltaStates.Duration = math.round(1000 * duration) / 1000
 		if includeEndEvent and midas._IsAlive == true then
 			self:_Fire(eventFullPath .. "Start", deltaStates, midas._Tags, timestamp)
-			self:Fire(midas, eventName .. "Finish", midas:_GetUTC(), eventIndex, duration)
+			self:Fire(midas, eventName .. "Finish", data, midas:_GetUTC(), eventIndex, duration)
 		else
 			self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
 		end
@@ -223,7 +244,15 @@ function Profile:FireSeries(
 end
 
 --shoot it out to server
-function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventIndex: number, index: number, duration: number?): nil
+function Profile:Fire(
+	midas: Midas,
+	eventName: string,
+	data: { [string]: any }?,
+	timestamp: string,
+	eventIndex: number,
+	index: number,
+	duration: number?
+): nil
 	log("fire", midas._Player, eventName)
 	local deltaStates = {}
 
@@ -244,7 +273,8 @@ function Profile:Fire(midas: Midas, eventName: string, timestamp: string, eventI
 	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
-	deltaStates, eventFullPath = self:_Format(midas, eventName, deltaStates, eventIndex, duration, timestamp, index)
+	deltaStates, eventFullPath =
+		self:_Format(midas, eventName, data, deltaStates, eventIndex, duration, timestamp, index)
 
 	self:_Fire(eventFullPath, deltaStates, midas._Tags, timestamp)
 	return nil
@@ -253,7 +283,9 @@ end
 function Profile:HasPath(midas: Midas, path: string): boolean
 	local mPath = midas.Path
 	local pLen = string.len(path)
-	return string.find(mPath, path) and path == string.sub(mPath, 1, pLen)
+	local f1 = string.find(mPath, path) ~= nil
+	local f2 = path == string.sub(mPath, 1, pLen)
+	return f1 and f2
 end
 
 function Profile:DestroyPath(path: string): nil
@@ -335,7 +367,6 @@ function Profile.new(player: Player): Profile
 
 	local prev = {}
 	local wasTeleported = false
-
 
 	local self = setmetatable({
 		_Maid = _Maid.new(),

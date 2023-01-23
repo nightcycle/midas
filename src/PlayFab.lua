@@ -3,13 +3,13 @@ local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 
 -- Packages
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
+local Package = script.Parent
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
 
 -- Modules
-local Config = require(_Package.Config)
+local Config = require(Package.Config)
 
 -- Constants
 local TITLE_ID: string?
@@ -113,17 +113,22 @@ function PlayFab:Fire(
 				["X-SecretKey"] = DEV_SECRET_KEY,
 			}
 
-			local versionText = "v"..Config.Version.Major.."."..Config.Version.Minor.."."..Config.Version.Patch
+			local versionText = "v"
+				.. Config.Version.Major
+				.. "."
+				.. Config.Version.Minor
+				.. "."
+				.. Config.Version.Patch
 			if Config.Version.Hotfix then
-				versionText ..= "."..Config.Version.Hotfix
+				versionText ..= "." .. Config.Version.Hotfix
 			end
 			if Config.Version.Tag then
-				versionText ..= "-"..Config.Version.Tag
+				versionText ..= "-" .. Config.Version.Tag
 			end
 			if Config.Version.TestGroup then
-				versionText ..= "-"..Config.Version.TestGroup
+				versionText ..= "-" .. Config.Version.TestGroup
 			end
-			versionText ..= "+"..game.PlaceVersion
+			versionText ..= "+" .. game.PlaceVersion
 
 			local body = {
 				EventName = string.gsub(eventName, "/", ""),

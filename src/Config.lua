@@ -1,7 +1,6 @@
 --!strict
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local Types = require(_Package.Types)
+local Package = script.Parent
+local Types = require(Package.Types)
 
 local Config: Types.ConfigurationData = {
 	Version = {

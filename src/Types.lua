@@ -1,8 +1,8 @@
 -- Packages
-local _Package = script.Parent
-local _Packages = _Package.Parent
-local _Maid = require(_Packages.Maid)
-local _Signal = require(_Packages.Signal)
+local Package = script.Parent
+local Packages = Package.Parent
+local _Maid = require(Packages.Maid)
+local _Signal = require(Packages.Signal)
 
 export type State = () -> any?
 
@@ -17,7 +17,13 @@ export type PublicMidas = {
 	GetPath: (self: PublicMidas) -> string,
 	SetRoundingPrecision: (self: PublicMidas, exp: number?) -> nil,
 	CanFire: (self: PublicMidas) -> boolean,
-	Fire: (self: PublicMidas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	Fire: (
+		self: PublicMidas,
+		data: { [string]: any }?,
+		eventName: string,
+		seriesDuration: number?,
+		includeEndEvent: boolean?
+	) -> nil,
 	SetChance: (self: PublicMidas, val: number) -> nil,
 	GetBoundStateCount: (self: PublicMidas) -> number,
 }
@@ -27,7 +33,7 @@ export type PrivateMidas = {
 	_OnLoad: _Signal.Signal,
 	_OnDestroy: _Signal.Signal,
 	_OnEvent: _Signal.Signal,
-	
+
 	SetState: (self: PrivateMidas, name: string, state: State) -> nil,
 	Destroy: (self: PrivateMidas) -> nil,
 	SetTag: (self: PrivateMidas, tag: string) -> nil,
@@ -38,12 +44,18 @@ export type PrivateMidas = {
 	_HandleCompile: (self: PrivateMidas) -> { [string]: any }?,
 	_GetUTC: (self: PrivateMidas, offset: number?) -> string,
 	CanFire: (self: PrivateMidas) -> boolean,
-	Fire: (self: PrivateMidas, eventName: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	Fire: (
+		self: PrivateMidas,
+		eventName: string,
+		data: { [string]: any }?,
+		seriesDuration: number?,
+		includeEndEvent: boolean?
+	) -> nil,
 	SetChance: (self: PrivateMidas, val: number) -> nil,
 	GetBoundStateCount: (self: PrivateMidas) -> number,
 
 	Instance: Folder?,
-	
+
 	_Maid: _Maid.Maid,
 
 	_Profile: Profile?,
@@ -51,7 +63,7 @@ export type PrivateMidas = {
 	_Player: Player,
 	Player: Player,
 	_PlayerName: string,
-	
+
 	_OnClientFire: RemoteEvent?,
 	_ClientRegister: RemoteEvent?,
 	_GetRenderOutput: RemoteFunction?,
@@ -74,9 +86,23 @@ export type PrivateMidas = {
 	__newindex: (self: PrivateMidas, index: any, value: State) -> nil,
 
 	_new: (player: Player, path: string) -> PrivateMidas,
-	_FireSeries: (self: PrivateMidas, eventName: string, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
-	_FireEvent: (self: PrivateMidas, eventName: string, utc: string) -> nil,
-	_Fire: (self: PrivateMidas, eventName: string, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	_FireSeries: (
+		self: PrivateMidas,
+		eventName: string,
+		data: { [string]: any }?,
+		utc: string,
+		waitDuration: number,
+		includeEndEvent: boolean?
+	) -> nil,
+	_FireEvent: (self: PrivateMidas, eventName: string, data: { [string]: any }?, utc: string) -> nil,
+	_Fire: (
+		self: PrivateMidas,
+		eventName: string,
+		data: { [string]: any }?,
+		utc: string,
+		seriesDuration: number?,
+		includeEndEvent: boolean?
+	) -> nil,
 	_Load: (
 		self: PrivateMidas,
 		player: Player,
@@ -110,6 +136,7 @@ export type Profile = {
 		self: Profile,
 		midas: PrivateMidas,
 		eventName: string,
+		data: { [string]: any }?,
 		timeStamp: string,
 		eventIndex: number,
 		index: number,
@@ -119,6 +146,7 @@ export type Profile = {
 		self: Profile,
 		midas: PrivateMidas,
 		eventName: string,
+		data: { [string]: any }?,
 		timestamp: string,
 		eventIndex: number,
 		index: number,
@@ -144,6 +172,7 @@ export type Profile = {
 		self: Profile,
 		midas: PrivateMidas,
 		eventName: string,
+		data: { [string]: any }?,
 		delta: { [string]: any },
 		eventIndex: number?,
 		duration: number?,
@@ -183,7 +212,7 @@ export type ConfigurationData = {
 		Settings: boolean?,
 		ServerIssues: boolean?,
 		ClientIssues: boolean?,
-		Group: {[string]: number}?,
+		Group: { [string]: number }?,
 	},
 }
 
