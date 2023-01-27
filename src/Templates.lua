@@ -578,9 +578,6 @@ function Templates.demographics(player: Player): Midas?
 		mDemographics:SetState("Platform/TouchEnabled", function()
 			return UserInputService.TouchEnabled
 		end)
-		mDemographics:SetState("Platform/VCEnabled", function()
-			return VoiceChatService:IsVoiceEnabledForUserIdAsync(player.UserId)
-		end)
 		mDemographics:SetState("Platform/ScreenSize", function()
 			return game.Workspace.CurrentCamera.ViewportSize.Magnitude
 		end)
