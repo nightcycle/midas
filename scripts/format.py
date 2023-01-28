@@ -10,7 +10,7 @@ import toml
 import datetime
 import re
 
-CONFIG = toml.load("./format.toml")
+CONFIG = toml.load("./midas.toml")["format"]
 
 FILL_DOWN_CONFIG = CONFIG["fill_down"]
 RECURSIVE_FILL_DOWN_ENABLED = FILL_DOWN_CONFIG["recursive"]

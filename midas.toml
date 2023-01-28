@@ -1,0 +1,17 @@
+[recorder]
+	interval = 60 #seconds
+	path = "./dashboard/input/records"
+	[recorder.id]
+		group = 4181328
+		place = 6683160653
+
+[format]
+	[format.fill_down]
+		enabled = false
+		recursive = true
+
+	[format.input]
+		path = "./dashboard/input"
+
+	[format.output]
+		path = "./dashboard/output"

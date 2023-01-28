@@ -1,9 +1,0 @@
-[fill_down]
-enabled = false
-recursive = true
-
-[input]
-path = "./dashboard/input"
-
-[output]
-path = "./dashboard/output"

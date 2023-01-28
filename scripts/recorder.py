@@ -6,10 +6,11 @@ import time
 from lxml import html
 from datetime import datetime
 
-GROUP_ID = 4181328
-PLACE_ID = 6683160653
+CONFIG = toml.load(".midas.toml")["recorder"]
+GROUP_ID = CONFIG["id"]["group"]
+PLACE_ID = CONFIG["id"]["place"]
 
-RECORDING_INTERVAL = 60 #seconds
+RECORDING_INTERVAL = CONFIG["interval"]
 
 AUTH = toml.load("./auth.toml")
 RBX_AUTH = AUTH["roblox"]
