@@ -17,6 +17,8 @@ RBX_AUTH = AUTH["roblox"]
 RBX_AUTH_COOKIE = RBX_AUTH["cookie"]
 
 GAME_URL_PREFIX = "https://www.roblox.com/games/"
+DASHBOARD_URL = "https://create.roblox.com/creations/experiences/"+GROUP_ID+"/analytics"
+SPONSORSHIP_URL = "https://www.roblox.com/sponsorships/list/group/4181328#!/experiences"
 
 session = requests.Session()
 session.cookies.update({
@@ -24,14 +26,12 @@ session.cookies.update({
 })
 
 global universeId
-placeResponse = session.get(" https://games.roblox.com/v1/games/multiget-place-details?placeIds="+str(PLACE_ID))
+placeResponse = session.get("https://games.roblox.com/v1/games/multiget-place-details?placeIds="+str(PLACE_ID))
 for place in json.loads(placeResponse.text):
 	universeId = place["universeId"]
 
-
 def dumpElement(element) -> str:
 	return (html.tostring(element)).decode('utf-8')
-
 
 def getAds():
 
@@ -124,7 +124,6 @@ def getAds():
 
 	return ads
 
-
 def getConcurrents(placeId: int) -> int: 
 	response = session.get(GAME_URL_PREFIX+str(placeId))
 	tree = html.fromstring(response.text)
@@ -139,6 +138,12 @@ def getConcurrents(placeId: int) -> int:
 		return 0
 
 	return 0
+
+def getSponsorShips():
+	return {}
+
+def getDashboard():
+	return {}
 
 def getGameStats():
 	global likes
@@ -180,6 +185,7 @@ def getGameStats():
 		return {}
 
 index = 0
+
 while True:
 	index += 1
 	print("Recording #"+str(index))
@@ -197,3 +203,4 @@ while True:
 
 
 	time.sleep(RECORDING_INTERVAL)
+	break

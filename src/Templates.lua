@@ -2,7 +2,6 @@
 local StatService = game:GetService("Stats")
 local PolicyService = game:GetService("PolicyService")
 local MarketplaceService = game:GetService("MarketplaceService")
-local VoiceChatService = game:GetService("VoiceChatService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -131,8 +130,10 @@ function Templates.character(character: Model): Midas?
 
 		mCharacter:SetState("Altitude", function()
 			local primaryPart = character.PrimaryPart
-			assert(primaryPart ~= nil)
-			return primaryPart.Position.Y
+			if primaryPart then
+				return primaryPart.Position.Y
+			end
+			return nil
 		end)
 
 		mCharacter:SetState("JumpPower", function()
@@ -233,26 +234,32 @@ function Templates.population(player: Player): Midas?
 
 		-- end
 		mPopulation:SetState("SpeakingDistance", function()
-			local count = 0
 			local pChar: Model? = player.Character :: any
-			assert(pChar ~= nil)
-			local pPrim = pChar.PrimaryPart
-			assert(pPrim ~= nil)
-			for i, plr in ipairs(game.Players:GetChildren()) do
-				if plr ~= player then
-					local char = plr.Character
-					if char then
-						local prim = char.PrimaryPart
-						if prim then
-							local dist = (prim.Position - pPrim.Position).Magnitude
-							if dist < 40 then
-								count += 1
+			if pChar then
+				local pPrim = pChar.PrimaryPart
+				if pPrim then
+					local count = 0
+					for i, plr in ipairs(game.Players:GetChildren()) do
+						if plr ~= player then
+							local char = plr.Character
+							if char then
+								local prim = char.PrimaryPart
+								if prim then
+									local dist = (prim.Position - pPrim.Position).Magnitude
+									if dist < 40 then
+										count += 1
+									end
+								end
 							end
 						end
 					end
+					return count
+				else
+					return nil
 				end
+			else
+				return nil
 			end
-			return count
 		end)
 	end)
 
