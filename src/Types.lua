@@ -19,8 +19,8 @@ export type PublicMidas = {
 	CanFire: (self: PublicMidas) -> boolean,
 	Fire: (
 		self: PublicMidas,
-		data: { [string]: any }?,
 		eventName: string,
+		data: { [string]: any }?,
 		seriesDuration: number?,
 		includeEndEvent: boolean?
 	) -> nil,
