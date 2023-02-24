@@ -68,75 +68,6 @@ print("Assembling event lists")
 sessionCount = 0
 userCount = 0
 
-for export in eventExports:
-	print("Importing "+str(export))
-	eventSource = pandas.read_csv(INPUT_EVENTS_PATH+"/"+export)
-
-	eventColumnData = {}
-	for col in eventSource.columns:
-		eventColumnData[col] = eventSource[col].tolist()
-
-	def getCell(columName: str, rowIndex: int):
-		return eventColumnData[columName][rowIndex]
-
-	def getRowData(rowIndex: int):
-		return json.loads(getCell("DATA", rowIndex))
-
-	def getRowCategoryData(rowIndex: int, categoryName: str):
-		rowData = getRowData(rowIndex)
-		if categoryName in rowData:
-			return rowData[categoryName]
-		return {}
-
-	def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
-		categoryData = getRowCategoryData(rowIndex, categoryName)
-		if keyName in categoryData:
-			return categoryData[keyName]
-		return None
-
-	for index in eventSource.index.values:
-		userId = getRowCategoryDataValue(index, "Id", "User")
-		userIds.append(userId)
-		sessionId = getRowCategoryDataValue(index, "Id", "Session")
-		if sessionId != None:
-
-			if not userId in userEventLists:
-				userCount += 1
-				userEventLists[userId] = []
-
-			if not sessionId in sessionEventLists:
-				sessionCount += 1
-				sessionEventLists[sessionId] = []
-
-			sessionEventList = sessionEventLists[sessionId]
-			userEventList = userEventLists[userId]
-			# Package up an event
-			if type(getRowCategoryDataValue(index, "Index", "Total")) == int:
-				event = Event(
-					sessionId = sessionId,
-					name = getCell("EVENT", index),
-					userId = userId,
-					placeId = getRowCategoryDataValue(index, "Id", "Place"),
-					index = getRowCategoryDataValue(index, "Index", "Total"),
-					isStudio = getRowCategoryData(index, "IsStudio"),
-					eventId = getCell("EVENT_ID", index),
-					timestamp = getCell("TIMESTAMP", index),
-					versionText = getCell("VERSION_TEXT", index),
-					version = json.loads(getCell("VERSION", index)),
-					data = getRowData(index) or {},
-				)
-				# print("INDX", event.Index)
-				if not event.EventId in eventRegistry:
-					eventRegistry[event.EventId] = event
-					sessionEventList.append(event)
-					userEventList.append(event)
-				# Update registry
-				sessionEventLists[sessionId] = sessionEventList
-
-userIds = list(dict.fromkeys(userIds))
-
-print("USER COUNT", len(userIds))
-print("SESSION COUNT", sessionCount)
 
 # fill down event data when previous index is available
 def fillDownEventData(previous: Event, current: Event): 
@@ -182,52 +113,6 @@ def totalFillDownEventData(sessionEventList: list[Event], current: Event, target
 	if targetIndex > 1:
 		totalFillDownEventData(sessionEventList, current, targetIndex-1, depth)
 
-print("Validating and organizing event data")
-# Sort session events by timestamp
-for sessionId in sessionEventLists:
-	sessionEventList = sessionEventLists[sessionId]
-	# print("Formatting session: "+str(sessionId))
-	sessionEventList.sort()
-	for previous, current in zip(sessionEventList, sessionEventList[1:]):
-		if current.Index == 2:
-			previous.FirstEventFound = True
-			previous.IsSequential = True
-			current.FirstEventFound = True
-			current.IsSequential = True
-
-		if previous != None:
-			current.FirstEventFound = previous.FirstEventFound
-			if previous.Index == current.Index - 1:
-				current.IsSequential = True
-				assert(previous.Index == current.Index - 1)
-
-				if FILL_DOWN_ENABLED == True:
-					if RECURSIVE_FILL_DOWN_ENABLED == False:
-						fillDownEventData(previous, current)
-					else:
-						totalFillDownEventData(sessionEventList, current, current.Index - 1, 0)
-				
-				if current.Category != "Issues":
-					# rep = 0
-					# for prevRepEvent in sessionEventList:
-					# 	if prevRepEvent.Name == current.Name and prevRepEvent.Index < current.Index and prevRepEvent.Category == current.Category:
-					# 		rep += 1
-				
-					current.SankeyLabel = current.Name #+ str(rep)
-					# print(current.SankeyLabel)
-	if current.Category != "Issues":
-		for event in sessionEventList:
-			dest: Event | None = None
-			for nxt in sessionEventList:
-				if nxt.Index > event.Index:
-					if dest != None:
-						if dest.Index > nxt.Index:
-							dest = nxt
-					else:
-						dest = nxt
-
-			if dest != None:
-				event.SankeyDestination = dest.SankeyLabel
 
 def flattenTable(data: dict[str, any], columnPrefix: str, row: dict[str, any]):
 	for key in data:
@@ -298,15 +183,135 @@ def createTable(category: str):
 
 #Assemble state categories from data
 dataCategoriesStorage = {}
-for datastring in eventSource["DATA"]:
 
-	data = json.loads(datastring)
+for export in eventExports:
+	print("Importing "+str(export))
+	eventSource = pandas.read_csv(INPUT_EVENTS_PATH+"/"+export)
 
-	for k in data:
-		if k != "Id" and k != "Version" and k != "IsStudio":
-			v = data[k]
-			if type(v) == dict:
-				dataCategoriesStorage[k] = True
+	for datastring in eventSource["DATA"]:
+		data = json.loads(datastring)
+
+		for k in data:
+			if k != "Id" and k != "Version" and k != "IsStudio":
+				v = data[k]
+				if type(v) == dict:
+					dataCategoriesStorage[k] = True
+
+	eventColumnData = {}
+	for col in eventSource.columns:
+		eventColumnData[col] = eventSource[col].tolist()
+
+	def getCell(columName: str, rowIndex: int):
+		return eventColumnData[columName][rowIndex]
+
+	def getRowData(rowIndex: int):
+		return json.loads(getCell("DATA", rowIndex))
+
+	def getRowCategoryData(rowIndex: int, categoryName: str):
+		rowData = getRowData(rowIndex)
+		if categoryName in rowData:
+			return rowData[categoryName]
+		return {}
+
+	def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
+		categoryData = getRowCategoryData(rowIndex, categoryName)
+		if keyName in categoryData:
+			return categoryData[keyName]
+		return None
+
+	for index in eventSource.index.values:
+		userId = getRowCategoryDataValue(index, "Id", "User")
+		userIds.append(userId)
+		sessionId = getRowCategoryDataValue(index, "Id", "Session")
+		if sessionId != None:
+
+			if not userId in userEventLists:
+				userCount += 1
+				userEventLists[userId] = []
+
+			if not sessionId in sessionEventLists:
+				sessionCount += 1
+				sessionEventLists[sessionId] = []
+
+			sessionEventList = sessionEventLists[sessionId]
+			userEventList = userEventLists[userId]
+			# Package up an event
+			if type(getRowCategoryDataValue(index, "Index", "Total")) == int:
+				event = Event(
+					sessionId = sessionId,
+					name = getCell("EVENT", index),
+					userId = userId,
+					placeId = getRowCategoryDataValue(index, "Id", "Place"),
+					index = getRowCategoryDataValue(index, "Index", "Total"),
+					isStudio = getRowCategoryData(index, "IsStudio"),
+					eventId = getCell("EVENT_ID", index),
+					timestamp = getCell("TIMESTAMP", index),
+					versionText = getCell("VERSION_TEXT", index),
+					version = json.loads(getCell("VERSION", index)),
+					data = getRowData(index) or {},
+				)
+				# print("INDX", event.Index)
+				if not event.EventId in eventRegistry:
+					eventRegistry[event.EventId] = event
+					sessionEventList.append(event)
+					userEventList.append(event)
+				# Update registry
+				sessionEventLists[sessionId] = sessionEventList
+
+userIds = list(dict.fromkeys(userIds))
+
+print("USER COUNT", len(userIds))
+print("SESSION COUNT", sessionCount)
+
+
+
+print("Validating and organizing event data")
+# Sort session events by timestamp
+for sessionId in sessionEventLists:
+	sessionEventList = sessionEventLists[sessionId]
+	# print("Formatting session: "+str(sessionId))
+	sessionEventList.sort()
+	for previous, current in zip(sessionEventList, sessionEventList[1:]):
+		if current.Index == 2:
+			previous.FirstEventFound = True
+			previous.IsSequential = True
+			current.FirstEventFound = True
+			current.IsSequential = True
+
+		if previous != None:
+			current.FirstEventFound = previous.FirstEventFound
+			if previous.Index == current.Index - 1:
+				current.IsSequential = True
+				assert(previous.Index == current.Index - 1)
+
+				if FILL_DOWN_ENABLED == True:
+					if RECURSIVE_FILL_DOWN_ENABLED == False:
+						fillDownEventData(previous, current)
+					else:
+						totalFillDownEventData(sessionEventList, current, current.Index - 1, 0)
+				
+				if current.Category != "Issues":
+					# rep = 0
+					# for prevRepEvent in sessionEventList:
+					# 	if prevRepEvent.Name == current.Name and prevRepEvent.Index < current.Index and prevRepEvent.Category == current.Category:
+					# 		rep += 1
+				
+					current.SankeyLabel = current.Name #+ str(rep)
+					# print(current.SankeyLabel)
+	if current.Category != "Issues":
+		for event in sessionEventList:
+			dest: Event | None = None
+			for nxt in sessionEventList:
+				if nxt.Index > event.Index:
+					if dest != None:
+						if dest.Index > nxt.Index:
+							dest = nxt
+					else:
+						dest = nxt
+
+			if dest != None:
+				event.SankeyDestination = dest.SankeyLabel
+
 
 dataCategories = []
 for k in dataCategoriesStorage:
@@ -335,7 +340,7 @@ for sessionId in sessionEventLists:
 				missingEventCount += event.Index - highestPriorEvent.Index - 1
 totalEventCount = missingEventCount + foundEventCount
 		
-eventSuccessRate = foundEventCount / totalEventCount
+eventSuccessRate = foundEventCount / max(totalEventCount, 1)
 
 print("Event Survival Rate: "+str(round(eventSuccessRate*1000)/10)+"%")
 
@@ -350,7 +355,7 @@ def timestampToDateTime(timestamp: str):
 	# print(timestamp)
 	timestamp = timestamp.replace('Z', '')
 	if "." in timestamp:
-		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S.%f')
+		return datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f%z')
 	else:
 		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')\
 

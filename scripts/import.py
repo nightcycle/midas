@@ -3,7 +3,10 @@ from azure.kusto.data import KustoClient, KustoConnectionStringBuilder, ClientRe
 from adal import AuthenticationContext
 import toml
 import json
+import pandas
 import requests
+import csv
+import os
 
 def main():
 	print("Starting import")
@@ -113,13 +116,24 @@ joinEvents
 			if len(data) <= 0:
 				break
 			else:
-				print("Success")
-				fullData.append(data)
+				for entry in data:
+					if "DATA" in entry:
+						entry["DATA"] = json.dumps(entry["DATA"])
+
+				fullData.extend(data) ##.append(data)
 				index += size
 		except:
 			print("Failed")
 			size -= 25
 
+	print("Dumping to file")
+	PATH = "./dashboard/input/event/import.csv"
+
+	dataframe = pandas.DataFrame(fullData)
+	dataframe.to_csv(PATH, index=False)
+	# file = open(PATH, "w")
+	# file.write(json.dumps(fullData, indent=4))
+	# file.close()
 	print("Import complete")
 
 	
