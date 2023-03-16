@@ -20,14 +20,14 @@ events, sessions, users = importer.deserialize()
 print("Constructing event table")
 categories = []
 for event in events:
-	if not event.Category in categories:
-		categories.append(event.Category)
+	if not event.category in categories:
+		categories.append(event.category)
 
 for category in categories:
 	category_events = []
 
 	for event in events:
-		if event.Category == category:
+		if event.category == category:
 			category_events.append(event)
 
 	util.export(category_events, OUTPUT_EVENTS_PATH+"/category")

@@ -9,6 +9,9 @@ demo
 export.toml
 *.parquet
 *.csv
+*.pyc
 /dashboard/input
 /dashboard/output
 auth.toml
+
+example

@@ -42,7 +42,7 @@ def download():
 	kcsb = KustoConnectionStringBuilder.with_aad_application_token_authentication(CLUSTER, token)
 	client = KustoClient(kcsb)
 
-	def getQuery(index: int, size: int) -> str:
+	def get_query(index: int, size: int) -> str:
 		query = """// run in data explorer
 // Used to create a list of relevant sessions"""
 		query += "\nlet TEST_PERIOD_START = datetime("+TEST_PERIOD_START+");"
@@ -93,9 +93,9 @@ joinEvents
 	crp = ClientRequestProperties()
 	crp.application = "KustoPythonSDK"
 
-	def getData(start: int, finish: int):
+	def get_data(start: int, finish: int):
 		print("Importing Users: ", start, finish)
-		query = getQuery(start, finish)
+		query = get_query(start, finish)
 		response = client.execute(TITLE_ID, query)
 
 		# Response processing
@@ -115,7 +115,7 @@ joinEvents
 	while True:
 		global data
 		try:
-			data = getData(index, index+size)
+			data = get_data(index, index+size)
 			print("LEN", len(data))
 			if len(data) <= 0:
 				break
@@ -148,12 +148,12 @@ def deserialize() -> tuple[list[Event], list[Session], list[User]]:
 
 	# Assemble state categories from data
 	print("Assembling events")
-	events = event.getEventsFromCSVs(INPUT_EVENTS_PATH)
+	events = event.get_events_from_csv_folder(INPUT_EVENTS_PATH)
 	print("Assembling sessions")
-	sessions = session.getSessionsFromEventList(events)
+	sessions = session.get_sessions_from_events(events)
 	print("Assembling users")
-	users = user.getUsersFromSessionList(sessions)
+	users = user.get_users_from_session_list(sessions)
 	
-	print("Event Survival Rate: "+str(round(session.getSurvivalRate(sessions)*1000)/10)+"%")
+	print("Event Survival Rate: "+str(round(session.get_survival_rate(sessions)*1000)/10)+"%")
 
 	return events, sessions, users

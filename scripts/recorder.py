@@ -30,10 +30,10 @@ placeResponse = session.get("https://games.roblox.com/v1/games/multiget-place-de
 for place in json.loads(placeResponse.text):
 	universeId = place["universeId"]
 
-def dumpElement(element) -> str:
+def dump_element(element) -> str:
 	return (html.tostring(element)).decode('utf-8')
 
-def getAds():
+def get_ads():
 
 	response = session.get("https://www.roblox.com/develop/groups/"+str(GROUP_ID)+"?Page=ads")
 	tree = html.fromstring(response.text)
@@ -124,7 +124,7 @@ def getAds():
 
 	return ads
 
-def getConcurrents(placeId: int) -> int: 
+def get_concurrents(placeId: int) -> int: 
 	response = session.get(GAME_URL_PREFIX+str(placeId))
 	tree = html.fromstring(response.text)
 	
@@ -139,13 +139,13 @@ def getConcurrents(placeId: int) -> int:
 
 	return 0
 
-def getSponsorShips():
+def get_sponsorships():
 	return {}
 
-def getDashboard():
+def get_dashboard():
 	return {}
 
-def getGameStats():
+def get_game_stats():
 	global likes
 	global dislikes
 	global favorites
@@ -170,7 +170,7 @@ def getGameStats():
 		for element in tree.xpath("//p[@id='game-visit-count']"):
 			visits = int(element.get("title").replace(",", ""))
 
-		concurrents = getConcurrents(PLACE_ID)
+		concurrents = get_concurrents(PLACE_ID)
 
 		return {
 			"Rating": {
@@ -184,8 +184,7 @@ def getGameStats():
 	except:
 		return {}
 
-
-def loopRecord():
+def loop_record():
 	index = 0
 	while True:
 		index += 1
@@ -194,8 +193,8 @@ def loopRecord():
 		data = {
 			"Timestamp": datetime.now().timestamp(),
 			"PlaceId": PLACE_ID,
-			"Advertisements": getAds(),
-			"Game": getGameStats(),
+			"Advertisements": get_ads(),
+			"Game": get_game_stats(),
 		}
 
 		file = open("./dashboard/input/records/"+str(data["Timestamp"]).replace(".", "_")+".json", "w")

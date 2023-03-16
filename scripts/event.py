@@ -7,69 +7,69 @@ import pandas
 
 class Event: 
 
-	def __init__(self, name: str, sessionId: str, userId: str, placeId: str, index: int, eventId: str, timestamp: str, versionText: str, isStudio: bool, version: dict[str, int | str], data: dict[str, any]):
+	def __init__(self, name: str, session_id: str, user_id: str, place_id: str, index: int, event_id: str, timestamp: str, version_text: str, isStudio: bool, version: dict[str, int | str], data: dict[str, any]):
 		catBase = name.replace('User', '')
 		m = re.search(r'^([^A-Z]*[A-Z]){2}', catBase);
-		nxtCap = m.span()[1] or len(catBase)
+		nxt_cap = m.span()[1] or len(catBase)
 
-		self.SessionId = sessionId
-		self.Name = name
-		self.Category = catBase[0:(nxtCap-1)]
-		self.UserId = userId
-		self.PlaceId = placeId
-		self.Index = index
-		self.EventId = eventId
-		self.IsStudio = isStudio
-		self.Timestamp = timestamp
-		self.VersionText = versionText
-		self.Version = version
-		self.FirstEventFound = False
-		self.Data = data
-		self.IsSequential = False
+		self.session_id = session_id
+		self.name = name
+		self.category = catBase[0:(nxt_cap-1)]
+		self.user_id = user_id
+		self.place_id = place_id
+		self.index = index
+		self.event_id = event_id
+		self.is_studio = isStudio
+		self.timestamp = timestamp
+		self.version_text = version_text
+		self.version = version
+		self.first_event_found = False
+		self.data = data
+		self.is_sequential = False
 
 	def __lt__(self, other):
-		t1 = self.Index
-		t2 = other.Index
+		t1 = self.index
+		t2 = other.index
 		return t1 < t2
 
 
 	def serialize(self):
 		# print("EL", event.SankeyLabel, "ED", event.SankeyDestination)
 		rowFinal = {
-			"SESSION_ID": self.SessionId,
-			"EVENT": self.Name,
-			"CATEGORY": self.Category,
-			"USER_ID": self.UserId,
-			"PLACE_ID": self.PlaceId,
-			"EVENT_ID": self.EventId,
-			"TIMESTAMP": self.Timestamp,
-			"VERSION.TEXT": self.VersionText,
-			"VERSION.MAJOR": self.Version["Major"],
-			"VERSION.MINOR": self.Version["Minor"],
-			"VERSION.PATCH": self.Version["Patch"],
-			"VERSION.BUILD": self.Version["Build"],
-			"FIRST_EVENT_FOUND": self.FirstEventFound,
-			"IS_STUDIO": self.IsStudio,
-			"INDEX": self.Index,
-			"IS_SEQUENTIAL": self.IsSequential
+			"SESSION_ID": self.session_id,
+			"EVENT": self.name,
+			"CATEGORY": self.category,
+			"USER_ID": self.user_id,
+			"PLACE_ID": self.place_id,
+			"EVENT_ID": self.event_id,
+			"TIMESTAMP": self.timestamp,
+			"VERSION.TEXT": self.version_text,
+			"VERSION.MAJOR": self.version["Major"],
+			"VERSION.MINOR": self.version["Minor"],
+			"VERSION.PATCH": self.version["Patch"],
+			"VERSION.BUILD": self.version["Build"],
+			"FIRST_EVENT_FOUND": self.first_event_found,
+			"IS_STUDIO": self.is_studio,
+			"INDEX": self.index,
+			"IS_SEQUENTIAL": self.is_sequential
 		}
 
-		if "Hotfix" in self.Version:
-			rowFinal["VERSION.HOTFIX"] = self.Version["Hotfix"]
+		if "Hotfix" in self.version:
+			rowFinal["VERSION.HOTFIX"] = self.version["Hotfix"]
 
-		if "Tag" in self.Version:
-			rowFinal["VERSION.TAG"] = self.Version["Tag"]
+		if "Tag" in self.version:
+			rowFinal["VERSION.TAG"] = self.version["Tag"]
 
-		if "TestGroup" in self.Version:
-			rowFinal["VERSION.TEST_GROUP"] = self.Version["TestGroup"]
+		if "TestGroup" in self.version:
+			rowFinal["VERSION.TEST_GROUP"] = self.version["TestGroup"]
 
 		return rowFinal
 		
 
 # fill down event data when previous index is available
-def fillDownEventData(previous: Event, current: Event): 
+def fill_down_event_from_previous(previous: Event, current: Event): 
 
-	def fillDown(curData: dict[str, any], prevData: dict[str, any]):
+	def fill_down(curData: dict[str, any], prevData: dict[str, any]):
 		if curData == None:
 			curData = {}
 
@@ -84,41 +84,41 @@ def fillDownEventData(previous: Event, current: Event):
 				return curData
 
 			if type(val) == dict:
-				fillDown(curData[key], prevData[key])
+				fill_down(curData[key], prevData[key])
 			else:
 				curData[key] = val
 
 		return curData
 
-	for key in previous.Data:
-		val = previous.Data[key]
-		if not key in current.Data:
-			current.Data[key] = {}
+	for key in previous.data:
+		val = previous.data[key]
+		if not key in current.data:
+			current.data[key] = {}
 
 		if type(val) == dict:
-			current.Data[key] = fillDown(current.Data[key], previous.Data[key])
+			current.data[key] = fill_down(current.data[key], previous.data[key])
 
-def totalFillDownEventData(sessionEventList: list[Event], current: Event, targetIndex: int, depth: int):
+def fill_down_events(session_events: list[Event], current: Event, targetIndex: int, depth: int):
 	depth += 1
 	if depth > 100:
 		return
 
-	for previous in sessionEventList:
-		if previous.Index == targetIndex:
-			fillDownEventData(previous, current)
+	for previous in session_events:
+		if previous.index == targetIndex:
+			fill_down_event_from_previous(previous, current)
 			break
 	if targetIndex > 1:
-		totalFillDownEventData(sessionEventList, current, targetIndex-1, depth)
+		fill_down_events(session_events, current, targetIndex-1, depth)
 
-def flattenTable(all_event_data: dict[str, dict], columnPrefix: str, row_data: dict):
+def flatten_table(all_event_data: dict[str, dict], column_prefix: str, row_data: dict):
 	for key in all_event_data:
 		val = all_event_data[key]
 		if type(val) == dict:
-			flattenTable(val, columnPrefix+key+".", row_data)
+			flatten_table(val, column_prefix+key+".", row_data)
 		else:
-			all_event_data[(columnPrefix+key).upper()] = val
+			all_event_data[(column_prefix+key).upper()] = val
 
-def getEventsFromCSVs(csv_directory: str) -> list[Event]:
+def get_events_from_csv_folder(csv_directory: str) -> list[Event]:
 	events: list[Event] = []
 	
 	for export in os.listdir(csv_directory):
@@ -129,29 +129,29 @@ def getEventsFromCSVs(csv_directory: str) -> list[Event]:
 			eventColumnData[col] = eventSource[col].tolist()
 
 
-		def getRowCategoryDataValue(rowIndex: int, categoryName: str, keyName: str):
-			categoryData = util.getRowCategoryData(eventColumnData,rowIndex, categoryName)
+		def get_row_category_data_value(rowIndex: int, categoryName: str, keyName: str):
+			categoryData = util.get_row_category_data(eventColumnData,rowIndex, categoryName)
 			if keyName in categoryData:
 				return categoryData[keyName]
 			return None
 
 		for index in eventSource.index.values:
-			userId = getRowCategoryDataValue(index, "Id", "User")
-			sessionId = getRowCategoryDataValue(index, "Id", "Session")
+			user_id = get_row_category_data_value(index, "Id", "User")
+			session_id = get_row_category_data_value(index, "Id", "Session")
 
-			if type(getRowCategoryDataValue(index, "Index", "Total")) == int:
+			if type(get_row_category_data_value(index, "Index", "Total")) == int:
 				event = Event(
-					sessionId = sessionId,
-					name = util.getCell(eventColumnData,"EVENT", index),
-					userId = userId,
-					placeId = getRowCategoryDataValue(index, "Id", "Place"),
-					index = getRowCategoryDataValue(index, "Index", "Total"),
-					isStudio = util.getRowCategoryData(eventColumnData,index, "IsStudio"),
-					eventId = util.getCell(eventColumnData,"EVENT_ID", index),
-					timestamp = util.getCell(eventColumnData,"TIMESTAMP", index),
-					versionText = util.getCell(eventColumnData,"VERSION_TEXT", index),
-					version = json.loads(util.getCell(eventColumnData,"VERSION", index)),
-					data = util.getRowData(eventColumnData, index) or {},
+					session_id = session_id,
+					name = util.get_cell(eventColumnData,"EVENT", index),
+					user_id = user_id,
+					place_id = get_row_category_data_value(index, "Id", "Place"),
+					index = get_row_category_data_value(index, "Index", "Total"),
+					isStudio = util.get_row_category_data(eventColumnData,index, "IsStudio"),
+					event_id = util.get_cell(eventColumnData,"EVENT_ID", index),
+					timestamp = util.get_cell(eventColumnData,"TIMESTAMP", index),
+					version_text = util.get_cell(eventColumnData,"VERSION_TEXT", index),
+					version = json.loads(util.get_cell(eventColumnData,"VERSION", index)),
+					data = util.get_row_data(eventColumnData, index) or {},
 				)
 				events.append(event)
 

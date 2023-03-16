@@ -7,6 +7,7 @@ local Package = script.Parent
 local Packages = Package.Parent
 local _Maid = require(Packages.Maid)
 local _Signal = require(Packages.Signal)
+local EncodeUtil = require(Package.EncodeUtil)
 
 -- Modules
 local Config = require(Package.Config)
@@ -96,6 +97,8 @@ function PlayFab:Fire(
 	timeStamp: string
 ): nil
 	assert(RunService:IsServer(), "PlayFab API can only be called on server")
+
+	data = EncodeUtil.encode(data)
 
 	PlayFab.OnFire:Fire(pId, eventName, data, tags, timeStamp)
 

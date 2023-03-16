@@ -185,6 +185,7 @@ export type Profile = {
 
 --- @type ConfigurationData {Version: {Major: number,Minor: number,Patch: number,Hotfix: number?,Tag: string?,TestGroup: string?,},SendDeltaState: boolean,PrintLog: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,ServerIssues: boolean, ClientIssues: boolean, Group: {[string]: number}},}
 --- @within Interface
+type RecursiveDict<T> = {[string]: T | RecursiveDict<T>}
 
 export type ConfigurationData = {
 	Version: {
@@ -200,6 +201,14 @@ export type ConfigurationData = {
 	SendDataToPlayFab: boolean?,
 	PrintEventsInStudio: boolean?,
 	PrintLog: boolean?,
+	Encoding: {
+		Marker: string,
+		Dictionary: {
+			Properties: {[string]: any},
+			Values: RecursiveDict<{[string]: string}>
+		},
+		Arrays: RecursiveDict<{[number]: string}>,
+	},
 	Templates: {
 		Join: boolean?,
 		Chat: boolean?,

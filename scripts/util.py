@@ -2,11 +2,12 @@ import pandas
 import os
 import datetime
 import json
+import data_encoder
 from xmlrpc.client import DateTime
 
 SECONDS_IN_DAY = 24 * 60 * 60
 
-def exportToParquet(path: str, data_list: list[dict[any]]):
+def export_to_parquet(path: str, data_list: list[dict[any]]):
 	tableDataFrame = pandas.DataFrame(data_list)
 	tableDataFrame.to_csv(path+".csv")
 	tableCSV = pandas.read_csv(path+".csv", low_memory=False)
@@ -14,14 +15,14 @@ def exportToParquet(path: str, data_list: list[dict[any]]):
 	os.remove(path+".csv")
 
 
-def getSecondsBetweenDateTimes(finish: DateTime, start: DateTime):
+def get_seconds_between_datetimes(finish: DateTime, start: DateTime):
 	difference = finish - start
 	datetime.timedelta(0, 8, 562000)
 	mins, seconds = divmod(difference.days * SECONDS_IN_DAY + difference.seconds, 60)
 	return mins * 60 + seconds
 	
 # define session and user classes
-def timestampToDateTime(timestamp: str):
+def timestamp_to_datetime(timestamp: str):
 	# print(timestamp)
 	timestamp = timestamp.replace('Z', '')
 	if "." in timestamp:
@@ -32,14 +33,14 @@ def timestampToDateTime(timestamp: str):
 		return datetime.datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S')\
 
 
-def getCell(eventColumnData: dict, columName: str, rowIndex: int):
+def get_cell(eventColumnData: dict, columName: str, rowIndex: int):
 	return eventColumnData[columName][rowIndex]
 
-def getRowData(eventColumnData: dict, rowIndex: int):
-	return json.loads(getCell(eventColumnData, "DATA", rowIndex))
+def get_row_data(eventColumnData: dict, rowIndex: int):
+	return data_encoder.decode(json.loads(get_cell(eventColumnData, "DATA", rowIndex)))
 
-def getRowCategoryData(eventColumnData: dict, rowIndex: int, categoryName: str):
-	rowData = getRowData(eventColumnData, rowIndex)
+def get_row_category_data(eventColumnData: dict, rowIndex: int, categoryName: str):
+	rowData = get_row_data(eventColumnData, rowIndex)
 	if categoryName in rowData:
 		return rowData[categoryName]
 	return {}
@@ -49,4 +50,4 @@ def export(objects: list, path: str):
 	for obj in objects:
 		data_list.append(obj.serialize())
 
-	exportToParquet(path, data_list)
+	export_to_parquet(path, data_list)

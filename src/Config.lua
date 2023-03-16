@@ -14,6 +14,14 @@ local Config: Types.ConfigurationData = {
 	PrintEventsInStudio = true,
 	PrintLog = false,
 	Keys = {},
+	Encoding = {
+		Marker = "~",
+		Dictionary = {
+			Properties = {},
+			Values = {},
+		},
+		Arrays = {},
+	},
 	Templates = {
 		Join = true,
 		Chat = true,

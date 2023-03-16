@@ -9,79 +9,79 @@ class User:
 
 		firstSession = sessions[0]
 
-		self.UserId = firstSession.UserId
+		self.user_id = firstSession.user_id
 		self.Sessions = sessions
-		self.Timestamp = firstSession.Timestamp
-		self.StartDateTime = firstSession.StartDateTime
+		self.timestamp = firstSession.timestamp
+		self.start_datetime = firstSession.start_datetime
 
 		lastSession = sessions[len(sessions)-1]
-		self.LastDateTime = lastSession.FinishDateTime
+		self.last_datetime = lastSession.finish_datetime
 		
-		self.Revenue = 0
-		self.Duration = 0
+		self.revenue = 0
+		self.duration = 0
 	
 		index = 0
 		for session in sessions:
 			index += 1
-			session.Index = index
-			self.Revenue += session.Revenue
-			self.Duration += session.Duration
+			session.index = index
+			self.revenue += session.revenue
+			self.duration += session.duration
 
-		def getSessionsCountBetween(start: DateTime, finish: DateTime):
+		def get_sessions_count_between(start: DateTime, finish: DateTime):
 			sessionsBetween = []
 
 			for session in sessions:
-				if session.StartDateTime >= start and session.StartDateTime <= finish:
+				if session.start_datetime >= start and session.start_datetime <= finish:
 					sessionsBetween.append(session)
 
 			return sessionsBetween
 
-		def getRetentionStatus(day: int, threshold: int):
-			start = self.StartDateTime + datetime.timedelta(days=day)
+		def get_retention_status(day: int, threshold: int):
+			start = self.start_datetime + datetime.timedelta(days=day)
 			finish = start + datetime.timedelta(days=1)
-			return len(getSessionsCountBetween(start, finish)) > threshold
+			return len(get_sessions_count_between(start, finish)) > threshold
 
-		self.Retained = [
-			getRetentionStatus(0, 1),
-			getRetentionStatus(1, 0),
-			getRetentionStatus(2, 0),	
-			getRetentionStatus(3, 0),	
-			getRetentionStatus(4, 0),	
-			getRetentionStatus(5, 0),
-			getRetentionStatus(6, 0),
-			getRetentionStatus(7, 0),
+		self.retained = [
+			get_retention_status(0, 1),
+			get_retention_status(1, 0),
+			get_retention_status(2, 0),	
+			get_retention_status(3, 0),	
+			get_retention_status(4, 0),	
+			get_retention_status(5, 0),
+			get_retention_status(6, 0),
+			get_retention_status(7, 0),
 		]
 
-		self.Index = -1
+		self.index = -1
 
 	def __lt__(self, other):
-		t1 = self.StartDateTime
-		t2 = other.StartDateTime
+		t1 = self.start_datetime
+		t2 = other.start_datetime
 		return t1 < t2
 
 	def serialize(self):
 		return {
-			"USER_ID": self.UserId,
-			"TIMESTAMP": self.Timestamp,
-			"INDEX": self.Index,
+			"USER_ID": self.user_id,
+			"TIMESTAMP": self.timestamp,
+			"INDEX": self.index,
 			"SESSION_COUNT": len(self.Sessions),
-			"REVENUE": self.Revenue,
-			"DURATION": self.Duration,
-			"D0_RETAINED": self.Retained[0],
-			"D1_RETAINED": self.Retained[1],
-			"D2_RETAINED": self.Retained[2],
-			"D3_RETAINED": self.Retained[3],
-			"D4_RETAINED": self.Retained[4],
-			"D5_RETAINED": self.Retained[5],
-			"D6_RETAINED": self.Retained[6],
-			"D7_RETAINED": self.Retained[7],		
+			"REVENUE": self.revenue,
+			"DURATION": self.duration,
+			"D0_RETAINED": self.retained[0],
+			"D1_RETAINED": self.retained[1],
+			"D2_RETAINED": self.retained[2],
+			"D3_RETAINED": self.retained[3],
+			"D4_RETAINED": self.retained[4],
+			"D5_RETAINED": self.retained[5],
+			"D6_RETAINED": self.retained[6],
+			"D7_RETAINED": self.retained[7],		
 		}
 
-def getUsersFromSessionList(sessions: list[Session]):
+def get_users_from_session_list(sessions: list[Session]):
 	
 	userSessionLists: dict[str, list[Session]] = {}
 	for session in sessions:
-		userId = session.UserId
+		userId = session.user_id
 		if not userId in userSessionLists:
 			userSessionLists[userId] = []
 
@@ -98,6 +98,6 @@ def getUsersFromSessionList(sessions: list[Session]):
 	userIndex = 0
 	for user in users:
 		userIndex += 1
-		user.Index = userIndex
+		user.index = userIndex
 
 	return users
