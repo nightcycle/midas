@@ -1,11 +1,12 @@
 --!strict
 local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 -- Packages
 local Package = script.Parent
 local Packages = Package.Parent
-local _Maid = require(Packages.Maid)
-local _Signal = require(Packages.Signal)
+local Maid = require(Packages.Maid)
+local Signal = require(Packages.Signal)
 local Network = require(Packages.Network)
 
 -- Modules
@@ -102,10 +103,14 @@ end
 function Profile:_Fire(eventFullPath: string, delta: { [string]: any }, tags: { [string]: boolean }, timestamp: string)
 	log("_fire", self.Player, eventFullPath)
 	self.EventsPerMinute += 1
+	
+	local charCount = string.len(HttpService:JSONEncode(delta))
+	self._BytesRemaining -= charCount
 
 	task.delay(60, function()
 		if self ~= nil and self._IsAlive ~= nil then
 			self.EventsPerMinute -= 1
+			self._BytesRemaining += charCount
 		end
 	end)
 
@@ -196,20 +201,21 @@ function Profile:FireSeries(
 	eventIndex: number,
 	index: number,
 	includeEndEvent: boolean
-): _Signal.Signal
+): Signal.Signal
 	log("fire series", midas._Player, eventName)
 	local deltaStates = {}
-	for p, midas in pairs(self._Midaii) do
-		local output = midas:_Compile()
+	if self._BytesRemaining > 0 then
+		for p, midas in pairs(self._Midaii) do
+			local output = midas:_Compile()
 
-		if output then
-			for k, v in pairs(output) do
-				local fullPath = p .. "/" .. k
-				writeDelta(fullPath, v, deltaStates, self._PreviousStates)
+			if output then
+				for k, v in pairs(output) do
+					local fullPath = p .. "/" .. k
+					writeDelta(fullPath, v, deltaStates, self._PreviousStates)
+				end
 			end
 		end
 	end
-
 	deltaStates.Id = deltaStates.Id or {}
 	deltaStates.Id.Place = tostring(game.PlaceId)
 	deltaStates.Id.Session = tostring(self._SessionId)
@@ -218,10 +224,10 @@ function Profile:FireSeries(
 	local eventFullPath
 	deltaStates, eventFullPath = self:_Format(midas, eventName, data, deltaStates, eventIndex, nil, timestamp, index)
 
-	local maid = _Maid.new()
+	local maid = Maid.new()
 	self._Maid:GiveTask(maid)
 
-	local trigger = _Signal.new()
+	local trigger = Signal.new()
 	maid:GiveTask(trigger)
 	local hasFired = false
 
@@ -256,16 +262,21 @@ function Profile:Fire(
 	log("fire", midas._Player, eventName)
 	local deltaStates = {}
 
-	for p, midas in pairs(self._Midaii) do
-		log("getting compile for " .. tostring(midas.Path), midas._Player, eventName)
-		local output = midas:_Compile()
-		if output then
-			for k, v in pairs(output) do
-				local fullPath = p .. "/" .. k
-				writeDelta(fullPath, v, deltaStates, self._PreviousStates)
+	if self._BytesRemaining > 0 then
+
+		for p, midas in pairs(self._Midaii) do
+			log("getting compile for " .. tostring(midas.Path), midas._Player, eventName)
+			local output = midas:_Compile()
+			if output then
+				for k, v in pairs(output) do
+					local fullPath = p .. "/" .. k
+					writeDelta(fullPath, v, deltaStates, self._PreviousStates)
+				end
 			end
 		end
+		
 	end
+
 	log("delta assembled", midas._Player, eventName)
 	deltaStates.Id = deltaStates.Id or {}
 	deltaStates.Id.Place = tostring(game.PlaceId)
@@ -369,12 +380,13 @@ function Profile.new(player: Player): Profile
 	local wasTeleported = false
 
 	local self = setmetatable({
-		_Maid = _Maid.new(),
+		_Maid = Maid.new(),
 		Player = player,
 		["Instance"] = inst,
 		_IsAlive = true,
 		EventsPerMinute = 0,
 		TimeDifference = 0,
+		_BytesRemaining = Config.BytesPerMinutePerPlayer,
 		_ConstructionTick = tick(),
 		_IsTeleporting = false,
 		_IsLoaded = false,

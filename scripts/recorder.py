@@ -6,7 +6,7 @@ import time
 from lxml import html
 from datetime import datetime
 
-CONFIG = toml.load(".midas.toml")["recorder"]
+CONFIG = toml.load("midas.toml")["recorder"]
 GROUP_ID = CONFIG["id"]["group"]
 PLACE_ID = CONFIG["id"]["place"]
 
@@ -17,7 +17,7 @@ RBX_AUTH = AUTH["roblox"]
 RBX_AUTH_COOKIE = RBX_AUTH["cookie"]
 
 GAME_URL_PREFIX = "https://www.roblox.com/games/"
-DASHBOARD_URL = "https://create.roblox.com/creations/experiences/"+GROUP_ID+"/analytics"
+DASHBOARD_URL = "https://create.roblox.com/creations/experiences/"+str(GROUP_ID)+"/analytics"
 SPONSORSHIP_URL = "https://www.roblox.com/sponsorships/list/group/4181328#!/experiences"
 
 session = requests.Session()
@@ -184,23 +184,23 @@ def getGameStats():
 	except:
 		return {}
 
-index = 0
 
-while True:
-	index += 1
-	print("Recording #"+str(index))
-		
-	data = {
-		"Timestamp": datetime.now().timestamp(),
-		"PlaceId": PLACE_ID,
-		"Advertisements": getAds(),
-		"Game": getGameStats(),
-	}
+def loopRecord():
+	index = 0
+	while True:
+		index += 1
+		print("Recording #"+str(index))
+			
+		data = {
+			"Timestamp": datetime.now().timestamp(),
+			"PlaceId": PLACE_ID,
+			"Advertisements": getAds(),
+			"Game": getGameStats(),
+		}
 
-	file = open("./dashboard/input/records/"+str(data["Timestamp"]).replace(".", "_")+".json", "w")
-	file.write(json.dumps(data, indent=4))
-	file.close()
+		file = open("./dashboard/input/records/"+str(data["Timestamp"]).replace(".", "_")+".json", "w")
+		file.write(json.dumps(data, indent=4))
+		file.close()
 
-
-	time.sleep(RECORDING_INTERVAL)
-	# break
+		time.sleep(RECORDING_INTERVAL)
+		# break

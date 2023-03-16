@@ -3,7 +3,7 @@
 	path = "./dashboard/input/records"
 	[recorder.id]
 		group = 4181328
-		place = 6683160653
+		place = 9795212770
 
 [format]
 	[format.fill_down]

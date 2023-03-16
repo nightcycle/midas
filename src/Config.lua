@@ -8,10 +8,12 @@ local Config: Types.ConfigurationData = {
 		Minor = 0,
 		Patch = 0,
 	},
+	BytesPerMinutePerPlayer = 2000*15,
 	SendDeltaState = false, --Send just the changes of state, not the entirety
 	SendDataToPlayFab = true,
 	PrintEventsInStudio = true,
 	PrintLog = false,
+	Keys = {},
 	Templates = {
 		Join = true,
 		Chat = true,

@@ -131,6 +131,7 @@ export type Profile = {
 	_PlayerId: string?,
 	__index: Profile,
 	Destroy: (self: Profile) -> nil,
+	_BytesRemaining: number,
 	IncrementIndex: (self: Profile) -> number,
 	FireSeries: (
 		self: Profile,
@@ -194,6 +195,7 @@ export type ConfigurationData = {
 		Tag: string?,
 		TestGroup: string?,
 	},
+	BytesPerMinutePerPlayer: number?,
 	SendDeltaState: boolean?,
 	SendDataToPlayFab: boolean?,
 	PrintEventsInStudio: boolean?,
