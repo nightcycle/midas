@@ -3,15 +3,9 @@ src_old
 package-lock.json
 Packages
 .gitconfig
-out
-build
-demo
-export.toml
 *.parquet
 *.csv
 *.pyc
-/dashboard/input
-/dashboard/output
-auth.toml
 
-example
+sourcemap.json
+test.project.json

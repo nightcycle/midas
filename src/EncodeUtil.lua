@@ -1,6 +1,11 @@
 --!strict
-local Config = require(script.Parent:WaitForChild("Config"))
-local TableUtil = require(script.Parent.Parent:WaitForChild("TableUtil"))
+-- References
+local Package = script.Parent
+local Packages = Package.Parent
+
+-- Packages
+local Config = require(Package:WaitForChild("Config"))
+local TableUtil = require(Packages:WaitForChild("TableUtil"))
 local Util = {}
 
 function Util.encode(fullData: {[string]: any}): {[string]: any}

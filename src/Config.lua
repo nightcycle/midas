@@ -32,15 +32,8 @@ local Config: Types.ConfigurationData = {
 		Character = true,
 		Player = true,
 		Demographics = true,
-		Policy = true,
 		ClientPerformance = true,
-		Settings = true,
-		ServerIssues = true,
-		ClientIssues = true,
 		Group = {
-			RobloxEmployee = 1200769,
-			RobloxIntern = 2868472,
-			DevForum = 3514227,
 		},
 	},
 }

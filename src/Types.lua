@@ -1,62 +1,65 @@
--- Packages
+--!strict
+-- References
 local Package = script.Parent
 local Packages = Package.Parent
-local _Maid = require(Packages.Maid)
-local _Signal = require(Packages.Signal)
+
+-- Packages
+local Maid = require(Packages:WaitForChild("Maid"))
+local Signal = require(Packages:WaitForChild("Signal"))
 
 export type State = () -> any?
 
-export type PublicMidas = {
+export type PublicTracker = {
 	Player: Player,
 	Path: string,
-	SetState: (self: PublicMidas, name: string, state: State) -> nil,
-	Destroy: (self: PublicMidas) -> nil,
-	SetTag: (self: PublicMidas, tag: string) -> nil,
-	RemoveTag: (self: PublicMidas, tag: string) -> nil,
-	SetCondition: (self: PublicMidas, key: string, func: () -> boolean) -> nil,
-	GetPath: (self: PublicMidas) -> string,
-	SetRoundingPrecision: (self: PublicMidas, exp: number?) -> nil,
-	CanFire: (self: PublicMidas) -> boolean,
+	SetState: (self: PublicTracker, name: string, state: State) -> nil,
+	Destroy: (self: PublicTracker) -> nil,
+	SetTag: (self: PublicTracker, tag: string) -> nil,
+	RemoveTag: (self: PublicTracker, tag: string) -> nil,
+	SetCondition: (self: PublicTracker, key: string, func: () -> boolean) -> nil,
+	GetPath: (self: PublicTracker) -> string,
+	SetRoundingPrecision: (self: PublicTracker, exp: number?) -> nil,
+	CanFire: (self: PublicTracker) -> boolean,
 	Fire: (
-		self: PublicMidas,
+		self: PublicTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		seriesDuration: number?,
 		includeEndEvent: boolean?
 	) -> nil,
-	SetChance: (self: PublicMidas, val: number) -> nil,
-	GetBoundStateCount: (self: PublicMidas) -> number,
+	SetChance: (self: PublicTracker, val: number) -> nil,
+	GetBoundStateCount: (self: PublicTracker) -> number,
 }
 
-export type PrivateMidas = {
+export type PrivateTracker = {
 	_Loaded: boolean,
-	_OnLoad: _Signal.Signal,
-	_OnDestroy: _Signal.Signal,
-	_OnEvent: _Signal.Signal,
+	_OnLoad: Signal.Signal,
+	_OnDestroy: Signal.Signal,
+	_OnEvent: Signal.Signal,
 
-	SetState: (self: PrivateMidas, name: string, state: State) -> nil,
-	Destroy: (self: PrivateMidas) -> nil,
-	SetTag: (self: PrivateMidas, tag: string) -> nil,
-	RemoveTag: (self: PrivateMidas, tag: string) -> nil,
-	SetCondition: (self: PrivateMidas, key: string, func: () -> boolean) -> nil,
-	SetRoundingPrecision: (self: PrivateMidas, exp: number?) -> nil,
-	_Compile: (self: PrivateMidas) -> { [string]: any }?,
-	_HandleCompile: (self: PrivateMidas) -> { [string]: any }?,
-	_GetUTC: (self: PrivateMidas, offset: number?) -> string,
-	CanFire: (self: PrivateMidas) -> boolean,
+	SetState: (self: PrivateTracker, name: string, state: State) -> nil,
+	Destroy: (self: PrivateTracker) -> nil,
+	SetTag: (self: PrivateTracker, tag: string) -> nil,
+	RemoveTag: (self: PrivateTracker, tag: string) -> nil,
+	SetCondition: (self: PrivateTracker, key: string, func: () -> boolean) -> nil,
+	SetRoundingPrecision: (self: PrivateTracker, exp: number?) -> nil,
+	_Compile: (self: PrivateTracker) -> { [string]: any }?,
+	_HandleCompile: (self: PrivateTracker) -> { [string]: any }?,
+	_GetUTC: (self: PrivateTracker, offset: number?) -> string,
+	CanFire: (self: PrivateTracker) -> boolean,
 	Fire: (
-		self: PrivateMidas,
+		self: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		seriesDuration: number?,
 		includeEndEvent: boolean?
 	) -> nil,
-	SetChance: (self: PrivateMidas, val: number) -> nil,
-	GetBoundStateCount: (self: PrivateMidas) -> number,
+	SetChance: (self: PrivateTracker, val: number) -> nil,
+	GetBoundStateCount: (self: PrivateTracker) -> number,
 
 	Instance: Folder?,
 
-	_Maid: _Maid.Maid,
+	_Maid: Maid.Maid,
 
 	_Profile: Profile?,
 	Path: string,
@@ -78,25 +81,25 @@ export type PrivateMidas = {
 	_States: { [string]: State },
 	_FirstFireTick: { [string]: number },
 	_LastFireTick: { [string]: number },
-	_SeriesSignal: { [string]: _Signal.Signal },
+	_SeriesSignal: { [string]: Signal.Signal },
 	_Index: { [string]: number },
 	_Repetitions: { [string]: number },
 	_KeyCount: number,
-	__index: PrivateMidas,
-	__newindex: (self: PrivateMidas, index: any, value: State) -> nil,
+	__index: PrivateTracker,
+	__newindex: (self: PrivateTracker, index: any, value: State) -> nil,
 
-	_new: (player: Player, path: string) -> PrivateMidas,
+	_new: (player: Player, path: string, profile: Profile?) -> PrivateTracker,
 	_FireSeries: (
-		self: PrivateMidas,
+		self: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		utc: string,
 		waitDuration: number,
 		includeEndEvent: boolean?
 	) -> nil,
-	_FireEvent: (self: PrivateMidas, eventName: string, data: { [string]: any }?, utc: string) -> nil,
+	_FireEvent: (self: PrivateTracker, eventName: string, data: { [string]: any }?, utc: string) -> nil,
 	_Fire: (
-		self: PrivateMidas,
+		self: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		utc: string,
@@ -104,17 +107,17 @@ export type PrivateMidas = {
 		includeEndEvent: boolean?
 	) -> nil,
 	_Load: (
-		self: PrivateMidas,
+		self: PrivateTracker,
 		player: Player,
 		path: string,
 		profile: Profile?,
-		maid: _Maid.Maid,
-		onLoad: _Signal.Signal
+		maid: Maid.Maid,
+		onLoad: Signal.Signal
 	) -> nil,
 }
 
 export type Profile = {
-	_Maid: _Maid.Maid,
+	_Maid: Maid.Maid,
 	Player: Player,
 	Instance: Instance,
 	EventsPerMinute: number,
@@ -125,7 +128,7 @@ export type Profile = {
 	_IsTeleporting: boolean,
 	_WasTeleported: boolean,
 	_Index: number,
-	_Midaii: { [string]: PrivateMidas },
+	_Midaii: { [string]: PrivateTracker },
 	_PreviousStates: {},
 	_SessionId: string?,
 	_PlayerId: string?,
@@ -135,17 +138,17 @@ export type Profile = {
 	IncrementIndex: (self: Profile) -> number,
 	FireSeries: (
 		self: Profile,
-		midas: PrivateMidas,
+		tracker: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		timeStamp: string,
 		eventIndex: number,
 		index: number,
 		includeEndEvent: boolean
-	) -> _Signal.Signal,
+	) -> Signal.Signal,
 	Fire: (
 		self: Profile,
-		midas: PrivateMidas,
+		tracker: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		timestamp: string,
@@ -153,14 +156,13 @@ export type Profile = {
 		index: number,
 		duration: number?
 	) -> nil,
-	HasPath: (self: Profile, midas: PrivateMidas, path: string) -> boolean,
+	HasPath: (self: Profile, tracker: PrivateTracker, path: string) -> boolean,
 	DestroyPath: (self: Profile, path: string) -> nil,
-	DestroyMidas: (self: Profile, path: string) -> nil,
-	GetMidas: (self: Profile, path: string) -> PrivateMidas?,
-	SetMidas: (self: Profile, midas: PrivateMidas) -> nil,
-	Teleport: (self: Profile, mExit: PrivateMidas?) -> TeleportDataEntry,
+	DestroyTracker: (self: Profile, path: string) -> nil,
+	GetTracker: (self: Profile, path: string) -> PrivateTracker?,
+	SetTracker: (self: Profile, tracker: PrivateTracker) -> nil,
+	Teleport: (self: Profile, mExit: PrivateTracker?) -> TeleportDataEntry,
 	new: (player: Player) -> Profile,
-	get: (userId: number) -> Profile?,
 	getProfilesFolder: () -> Folder,
 	_Fire: (
 		self: Profile,
@@ -171,7 +173,7 @@ export type Profile = {
 	) -> nil,
 	_Format: (
 		self: Profile,
-		midas: PrivateMidas,
+		tracker: PrivateTracker,
 		eventName: string,
 		data: { [string]: any }?,
 		delta: { [string]: any },
@@ -218,11 +220,7 @@ export type ConfigurationData = {
 		Exit: boolean?,
 		Character: boolean?,
 		Demographics: boolean?,
-		Policy: boolean?,
 		ClientPerformance: boolean?,
-		Settings: boolean?,
-		ServerIssues: boolean?,
-		ClientIssues: boolean?,
 		Group: { [string]: number }?,
 	},
 }

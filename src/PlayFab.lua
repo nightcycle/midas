@@ -2,15 +2,16 @@
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 
--- Packages
+-- References
 local Package = script.Parent
 local Packages = Package.Parent
-local _Maid = require(Packages.Maid)
-local _Signal = require(Packages.Signal)
-local EncodeUtil = require(Package.EncodeUtil)
+
+-- Packages
+local Signal = require(Packages:WaitForChild("Signal"))
+local EncodeUtil = require(script.Parent.EncodeUtil)
 
 -- Modules
-local Config = require(Package.Config)
+local Config = require(script.Parent.Config)
 
 -- Constants
 local TITLE_ID: string?
@@ -18,7 +19,7 @@ local DEV_SECRET_KEY: string?
 
 -- Class
 export type PlayFab = {
-	OnFire: _Signal.Signal,
+	OnFire: Signal.Signal,
 	Register: (self: PlayFab, userId: number) -> (string, string),
 	Fire: (
 		self: PlayFab,
@@ -38,7 +39,7 @@ type HttpResponse = {
 	data: { [string]: any },
 }
 
-PlayFab.OnFire = _Signal.new()
+PlayFab.OnFire = Signal.new()
 
 function getURL(path: string): string
 	assert(TITLE_ID ~= nil, "Bad Title Id")
@@ -81,7 +82,7 @@ function post(url: string, headers: { [string]: any }, body: { [string]: any }, 
 	if success and response.code == 200 then
 		return response
 	elseif attempt < 15 then
-		task.wait(1)
+		task.wait(attempt*2.5)
 		return post(url, headers, body, attempt + 1)
 	else
 		print(response, success, response)
@@ -154,7 +155,9 @@ end
 function PlayFab:Register(userId: number): (string, string)
 	assert(RunService:IsServer(), "PlayFab API can only be called on server")
 	if Config.SendDataToPlayFab == false then
-		return HttpService:GenerateGUID(false), tostring(userId)
+		local outUserId = tostring(userId)
+		local outSessionId = HttpService:GenerateGUID(false)
+		return outSessionId, outUserId
 	end
 	while TITLE_ID == nil do
 		print("WAITING FOR TITLE")
