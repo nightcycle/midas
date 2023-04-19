@@ -14,7 +14,7 @@ dependencies = []
 
 [[package]]
 name = "nightcycle/midas"
-version = "1.5.0"
+version = "2.0.0"
 dependencies = [["Fetchu", "nightcycle/fetchu@1.0.1"], ["Maid", "nightcycle/maid@1.1.4"], ["NetworkUtil", "nightcycle/network-util@1.7.0"], ["ServiceProxy", "nightcycle/service-proxy@1.0.0"], ["Signal", "nightcycle/signal@1.0.2"], ["TableUtil", "nightcycle/table-util@1.1.0"]]
 
 [[package]]

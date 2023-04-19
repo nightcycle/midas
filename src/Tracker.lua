@@ -580,7 +580,9 @@ function Tracker._new(player: Player, path: string, profile: Profile?): Tracker
 		assert(profile ~= nil)
 		log("sending to profile", player, path)
 
-		profile:SetTracker(self :: any)
+		if profile._IsAlive then
+			profile:SetTracker(self :: any)
+		end
 	end
 
 	return self :: any
