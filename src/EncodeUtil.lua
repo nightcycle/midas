@@ -17,7 +17,9 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 			k = string.gsub(k, Config.Encoding.Marker, "")
 			if type(v) == "table" then
 				v = replaceKeys(v)
-				v = v:gsub(Config.Encoding.Marker, "")
+				if type(v) == "string" then
+					v = v:gsub(Config.Encoding.Marker, "")
+				end
 			end
 
 			if Config.Encoding.Dictionary.Properties[k] then
