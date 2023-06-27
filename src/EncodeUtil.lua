@@ -17,10 +17,13 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 			k = string.gsub(k, Config.Encoding.Marker, "")
 			if type(v) == "table" then
 				v = replaceKeys(v)
+				v = v:gsub(Config.Encoding.Marker, "")
 			end
 
 			if Config.Encoding.Dictionary.Properties[k] then
-				out[Config.Encoding.Marker .. Config.Encoding.Dictionary.Properties[k]] = v
+				local key = Config.Encoding.Dictionary.Properties[k]
+				key = key:gsub(Config.Encoding.Marker, "")
+				out[Config.Encoding.Marker .. key] = v
 			else
 				out[k] = v
 			end
@@ -64,7 +67,9 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 					end
 				else
 					if valDict[k][v] then
-						v = Config.Encoding.Marker .. valDict[k][v]
+						local encoded_v = valDict[k][v]
+						encoded_v = encoded_v:gsub(Config.Encoding.Marker, "")
+						v = Config.Encoding.Marker .. encoded_v
 					end
 				end
 			else
@@ -83,7 +88,7 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 		return out
 	end
 
-	return replaceKeys(replaceValues(fullData, Config.Encoding.Dictionary.Values, Config.Encoding.Arrays))
+	return replaceKeys(replaceValues(fullData, Config.Encoding.Dictionary.Values, Config.Encoding.Arrays :: any))
 end
 
 function Util.decode(encodedData: {[string]: any})
@@ -161,7 +166,7 @@ function Util.decode(encodedData: {[string]: any})
 		return out
 	end
 
-	return restoreValues(restoreKeys(encodedData), Config.Encoding.Dictionary.Values, Config.Encoding.Arrays)
+	return restoreValues(restoreKeys(encodedData), Config.Encoding.Dictionary.Values, Config.Encoding.Arrays :: any)
 end
 
 

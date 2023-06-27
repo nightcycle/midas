@@ -257,6 +257,7 @@ if RunService:IsServer() then
 
 		task.spawn(function()
 			for i, player in ipairs(Players:GetChildren()) do
+				assert(player:IsA("Player"))
 				initPlayer(player)
 			end
 		end)
@@ -311,8 +312,8 @@ else
 
 	GetInitialConfig:InvokeServer()
 
-	Templates.demographics(game.Players.LocalPlayer)
-	Templates.clientPerformance(game.Players.LocalPlayer)
+	Templates.demographics(Players.LocalPlayer)
+	Templates.clientPerformance(Players.LocalPlayer)
 
 end
 

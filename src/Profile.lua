@@ -25,8 +25,7 @@ local REGISTRY: { [number]: Profile } = {}
 local Profile: Profile = {} :: any
 Profile.__index = Profile
 
-local ProfilesFolder: Folder? = script:FindFirstChild("MidasProfiles") or Instance.new("Folder")
-assert(ProfilesFolder ~= nil)
+local ProfilesFolder = assert(script:WaitForChild("MidasProfiles", 10) or Instance.new("Folder")) :: Folder
 ProfilesFolder.Name = "MidasProfiles"
 ProfilesFolder.Parent = script
 

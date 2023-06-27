@@ -207,9 +207,9 @@ export type ConfigurationData = {
 		Marker: string,
 		Dictionary: {
 			Properties: {[string]: any},
-			Values: RecursiveDict<{[string]: string}>
+			Values: {[string]: any},
 		},
-		Arrays: RecursiveDict<{[number]: string}>,
+		Arrays: any, --{[number]: any},
 	},
 	Templates: {
 		Join: boolean?,

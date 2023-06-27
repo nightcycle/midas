@@ -185,12 +185,13 @@ function Templates.population(player: Player, profile: Profile): Tracker?
 
 	task.spawn(function()
 		mPopulation:SetState("Total", function()
-			return #game.Players:GetChildren()
+			return #Players:GetChildren()
 		end)
 		mPopulation:SetState("Team", function()
 			local teamColor = player.TeamColor
 			local count = 0
-			for i, plr in ipairs(game.Players:GetChildren()) do
+			for i, plr in ipairs(Players:GetChildren()) do
+				assert(plr:IsA("Player"))
 				if plr ~= player and plr.TeamColor == teamColor then
 					count += 1
 				end
@@ -227,7 +228,8 @@ function Templates.population(player: Player, profile: Profile): Tracker?
 		end)
 		mPopulation:SetState("Friends", function()
 			local count = 0
-			for i, plr in ipairs(game.Players:GetChildren()) do
+			for i, plr in ipairs(Players:GetChildren()) do
+				assert(plr:IsA("Player"))
 				if plr ~= player and friends[plr.UserId] == true then
 					count += 1
 				end
@@ -243,7 +245,8 @@ function Templates.population(player: Player, profile: Profile): Tracker?
 				local pPrim = pChar.PrimaryPart
 				if pPrim then
 					local count = 0
-					for i, plr in ipairs(game.Players:GetChildren()) do
+					for i, plr in ipairs(Players:GetChildren()) do
+						assert(plr:IsA("Player"))
 						if plr ~= player then
 							local char = plr.Character
 							if char then
@@ -456,7 +459,7 @@ function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -
 
 	local mExit = Tracker._new(player, "Exit", profile)
 	task.spawn(function()
-		mExit._Maid:GiveTask(game.Players.PlayerRemoving:Connect(function(remPlayer: Player)
+		mExit._Maid:GiveTask(Players.PlayerRemoving:Connect(function(remPlayer: Player)
 			local isTeleporting = getIfTeleporting()
 			if remPlayer == player and isTeleporting == false then
 				remPlayer:SetAttribute("IsExiting", true)
