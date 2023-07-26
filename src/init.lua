@@ -208,7 +208,12 @@ if RunService:IsServer() then
 			log("registering profile", player)
 			local preExistingProfile: Profile = self._ProfileRegistry[player.UserId]
 			if preExistingProfile then
-				preExistingProfile:Destroy()
+				local success, msg = pcall(function()
+					preExistingProfile:Destroy()
+				end)
+				if not success then
+					warn(msg)
+				end
 				self._ProfileRegistry[player.UserId] = nil
 			end
 			self._ProfileRegistry[player.UserId] = profile
