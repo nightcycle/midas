@@ -8,10 +8,10 @@ local Config = require(Package:WaitForChild("Config"))
 local TableUtil = require(Packages:WaitForChild("TableUtil"))
 local Util = {}
 
-function Util.encode(fullData: {[string]: any}): {[string]: any}
+function Util.encode(fullData: { [string]: any }): { [string]: any }
 	fullData = TableUtil.deepCopy(fullData)
-	
-	local function replaceKeys(data: {[string]: any})
+
+	local function replaceKeys(data: { [string]: any })
 		local out = {}
 		for k, v in pairs(data) do
 			k = string.gsub(k, Config.Encoding.Marker, "")
@@ -33,7 +33,7 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 		return out
 	end
 
-	local function replaceBinaryList(data: {[string]: any}, binArray: {[number]: string})
+	local function replaceBinaryList(data: { [string]: any }, binArray: { [number]: string })
 		local encodedStr = Config.Encoding.Marker
 		for _, item in ipairs(binArray) do
 			local v = "0"
@@ -47,11 +47,11 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 		return encodedStr
 	end
 
-	local function replaceValues(data: {[string]: any}, valDict: {[string]: any}, binArrayReg: {[string]: any})
+	local function replaceValues(data: { [string]: any }, valDict: { [string]: any }, binArrayReg: { [string]: any })
 		local out = {}
 
 		for k, v in pairs(data) do
-			local nxtBinArrayReg: {[string]: any} |  {[number]: any} = {}
+			local nxtBinArrayReg: { [string]: any } | { [number]: any } = {}
 			if binArrayReg[k] then
 				nxtBinArrayReg = binArrayReg[k]
 			end
@@ -93,10 +93,10 @@ function Util.encode(fullData: {[string]: any}): {[string]: any}
 	return replaceKeys(replaceValues(fullData, Config.Encoding.Dictionary.Values, Config.Encoding.Arrays :: any))
 end
 
-function Util.decode(encodedData: {[string]: any})
+function Util.decode(encodedData: { [string]: any })
 	encodedData = TableUtil.deepCopy(encodedData)
 
-	local function restoreKeys(data: {[string]: any})
+	local function restoreKeys(data: { [string]: any })
 		local out = {}
 		for k, v in pairs(data) do
 			if type(v) == "table" then
@@ -118,7 +118,7 @@ function Util.decode(encodedData: {[string]: any})
 		return out
 	end
 
-	local function restoreBinaryList(encodedStr: string, binArray: {[number]: string})
+	local function restoreBinaryList(encodedStr: string, binArray: { [number]: string })
 		local restoredData = {}
 		for i, key in ipairs(binArray) do
 			local v = string.sub(encodedStr, i + #Config.Encoding.Marker, i + #Config.Encoding.Marker)
@@ -131,7 +131,7 @@ function Util.decode(encodedData: {[string]: any})
 		return restoredData
 	end
 
-	local function restoreValues(data: {[string]: any}, valDict: {[string]: any}, binArrayReg: {[string]: any})
+	local function restoreValues(data: { [string]: any }, valDict: { [string]: any }, binArrayReg: { [string]: any })
 		local out = {}
 
 		for k, v in pairs(data) do
@@ -170,7 +170,5 @@ function Util.decode(encodedData: {[string]: any})
 
 	return restoreValues(restoreKeys(encodedData), Config.Encoding.Dictionary.Values, Config.Encoding.Arrays :: any)
 end
-
-
 
 return Util

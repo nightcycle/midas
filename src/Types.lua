@@ -20,13 +20,7 @@ export type PublicTracker = {
 	GetPath: (self: PublicTracker) -> string,
 	SetRoundingPrecision: (self: PublicTracker, exp: number?) -> nil,
 	CanFire: (self: PublicTracker) -> boolean,
-	Fire: (
-		self: PublicTracker,
-		eventName: string,
-		data: { [string]: any }?,
-		seriesDuration: number?,
-		includeEndEvent: boolean?
-	) -> nil,
+	Fire: (self: PublicTracker, eventName: string, data: { [string]: any }?, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	SetChance: (self: PublicTracker, val: number) -> nil,
 	GetBoundStateCount: (self: PublicTracker) -> number,
 }
@@ -47,13 +41,7 @@ export type PrivateTracker = {
 	_HandleCompile: (self: PrivateTracker) -> { [string]: any }?,
 	_GetUTC: (self: PrivateTracker, offset: number?) -> string,
 	CanFire: (self: PrivateTracker) -> boolean,
-	Fire: (
-		self: PrivateTracker,
-		eventName: string,
-		data: { [string]: any }?,
-		seriesDuration: number?,
-		includeEndEvent: boolean?
-	) -> nil,
+	Fire: (self: PrivateTracker, eventName: string, data: { [string]: any }?, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
 	SetChance: (self: PrivateTracker, val: number) -> nil,
 	GetBoundStateCount: (self: PrivateTracker) -> number,
 
@@ -89,31 +77,10 @@ export type PrivateTracker = {
 	__newindex: (self: PrivateTracker, index: any, value: State) -> nil,
 
 	_new: (player: Player, path: string, profile: Profile?) -> PrivateTracker,
-	_FireSeries: (
-		self: PrivateTracker,
-		eventName: string,
-		data: { [string]: any }?,
-		utc: string,
-		waitDuration: number,
-		includeEndEvent: boolean?
-	) -> nil,
+	_FireSeries: (self: PrivateTracker, eventName: string, data: { [string]: any }?, utc: string, waitDuration: number, includeEndEvent: boolean?) -> nil,
 	_FireEvent: (self: PrivateTracker, eventName: string, data: { [string]: any }?, utc: string) -> nil,
-	_Fire: (
-		self: PrivateTracker,
-		eventName: string,
-		data: { [string]: any }?,
-		utc: string,
-		seriesDuration: number?,
-		includeEndEvent: boolean?
-	) -> nil,
-	_Load: (
-		self: PrivateTracker,
-		player: Player,
-		path: string,
-		profile: Profile?,
-		maid: Maid.Maid,
-		onLoad: Signal.Signal
-	) -> nil,
+	_Fire: (self: PrivateTracker, eventName: string, data: { [string]: any }?, utc: string, seriesDuration: number?, includeEndEvent: boolean?) -> nil,
+	_Load: (self: PrivateTracker, player: Player, path: string, profile: Profile?, maid: Maid.Maid, onLoad: Signal.Signal) -> nil,
 }
 
 export type Profile = {
@@ -146,16 +113,7 @@ export type Profile = {
 		index: number,
 		includeEndEvent: boolean
 	) -> Signal.Signal,
-	Fire: (
-		self: Profile,
-		tracker: PrivateTracker,
-		eventName: string,
-		data: { [string]: any }?,
-		timestamp: string,
-		eventIndex: number,
-		index: number,
-		duration: number?
-	) -> nil,
+	Fire: (self: Profile, tracker: PrivateTracker, eventName: string, data: { [string]: any }?, timestamp: string, eventIndex: number, index: number, duration: number?) -> nil,
 	HasPath: (self: Profile, tracker: PrivateTracker, path: string) -> boolean,
 	DestroyPath: (self: Profile, path: string) -> nil,
 	DestroyTracker: (self: Profile, path: string) -> nil,
@@ -164,13 +122,7 @@ export type Profile = {
 	Teleport: (self: Profile, mExit: PrivateTracker?) -> TeleportDataEntry,
 	new: (player: Player) -> Profile,
 	getProfilesFolder: () -> Folder,
-	_Fire: (
-		self: Profile,
-		eventFullPath: string,
-		delta: { [string]: any },
-		tags: { [string]: boolean },
-		timestamp: string
-	) -> nil,
+	_Fire: (self: Profile, eventFullPath: string, delta: { [string]: any }, tags: { [string]: boolean }, timestamp: string) -> nil,
 	_Format: (
 		self: Profile,
 		tracker: PrivateTracker,
@@ -187,7 +139,7 @@ export type Profile = {
 
 --- @type ConfigurationData {Version: {Major: number,Minor: number,Patch: number,Hotfix: number?,Tag: string?,TestGroup: string?,},SendDeltaState: boolean,PrintLog: boolean,PrintEventsInStudio: boolean,SendDataToPlayFab: boolean, Templates: {Join: boolean,Chat: boolean,Population: boolean,ServerPerformance: boolean,Market: boolean,Exit: boolean,Character: boolean,Demographics: boolean,Policy: boolean,ClientPerformance: boolean,Settings: boolean,ServerIssues: boolean, ClientIssues: boolean, Group: {[string]: number}},}
 --- @within Interface
-type RecursiveDict<T> = {[string]: T | RecursiveDict<T>}
+type RecursiveDict<T> = { [string]: T | RecursiveDict<T> }
 
 export type ConfigurationData = {
 	Version: {
@@ -206,8 +158,8 @@ export type ConfigurationData = {
 	Encoding: {
 		Marker: string,
 		Dictionary: {
-			Properties: {[string]: any},
-			Values: {[string]: any},
+			Properties: { [string]: any },
+			Values: { [string]: any },
 		},
 		Arrays: any, --{[number]: any},
 	},
@@ -245,25 +197,25 @@ export type ConfigurationData = {
 				Server: {
 					EventsPerMinute: boolean,
 					Ping: boolean,
-					ServerTime: boolean, 
-					HeartRate: boolean, 
-					Instances: boolean, 
-					MovingParts: boolean, 
+					ServerTime: boolean,
+					HeartRate: boolean,
+					Instances: boolean,
+					MovingParts: boolean,
 					Network: {
 						Data: {
 							Send: boolean,
 							Receive: boolean,
 						},
 						Physics: {
-							Send: boolean, 
+							Send: boolean,
 							Receive: boolean,
 						},
 					},
 					Memory: {
 						Internal: boolean,
-						HttpCache: boolean, 
-						Instances: boolean, 
-						Signals: boolean, 
+						HttpCache: boolean,
+						Instances: boolean,
+						Signals: boolean,
 						LuaHeap: boolean,
 						Script: boolean,
 						PhysicsCollision: boolean,
@@ -290,8 +242,8 @@ export type ConfigurationData = {
 				Gamepass: boolean,
 				Total: boolean,
 			},
-			Groups: {[string]: number},
-			Badges: {[string]: number},
+			Groups: { [string]: number },
+			Badges: { [string]: number },
 			Demographics: {
 				AccountAge: boolean,
 				RobloxLanguage: boolean,
@@ -313,13 +265,12 @@ export type ConfigurationData = {
 					ScreenSize: boolean,
 					ScreenRatio: boolean,
 				},
-
 			},
 		},
 		Event: {
 			Interval: number?,
 			Join: {
-				Teleport: boolean, 
+				Teleport: boolean,
 				Enter: boolean,
 			},
 			Chat: {
@@ -331,15 +282,15 @@ export type ConfigurationData = {
 			Spending: {
 				Purchase: {
 					Product: boolean,
-					Gamepass: boolean
+					Gamepass: boolean,
 				},
 			},
 			Exit: {
-				Quit: boolean, 
-				Disconnect: boolean, 
+				Quit: boolean,
+				Disconnect: boolean,
 				Close: boolean,
 			},
-		}
+		},
 	},
 }
 

@@ -31,19 +31,15 @@ export type ConfigurationData = Types.ConfigurationData
 type Maid = Maid.Maid
 export type Interface = {
 	__index: Interface,
-	_TitleId: string?, 
+	_TitleId: string?,
 	_SecretKey: string?,
 	_Maid: Maid,
 	_IsAlive: boolean,
-	_ProfileRegistry: {[number]: Profile},
+	_ProfileRegistry: { [number]: Profile },
 	_GetProfile: (self: Interface, userId: number) -> Profile?,
 	GetTracker: (self: Interface, player: Player, path: string) -> Tracker,
 	_Connect: (self: Interface, player: Player) -> nil,
-	InsertTeleportDataEntry: (
-		self: Interface,
-		player: Player,
-		teleportData: { [any]: any }?
-	) -> {
+	InsertTeleportDataEntry: (self: Interface, player: Player, teleportData: { [any]: any }?) -> {
 		MidasAnalyticsData: TeleportDataEntry,
 		[any]: any,
 	},
@@ -85,13 +81,13 @@ function Interface:Destroy()
 end
 
 function Interface:_GetProfile(userId: number)
-	log("get profile for "..tostring(userId))
+	log("get profile for " .. tostring(userId))
 	local function getProfile(attempt: number?)
 		attempt = attempt or 1
 		assert(attempt ~= nil)
 
 		if attempt > 10 / 0.1 then
-			log("profile failed "..tostring(userId))
+			log("profile failed " .. tostring(userId))
 			return
 		end
 
@@ -99,10 +95,10 @@ function Interface:_GetProfile(userId: number)
 
 		if result == nil then
 			task.wait(1)
-			log("did not find profile "..tostring(userId))
+			log("did not find profile " .. tostring(userId))
 			return getProfile(attempt + 1)
 		else
-			log("found profile "..tostring(userId))
+			log("found profile " .. tostring(userId))
 			return result
 		end
 	end
@@ -120,10 +116,10 @@ function Interface:GetTracker(player: Player, path: string): Tracker
 		end
 	end
 	if RunService:IsServer() then
-		log("constructing new server tracker", player)	
+		log("constructing new server tracker", player)
 		return Tracker._new(player, path, profile) :: any
 	else
-		log("constructing new client tracker", player)	
+		log("constructing new client tracker", player)
 		return Tracker._new(player, path, nil) :: any
 	end
 end
@@ -149,7 +145,6 @@ function Interface:Configure(deltaConfig: ConfigurationData): nil
 
 	return nil
 end
-
 
 --- When a player is being teleported, pass the teleport data prior to teleporting them through this API. This will ensure the session is tracked as continuing.
 --- @server
@@ -180,15 +175,10 @@ function Interface:GetEventSignal(): Signal.Signal
 	return PlayFab.OnFire
 end
 
-
-
 local currentInterface: Interface
-
 
 -- Make sure client always has the most up-to-date config
 if RunService:IsServer() then
-
-
 	function Interface.new()
 		log("new interface")
 		local self: Interface = setmetatable({}, Interface) :: any
@@ -197,14 +187,14 @@ if RunService:IsServer() then
 		self._Maid = Maid.new()
 		self._ProfileRegistry = {}
 		self._IsAlive = true
-	
+
 		-- Connect players to framework when they enter
 		local function initPlayer(player: Player)
 			assert(player, "bad player")
 
 			log("init player", player)
 			local profile = self._Maid:GiveTask(Profile.new(player))
-			
+
 			log("registering profile", player)
 			local preExistingProfile: Profile = self._ProfileRegistry[player.UserId]
 			if preExistingProfile then
@@ -217,7 +207,7 @@ if RunService:IsServer() then
 				self._ProfileRegistry[player.UserId] = nil
 			end
 			self._ProfileRegistry[player.UserId] = profile
-			
+
 			log("registering templates", player)
 			assert(profile ~= nil)
 			Templates.join(player, profile, profile._WasTeleported)
@@ -226,7 +216,7 @@ if RunService:IsServer() then
 			Templates.population(player, profile)
 			local updateInterval = Config.Template.Event.Interval
 			if updateInterval then
-				local intervalUpdate = Tracker._new(player, "Interval")
+				local intervalUpdate = Tracker._new(player, "Interval", profile)
 				local lastUpdate = 0
 				intervalUpdate._Maid:GiveTask(RunService.Heartbeat:Connect(function()
 					if tick() - lastUpdate >= updateInterval then
@@ -268,7 +258,7 @@ if RunService:IsServer() then
 				profile:DestroyTracker(eventKeyPath)
 			end
 		end))
-		
+
 		self._Maid:GiveTask(Players.PlayerAdded:Connect(initPlayer))
 
 		task.spawn(function()
@@ -292,7 +282,7 @@ if RunService:IsServer() then
 		end))
 
 		NetworkUtil.onServerInvoke(CONSTRUCT_KEY, function(player: Player, eventKeyPath: string)
-			log("constructing tracker at "..tostring(eventKeyPath), player)
+			log("constructing tracker at " .. tostring(eventKeyPath), player)
 			Tracker._new(player, eventKeyPath, self:_GetProfile(player.UserId))
 			return true
 		end)
@@ -300,15 +290,13 @@ if RunService:IsServer() then
 			currentInterface:Destroy()
 		end
 		currentInterface = self
-	
+
 		return self
 	end
-
 
 	--- Call this on the server to connect PlayFab prior to firing any events.
 	--- @server
 	function Interface.init(titleId: string, devSecretKey: string, maid: Maid?): nil
-
 		maid = maid or Maid.new()
 		assert(maid)
 
@@ -323,15 +311,12 @@ if RunService:IsServer() then
 
 		return nil
 	end
-
 else
-
 	GetInitialConfig:InvokeServer()
 
 	Templates.demographics(Players.LocalPlayer)
 	Templates.clientPerformance(Players.LocalPlayer)
 	Templates.groups(Players.LocalPlayer)
-
 end
 
 return ServiceProxy(function()

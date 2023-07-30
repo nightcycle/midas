@@ -8,7 +8,7 @@ local Config: Types.ConfigurationData = {
 		Minor = 0,
 		Patch = 0,
 	},
-	BytesPerMinutePerPlayer = 2000*15,
+	BytesPerMinutePerPlayer = 2000 * 15,
 	SendDeltaState = false, --Send just the changes of state, not the entirety
 	SendDataToPlayFab = true,
 	PrintEventsInStudio = true,
@@ -150,7 +150,7 @@ local Config: Types.ConfigurationData = {
 				Disconnect = true,
 				Close = true,
 			},
-		}
+		},
 	},
 }
 

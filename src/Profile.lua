@@ -103,7 +103,7 @@ end
 function Profile:_Fire(eventFullPath: string, delta: { [string]: any }, tags: { [string]: boolean }, timestamp: string)
 	log("_fire", self.Player, eventFullPath)
 	self.EventsPerMinute += 1
-	
+
 	local charCount = string.len(HttpService:JSONEncode(delta))
 	self._BytesRemaining -= charCount
 
@@ -157,7 +157,6 @@ function Profile:_Format(
 		Build = game.PlaceVersion,
 	}
 
-
 	delta.Duration = math.round(1000 * (duration or 0)) / 1000
 	delta.IsStudio = RunService:IsStudio()
 	local path = tracker.Path
@@ -169,14 +168,14 @@ function Profile:_Format(
 	end
 
 	if data then
-		local currentAccessPoint: {[string]: any} = delta
+		local currentAccessPoint: { [string]: any } = delta
 		local keys = string.split(eventFullPath, "/")
 		for i, k in ipairs(keys) do
 			if i < #keys then
 				if not currentAccessPoint[k] then
 					currentAccessPoint[k] = {}
 				elseif typeof(currentAccessPoint[k]) ~= "table" then
-					currentAccessPoint["_"..k] = currentAccessPoint[k]
+					currentAccessPoint["_" .. k] = currentAccessPoint[k]
 					currentAccessPoint[k] = {}
 				end
 				currentAccessPoint = currentAccessPoint[k]
@@ -194,15 +193,7 @@ function Profile:IncrementIndex(): number
 	return self._Index
 end
 
-function Profile:FireSeries(
-	tracker: Tracker,
-	eventName: string,
-	data: { [string]: any }?,
-	timestamp: string,
-	eventIndex: number,
-	index: number,
-	includeEndEvent: boolean
-): Signal.Signal
+function Profile:FireSeries(tracker: Tracker, eventName: string, data: { [string]: any }?, timestamp: string, eventIndex: number, index: number, includeEndEvent: boolean): Signal.Signal
 	log("fire series", tracker._Player, eventName)
 	local deltaStates = {}
 	if self._BytesRemaining > 0 then
@@ -251,20 +242,11 @@ function Profile:FireSeries(
 end
 
 --shoot it out to server
-function Profile:Fire(
-	tracker: Tracker,
-	eventName: string,
-	data: { [string]: any }?,
-	timestamp: string,
-	eventIndex: number,
-	index: number,
-	duration: number?
-): nil
+function Profile:Fire(tracker: Tracker, eventName: string, data: { [string]: any }?, timestamp: string, eventIndex: number, index: number, duration: number?): nil
 	log("fire", tracker._Player, eventName)
 	local deltaStates = {}
 
 	if self._BytesRemaining > 0 then
-
 		for p, t in pairs(self._Trackers) do
 			log("getting compile for " .. tostring(t.Path), t._Player, eventName)
 			local output = t:_Compile()
@@ -275,7 +257,6 @@ function Profile:Fire(
 				end
 			end
 		end
-		
 	end
 
 	log("delta assembled", tracker._Player, eventName)
@@ -285,8 +266,7 @@ function Profile:Fire(
 	deltaStates.Id.User = tostring(self.Player.UserId)
 
 	local eventFullPath
-	deltaStates, eventFullPath =
-		self:_Format(tracker, eventName, data, deltaStates, eventIndex, duration, timestamp, index)
+	deltaStates, eventFullPath = self:_Format(tracker, eventName, data, deltaStates, eventIndex, duration, timestamp, index)
 
 	self:_Fire(eventFullPath, deltaStates, tracker._Tags, timestamp)
 	return nil
@@ -427,6 +407,5 @@ function Profile.new(player: Player): Profile
 
 	return self :: any
 end
-
 
 return Profile

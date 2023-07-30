@@ -31,7 +31,6 @@ local Templates = {}
 Templates.__index = {}
 
 function Templates.join(player: Player, profile: Profile, wasTeleportedIn: boolean): Tracker?
-
 	if Config.Template.Event.Join.Enter or Config.Template.Event.Join.Teleport then
 		assert(RunService:IsServer(), "Bad domain")
 		local mJoin = Tracker._new(player, "Join", profile)
@@ -52,17 +51,12 @@ function Templates.join(player: Player, profile: Profile, wasTeleportedIn: boole
 end
 
 function Templates.chat(player: Player, profile: Profile): Tracker?
-
 	assert(RunService:IsServer(), "Bad domain")
 
-	if Config.Template.State.Chat.Count
-	or Config.Template.State.Chat.LastMessage
-	or Config.Template.Event.Chat.Spoke
-	then
-
+	if Config.Template.State.Chat.Count or Config.Template.State.Chat.LastMessage or Config.Template.Event.Chat.Spoke then
 		local mChat = Tracker._new(player, "Chat", profile)
 		log("loaded", player, mChat.Path)
-		
+
 		task.spawn(function()
 			local lastMessage: string?
 			local chatCount = 0
@@ -87,7 +81,7 @@ function Templates.chat(player: Player, profile: Profile): Tracker?
 				chatCount += 1
 			end))
 		end)
-	
+
 		return mChat :: any
 	else
 		return nil
@@ -95,7 +89,6 @@ function Templates.chat(player: Player, profile: Profile): Tracker?
 end
 
 function Templates.character(character: Model, profile: Profile): Tracker?
-
 	assert(RunService:IsServer(), "Bad domain")
 	local player = Players:GetPlayerFromCharacter(character)
 	assert(player ~= nil)
@@ -113,12 +106,12 @@ function Templates.character(character: Model, profile: Profile): Tracker?
 	if isUsed then
 		local mCharacter = Tracker._new(player, "Character", profile)
 		mCharacter:SetRoundingPrecision(1)
-	
+
 		maid:GiveTask(character.Destroying:Connect(function()
 			log("character destroying", player, mCharacter.Path)
 			maid:Destroy()
 		end))
-	
+
 		local isDead = false
 		task.spawn(function()
 			if Config.Template.State.Character.IsDead then
@@ -192,7 +185,7 @@ function Templates.character(character: Model, profile: Profile): Tracker?
 					return humanoid.MaxHealth
 				end)
 			end
-	
+
 			local deaths = 0
 			if Config.Template.State.Character.Deaths then
 				mCharacter:SetState("Deaths", function()
@@ -202,7 +195,7 @@ function Templates.character(character: Model, profile: Profile): Tracker?
 
 			local humanoid = character:WaitForChild("Humanoid", 15)
 			assert(humanoid ~= nil and humanoid:IsA("Humanoid"), "Bad humanoid")
-	
+
 			maid:GiveTask(humanoid.Died:Connect(function()
 				deaths += 1
 				if Config.Template.Event.Character.Died then
@@ -211,7 +204,7 @@ function Templates.character(character: Model, profile: Profile): Tracker?
 				isDead = true
 			end))
 		end)
-	
+
 		return mCharacter :: any
 	else
 		return nil
@@ -219,16 +212,16 @@ function Templates.character(character: Model, profile: Profile): Tracker?
 end
 
 function Templates.population(player: Player, profile: Profile): Tracker?
-
-	if Config.Template.State.Population.Total 
-	or Config.Template.State.Population.Team 
-	or Config.Template.State.Population.PeakFriends
-	or Config.Template.State.Population.Friends
-	or Config.Template.State.Population.SpeakingDistance   
+	if
+		Config.Template.State.Population.Total
+		or Config.Template.State.Population.Team
+		or Config.Template.State.Population.PeakFriends
+		or Config.Template.State.Population.Friends
+		or Config.Template.State.Population.SpeakingDistance
 	then
 		assert(RunService:IsServer(), "Bad domain")
 		local mPopulation = Tracker._new(player, "Population", profile)
-	
+
 		task.spawn(function()
 			if Config.Template.State.Population.Total then
 				mPopulation:SetState("Total", function()
@@ -272,7 +265,7 @@ function Templates.population(player: Player, profile: Profile): Tracker?
 						friends[item.Id] = true
 					end
 				end)
-		
+
 				local peakFriends = 0
 				if Config.Template.State.Population.PeakFriends then
 					mPopulation:SetState("PeakFriends", function()
@@ -325,25 +318,17 @@ function Templates.population(player: Player, profile: Profile): Tracker?
 					end
 				end)
 			end
-			
 		end)
-	
+
 		return mPopulation :: any
 	else
 		return nil
 	end
-
-	
 end
 
-function Templates.serverPerformance(
-	player: Player, profile: Profile,
-	getTimeDifference: () -> number,
-	getEventsPerMinute: () -> number
-): Tracker?
-
+function Templates.serverPerformance(player: Player, profile: Profile, getTimeDifference: () -> number, getEventsPerMinute: () -> number): Tracker?
 	local isUsed = false
-	local function getUsage(tabl: {[string]: any}): boolean
+	local function getUsage(tabl: { [string]: any }): boolean
 		local altUsage = false
 		for k, v in pairs(tabl) do
 			if v == true then
@@ -433,7 +418,7 @@ function Templates.serverPerformance(
 					end)
 				end
 			end
-		
+
 			if memoryUsage then
 				if Config.Template.State.Performance.Server.Memory.Internal then
 					mServerPerformance:SetState("Memory/Internal", function()
@@ -554,14 +539,14 @@ function Templates.serverPerformance(
 end
 
 function Templates.market(player: Player, profile: Profile): Tracker?
-
 	assert(RunService:IsServer(), "Bad domain")
 
-	if Config.Template.State.Spending.Product 
-	or Config.Template.State.Spending.Gamepass 
-	or Config.Template.State.Spending.Total
-	or Config.Template.Event.Spending.Purchase.Product 
-	or Config.Template.Event.Spending.Purchase.Gamepass
+	if
+		Config.Template.State.Spending.Product
+		or Config.Template.State.Spending.Gamepass
+		or Config.Template.State.Spending.Total
+		or Config.Template.Event.Spending.Purchase.Product
+		or Config.Template.Event.Spending.Purchase.Gamepass
 	then
 		local mMarket = Tracker._new(player, "Spending", profile)
 
@@ -569,62 +554,52 @@ function Templates.market(player: Player, profile: Profile): Tracker?
 		local gamepasses = 0
 
 		task.spawn(function()
-			if Config.Template.State.Spending.Product 
-			or Config.Template.Event.Spending.Purchase.Product
-			or Config.Template.State.Spending.Total then
+			if Config.Template.State.Spending.Product or Config.Template.Event.Spending.Purchase.Product or Config.Template.State.Spending.Total then
 				if Config.Template.State.Spending.Product then
 					mMarket:SetState("Spending/Product", function()
 						return products
 					end)
 				end
 
-				mMarket._Maid:GiveTask(
-					MarketplaceService.PromptPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
-						if plr ~= player and success then
-							local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)
-							if Config.Template.Event.Spending.Purchase.Product then
-								mMarket:Fire("Purchase/Product", {
-									Name = itemInfo.Name,
-									Price = itemInfo.PriceInRobux
-								})
-							end
-							products += itemInfo.PriceInRobux
+				mMarket._Maid:GiveTask(MarketplaceService.PromptPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
+					if plr ~= player and success then
+						local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.Product)
+						if Config.Template.Event.Spending.Purchase.Product then
+							mMarket:Fire("Purchase/Product", {
+								Name = itemInfo.Name,
+								Price = itemInfo.PriceInRobux,
+							})
 						end
-					end)
-				)
+						products += itemInfo.PriceInRobux
+					end
+				end))
 			end
 
-			if Config.Template.State.Spending.Gamepass 
-			or Config.Template.Event.Spending.Purchase.Gamepass
-			or Config.Template.State.Spending.Total then
+			if Config.Template.State.Spending.Gamepass or Config.Template.Event.Spending.Purchase.Gamepass or Config.Template.State.Spending.Total then
 				if Config.Template.State.Spending.Gamepass then
 					mMarket:SetState("Spending/Gamepass", function()
 						return gamepasses
 					end)
 				end
 
-				mMarket._Maid:GiveTask(
-					MarketplaceService.PromptGamePassPurchaseFinished:Connect(
-						function(plr: Player, id: number, success: boolean)
-							if plr ~= player and success then
-								local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
-								if Config.Template.Event.Spending.Purchase.Gamepass then
-									mMarket:Fire("Purchase/Gamepass", {
-										Name = itemInfo.Name,
-										Price = itemInfo.PriceInRobux
-									})
-								end
-								gamepasses += itemInfo.PriceInRobux
-							end
+				mMarket._Maid:GiveTask(MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr: Player, id: number, success: boolean)
+					if plr ~= player and success then
+						local itemInfo = MarketplaceService:GetProductInfo(id, Enum.InfoType.GamePass)
+						if Config.Template.Event.Spending.Purchase.Gamepass then
+							mMarket:Fire("Purchase/Gamepass", {
+								Name = itemInfo.Name,
+								Price = itemInfo.PriceInRobux,
+							})
 						end
-					)
-				)
+						gamepasses += itemInfo.PriceInRobux
+					end
+				end))
 			end
 			if Config.Template.State.Spending.Total then
 				mMarket:SetState("Spending/Total", function()
 					return products + gamepasses
 				end)
-			end			
+			end
 		end)
 
 		return mMarket :: any
@@ -634,15 +609,12 @@ function Templates.market(player: Player, profile: Profile): Tracker?
 end
 
 function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -> boolean): Tracker?
-
 	assert(RunService:IsServer(), "Bad domain")
 
 	if Config.Template.Event.Exit.Close or Config.Template.Event.Exit.Quit or Config.Template.Event.Exit.Disconnect then
-
 		local mExit = Tracker._new(player, "Exit", profile)
 		task.spawn(function()
 			if Config.Template.Event.Exit.Quit then
-
 				mExit._Maid:GiveTask(Players.PlayerRemoving:Connect(function(remPlayer: Player)
 					local isTeleporting = getIfTeleporting()
 					if remPlayer == player and isTeleporting == false then
@@ -663,7 +635,7 @@ function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -
 				end))
 			end
 		end)
-	
+
 		return mExit :: any
 	else
 		return nil
@@ -671,7 +643,6 @@ function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -
 end
 
 function Templates.groups(player: Player): Tracker?
-
 	assert(RunService:IsClient())
 
 	local groupCount = 0
@@ -681,7 +652,7 @@ function Templates.groups(player: Player): Tracker?
 	if groupCount > 0 then
 		local mGroups = Tracker._new(player, "Groups")
 		mGroups:SetRoundingPrecision(0)
-	
+
 		task.spawn(function()
 			local groupConfig = Config.Template.State.Groups
 			assert(groupConfig ~= nil)
@@ -690,11 +661,11 @@ function Templates.groups(player: Player): Tracker?
 
 			for groupName, groupId in pairs(groupConfig) do
 				local rank = player:GetRankInGroup(groupId)
-			
+
 				if callsPerMinute >= 1 then
 					local lastUpdate = tick()
 					mGroups._Maid:GiveTask(RunService.Heartbeat:Connect(function()
-						if tick() - lastUpdate > 60/callsPerMinute then
+						if tick() - lastUpdate > 60 / callsPerMinute then
 							lastUpdate = tick()
 							rank = player:GetRankInGroup(groupId)
 						end
@@ -706,7 +677,7 @@ function Templates.groups(player: Player): Tracker?
 				end)
 			end
 		end)
-	
+
 		return mGroups :: any
 	else
 		return nil
@@ -714,7 +685,6 @@ function Templates.groups(player: Player): Tracker?
 end
 
 function Templates.badges(player: Player, profile: Profile): Tracker?
-	
 	assert(RunService:IsServer())
 
 	local badgeCount = 0
@@ -726,20 +696,20 @@ function Templates.badges(player: Player, profile: Profile): Tracker?
 
 		local mBadges = Tracker._new(player, "Badges", profile)
 		mBadges:SetRoundingPrecision(0)
-	
+
 		task.spawn(function()
 			local badgesConfig = Config.Template.State.Badges
 			assert(badgesConfig ~= nil)
 
 			local callsPerMinute = math.floor(35 / badgeCount) - 1
-		
+
 			for badgeName, badgeId in pairs(badgesConfig) do
 				local isBadgeOwned = BadgeService:UserHasBadgeAsync(player.UserId, badgeId)
-			
+
 				if not isBadgeOwned and callsPerMinute >= 1 then
 					local lastUpdate = tick()
 					mBadges._Maid:GiveTask(RunService.Heartbeat:Connect(function()
-						if tick() - lastUpdate > 60/callsPerMinute and not isBadgeOwned then
+						if tick() - lastUpdate > 60 / callsPerMinute and not isBadgeOwned then
 							lastUpdate = tick()
 							isBadgeOwned = BadgeService:UserHasBadgeAsync(player.UserId, badgeId)
 						end
@@ -752,7 +722,7 @@ function Templates.badges(player: Player, profile: Profile): Tracker?
 				end)
 			end
 		end)
-	
+
 		return mBadges :: any
 	else
 		return nil
@@ -760,7 +730,6 @@ function Templates.badges(player: Player, profile: Profile): Tracker?
 end
 
 function Templates.demographics(player: Player): Tracker?
-
 	assert(RunService:IsClient(), "Bad domain")
 
 	local isUsed = false
@@ -786,13 +755,13 @@ function Templates.demographics(player: Player): Tracker?
 
 		local mDemographics = Tracker._new(player, "Demographics")
 		mDemographics:SetRoundingPrecision(3)
-	
+
 		task.spawn(function()
 			if isUsed then
 				if Config.Template.State.Demographics.AccountAge then
 					mDemographics:SetState("AccountAge", function()
 						return player.AccountAge
-					end)	
+					end)
 				end
 				if Config.Template.State.Demographics.RobloxLanguage then
 					mDemographics:SetState("RobloxLanguage", function()
@@ -851,19 +820,16 @@ function Templates.demographics(player: Player): Tracker?
 					end)
 				end
 				if Config.Template.State.Demographics.Platform.Mouse then
-
 					mDemographics:SetState("Platform/Mouse", function()
 						return UserInputService.MouseEnabled
 					end)
 				end
 				if Config.Template.State.Demographics.Platform.Touch then
-
 					mDemographics:SetState("Platform/Touch", function()
 						return UserInputService.TouchEnabled
 					end)
 				end
 				if Config.Template.State.Demographics.Platform.VR then
-
 					mDemographics:SetState("Platform/VR", function()
 						return UserInputService.VREnabled
 					end)
@@ -899,7 +865,7 @@ function Templates.demographics(player: Player): Tracker?
 				end
 			end
 		end)
-	
+
 		return mDemographics :: any
 	else
 		return nil
@@ -910,14 +876,13 @@ function Templates.clientPerformance(player: Player): Tracker?
 	assert(RunService:IsClient())
 
 	if Config.Template.State.Performance.Client.FPS or Config.Template.State.Performance.Client.Ping then
-
 		local mClientPerformance = Tracker._new(player, "Performance/Client")
 		mClientPerformance:SetRoundingPrecision(0)
-	
+
 		task.spawn(function()
 			if Config.Template.State.Performance.Client.Ping then
 				mClientPerformance:SetState("Ping", function()
-					return math.round(math.clamp(player:GetNetworkPing()*1000, 0, 10 ^ 6))
+					return math.round(math.clamp(player:GetNetworkPing() * 1000, 0, 10 ^ 6))
 				end)
 			end
 
@@ -934,7 +899,7 @@ function Templates.clientPerformance(player: Player): Tracker?
 				end)
 			end
 		end)
-	
+
 		return mClientPerformance :: any
 	else
 		return nil

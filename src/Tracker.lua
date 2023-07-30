@@ -253,19 +253,7 @@ function Tracker:_GetUTC(offset: number?): string
 	local dateTime: DateTime = DateTime.fromUnixTimestamp(unixTime)
 	local utc: any = dateTime:ToUniversalTime()
 
-	return utc.Year
-		.. "-"
-		.. utc.Month
-		.. "-"
-		.. utc.Day
-		.. " "
-		.. utc.Hour
-		.. ":"
-		.. utc.Minute
-		.. ":"
-		.. utc.Second
-		.. "."
-		.. math.round((unixTime - math.floor(unixTime)) * 1000) --utc.Millisecond
+	return utc.Year .. "-" .. utc.Month .. "-" .. utc.Day .. " " .. utc.Hour .. ":" .. utc.Minute .. ":" .. utc.Second .. "." .. math.round((unixTime - math.floor(unixTime)) * 1000) --utc.Millisecond
 end
 
 --- Determines if a tracker object meets all the bound conditions.
@@ -279,13 +267,7 @@ function Tracker:CanFire(): boolean
 	return allTrue
 end
 
-function Tracker:_FireSeries(
-	eventName: string,
-	data: { [string]: any }?,
-	utc: string,
-	waitDuration: number,
-	includeEndEvent: boolean?
-): nil
+function Tracker:_FireSeries(eventName: string, data: { [string]: any }?, utc: string, waitDuration: number, includeEndEvent: boolean?): nil
 	log("_fire series", self.Player, eventName)
 	assert(RunService:IsServer(), "Bad domain")
 	waitDuration = waitDuration or 15
@@ -294,15 +276,7 @@ function Tracker:_FireSeries(
 	local t = tick()
 	if self._LastFireTick[eventName] == nil then
 		assert(self._Profile ~= nil)
-		self._SeriesSignal[eventName] = self._Profile:FireSeries(
-			self,
-			eventName,
-			data,
-			utc,
-			self._Index[eventName],
-			self._Profile:IncrementIndex(),
-			includeEndEvent
-		)
+		self._SeriesSignal[eventName] = self._Profile:FireSeries(self, eventName, data, utc, self._Index[eventName], self._Profile:IncrementIndex(), includeEndEvent)
 	end
 	self._FirstFireTick[eventName] = self._FirstFireTick[eventName] or t
 	self._LastFireTick[eventName] = t
@@ -338,13 +312,7 @@ function Tracker:_FireEvent(eventName: string, data: { [string]: any }?, utc: st
 	return nil
 end
 
-function Tracker:_Fire(
-	eventName: string,
-	data: { [string]: any }?,
-	utc: string,
-	seriesDuration: number?,
-	includeEndEvent: boolean?
-): nil
+function Tracker:_Fire(eventName: string, data: { [string]: any }?, utc: string, seriesDuration: number?, includeEndEvent: boolean?): nil
 	log("_fire", self.Player, eventName)
 	if RunService:IsServer() then
 		if seriesDuration ~= nil then
@@ -360,12 +328,7 @@ function Tracker:_Fire(
 end
 
 --- Fires an event. If series duration is included it will delay sending the event until that duration has passed. It can also fire an end event in that case.
-function Tracker:Fire(
-	eventName: string,
-	data: { [string]: any }?,
-	seriesDuration: number?,
-	includeEndEvent: boolean?
-): nil
+function Tracker:Fire(eventName: string, data: { [string]: any }?, seriesDuration: number?, includeEndEvent: boolean?): nil
 	log("fire", self.Player, eventName)
 	task.spawn(function()
 		local utc = self:_GetUTC()
@@ -413,7 +376,7 @@ function Tracker:_Load(player: Player, path: string, profile: Profile?, maid: Ma
 	local inst: Folder?
 	log("loading", player, path)
 	if RunService:IsServer() then -- Server builds instance
-		log("building server instances", player, path)	
+		log("building server instances", player, path)
 		inst = Instance.new("Folder")
 		assert(inst ~= nil)
 		assert(profile ~= nil)
@@ -479,19 +442,15 @@ function Tracker:_Load(player: Player, path: string, profile: Profile?, maid: Ma
 		self._OnClientFire = NetworkUtil.getRemoteEvent(ON_CLIENT_FIRE_KEY, inst)
 		maid:GiveTask(self._OnClientFire)
 		assert(self._OnClientFire ~= nil)
-		maid:GiveTask(
-			self._OnClientFire.OnServerEvent:Connect(
-				function(eventPlayer: Player, eventName: string, data: { [string]: any }?, utc: string, reps: number)
-					if eventPlayer == player then
-						log("client fired", player, path)
-						if not rawget(self, "_Loaded") then
-							onLoad:Wait()
-						end
-						Tracker._Fire(self :: any, eventName, data, utc, reps)
-					end
+		maid:GiveTask(self._OnClientFire.OnServerEvent:Connect(function(eventPlayer: Player, eventName: string, data: { [string]: any }?, utc: string, reps: number)
+			if eventPlayer == player then
+				log("client fired", player, path)
+				if not rawget(self, "_Loaded") then
+					onLoad:Wait()
 				end
-			)
-		)
+				Tracker._Fire(self :: any, eventName, data, utc, reps)
+			end
+		end))
 
 		--get render output from client
 		self._GetRenderOutput = NetworkUtil.getRemoteFunction("GetRenderOutput", inst)
@@ -523,7 +482,6 @@ function Tracker._new(player: Player, path: string, profile: Profile?): Tracker
 
 	-- Construct instance.
 	local maid = Maid.new()
-
 
 	-- Create signals
 	local onLoad = Signal.new()

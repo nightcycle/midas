@@ -21,14 +21,7 @@ local DEV_SECRET_KEY: string?
 export type PlayFab = {
 	OnFire: Signal.Signal,
 	Register: (self: PlayFab, userId: number) -> (string, string),
-	Fire: (
-		self: PlayFab,
-		pId: string,
-		eventName: string,
-		data: { [string]: any },
-		tags: { [string]: boolean },
-		timeStamp: string
-	) -> nil,
+	Fire: (self: PlayFab, pId: string, eventName: string, data: { [string]: any }, tags: { [string]: boolean }, timeStamp: string) -> nil,
 	init: (titleId: string, devSecretKey: string) -> nil,
 }
 
@@ -62,13 +55,7 @@ function post(url: string, headers: { [string]: any }, body: { [string]: any }, 
 	end
 
 	local success, _msg = pcall(function()
-		rawResponse = HttpService:PostAsync(
-			url,
-			HttpService:JSONEncode(body or {}),
-			Enum.HttpContentType.ApplicationJson,
-			false,
-			headers
-		)
+		rawResponse = HttpService:PostAsync(url, HttpService:JSONEncode(body or {}), Enum.HttpContentType.ApplicationJson, false, headers)
 	end)
 	local response: HttpResponse
 	local dSuccess, dMsg = pcall(function()
@@ -82,7 +69,7 @@ function post(url: string, headers: { [string]: any }, body: { [string]: any }, 
 	if success and response.code == 200 then
 		return response
 	elseif attempt < 15 then
-		task.wait(attempt*2.5)
+		task.wait(attempt * 2.5)
 		return post(url, headers, body, attempt + 1)
 	else
 		print(response, success, response)
@@ -90,13 +77,7 @@ function post(url: string, headers: { [string]: any }, body: { [string]: any }, 
 	end
 end
 
-function PlayFab:Fire(
-	pId: string,
-	eventName: string,
-	data: { [string]: any },
-	tags: { [string]: boolean },
-	timeStamp: string
-): nil
+function PlayFab:Fire(pId: string, eventName: string, data: { [string]: any }, tags: { [string]: boolean }, timeStamp: string): nil
 	assert(RunService:IsServer(), "PlayFab API can only be called on server")
 
 	data = EncodeUtil.encode(data)
@@ -117,12 +98,7 @@ function PlayFab:Fire(
 				["X-SecretKey"] = DEV_SECRET_KEY,
 			}
 
-			local versionText = "v"
-				.. Config.Version.Major
-				.. "."
-				.. Config.Version.Minor
-				.. "."
-				.. Config.Version.Patch
+			local versionText = "v" .. Config.Version.Major .. "." .. Config.Version.Minor .. "." .. Config.Version.Patch
 			if Config.Version.Hotfix then
 				versionText ..= "." .. Config.Version.Hotfix
 			end
