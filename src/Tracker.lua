@@ -45,11 +45,11 @@ function Tracker:SetState(key: string, state: State)
 	local states: { [string]: State } = s
 	assert(states ~= nil and typeof(states) == "table")
 
-	local function stateToFunction(state: State): any
-		if type(state) == "function" then
+	local function stateToFunction(st: State): any
+		if type(st) == "function" then
 			return state
-		elseif type(state) == "table" then
-			local stateObj: any = state
+		elseif type(st) == "table" then
+			local stateObj: any = st
 			if stateObj.get then
 				return function()
 					return stateObj:get()
@@ -440,8 +440,8 @@ function Tracker:_Load(player: Player, path: string, profile: Profile?, maid: Ma
 			local userId = self.Player.UserId
 			inst = profFolder:WaitForChild(path, 15) :: any?
 			local isPlayerInGameStill = false
-			for i, player in ipairs(Players:GetChildren()) do
-				if player:IsA("Player") and userId == player.UserId then
+			for i, plr in ipairs(Players:GetChildren()) do
+				if plr:IsA("Player") and userId == plr.UserId then
 					isPlayerInGameStill = true
 				end
 			end
@@ -467,9 +467,9 @@ function Tracker:_Load(player: Player, path: string, profile: Profile?, maid: Ma
 		maid:GiveTask(self._ClientRegister.OnServerEvent:Connect(function(eventPlayer: Player)
 			if eventPlayer == player then
 				log("register", player, path)
-				local onLoad: any = rawget(self, "_OnLoad")
+				local onEventLoad: any = rawget(self, "_OnLoad")
 				if not rawget(self, "_Loaded") then
-					onLoad:Wait()
+					onEventLoad:Wait()
 				end
 				self._IsClientManaged = true
 			end

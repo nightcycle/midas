@@ -128,7 +128,7 @@ export type Profile = {
 	_IsTeleporting: boolean,
 	_WasTeleported: boolean,
 	_Index: number,
-	_Midaii: { [string]: PrivateTracker },
+	_Trackers: { [string]: PrivateTracker },
 	_PreviousStates: {},
 	_SessionId: string?,
 	_PlayerId: string?,
@@ -211,17 +211,134 @@ export type ConfigurationData = {
 		},
 		Arrays: any, --{[number]: any},
 	},
-	Templates: {
-		Join: boolean?,
-		Chat: boolean?,
-		Population: boolean?,
-		ServerPerformance: boolean?,
-		Market: boolean?,
-		Exit: boolean?,
-		Character: boolean?,
-		Demographics: boolean?,
-		ClientPerformance: boolean?,
-		Group: { [string]: number }?,
+	Template: {
+		State: {
+			Chat: {
+				LastMessage: boolean,
+				Count: boolean,
+			},
+			Character: {
+				IsDead: boolean,
+				Height: boolean,
+				Mass: boolean,
+				State: boolean,
+				WalkSpeed: boolean,
+				Position: boolean,
+				Altitude: boolean,
+				JumpPower: boolean,
+				Health: boolean,
+				MaxHealth: boolean,
+				Deaths: boolean,
+			},
+			Population: {
+				Total: boolean,
+				Team: boolean,
+				PeakFriends: boolean,
+				Friends: boolean,
+				SpeakingDistance: boolean,
+			},
+			Performance: {
+				Client: {
+					Ping: boolean,
+					FPS: boolean,
+				},
+				Server: {
+					EventsPerMinute: boolean,
+					Ping: boolean,
+					ServerTime: boolean, 
+					HeartRate: boolean, 
+					Instances: boolean, 
+					MovingParts: boolean, 
+					Network: {
+						Data: {
+							Send: boolean,
+							Receive: boolean,
+						},
+						Physics: {
+							Send: boolean, 
+							Receive: boolean,
+						},
+					},
+					Memory: {
+						Internal: boolean,
+						HttpCache: boolean, 
+						Instances: boolean, 
+						Signals: boolean, 
+						LuaHeap: boolean,
+						Script: boolean,
+						PhysicsCollision: boolean,
+						PhysicsParts: boolean,
+						CSG: boolean,
+						Particle: boolean,
+						Part: boolean,
+						MeshPart: boolean,
+						SpatialHash: boolean,
+						TerrainGraphics: boolean,
+						Textures: boolean,
+						CharacterTextures: boolean,
+						SoundsData: boolean,
+						SoundsStreaming: boolean,
+						TerrainVoxels: boolean,
+						Guis: boolean,
+						Animations: boolean,
+						Pathfinding: boolean,
+					},
+				},
+			},
+			Spending: {
+				Product: boolean,
+				Gamepass: boolean,
+				Total: boolean,
+			},
+			Groups: {[string]: number},
+			Badges: {[string]: number},
+			Demographics: {
+				AccountAge: boolean,
+				RobloxLanguage: boolean,
+				SystemLanguage: boolean,
+				UserSettings: {
+					Fullscreen: boolean,
+					GamepadCameraSensitivity: boolean,
+					MouseSensitivity: boolean,
+					SavedQualityLevel: boolean,
+				},
+				Platform: {
+					Accelerometer: boolean,
+					Gamepad: boolean,
+					Gyroscope: boolean,
+					Keyboard: boolean,
+					Mouse: boolean,
+					Touch: boolean,
+					VR: boolean,
+					ScreenSize: boolean,
+					ScreenRatio: boolean,
+				},
+
+			},
+		},
+		Event: {
+			Join: {
+				Teleport: boolean, 
+				Enter: boolean,
+			},
+			Chat: {
+				Spoke: boolean,
+			},
+			Character: {
+				Died: boolean,
+			},
+			Spending: {
+				Purchase: {
+					Product: boolean,
+					Gamepass: boolean
+				},
+			},
+			Exit: {
+				Quit: boolean, 
+				Disconnect: boolean, 
+				Close: boolean,
+			},
+		}
 	},
 }
 

@@ -9,3 +9,7 @@ Packages
 
 sourcemap.json
 test.project.json
+types
+tests/lsp/**
+tests/selene/**
+lints

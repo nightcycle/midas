@@ -206,8 +206,8 @@ function Profile:FireSeries(
 	log("fire series", tracker._Player, eventName)
 	local deltaStates = {}
 	if self._BytesRemaining > 0 then
-		for p, tracker in pairs(self._Midaii) do
-			local output = tracker:_Compile()
+		for p, t in pairs(self._Trackers) do
+			local output = t:_Compile()
 
 			if output then
 				for k, v in pairs(output) do
@@ -265,9 +265,9 @@ function Profile:Fire(
 
 	if self._BytesRemaining > 0 then
 
-		for p, tracker in pairs(self._Midaii) do
-			log("getting compile for " .. tostring(tracker.Path), tracker._Player, eventName)
-			local output = tracker:_Compile()
+		for p, t in pairs(self._Trackers) do
+			log("getting compile for " .. tostring(t.Path), t._Player, eventName)
+			local output = t:_Compile()
 			if output then
 				for k, v in pairs(output) do
 					local fullPath = p .. "/" .. k
@@ -303,7 +303,7 @@ end
 
 function Profile:DestroyPath(path: string): nil
 	log("destroy path", self.Player, path)
-	for k, tracker in pairs(self._Midaii) do
+	for k, tracker in pairs(self._Trackers) do
 		if self:HasPath(tracker, path) then
 			self:DestroyTracker(k)
 		end
@@ -313,7 +313,7 @@ end
 
 function Profile:DestroyTracker(path: string): nil
 	log("destroy tracker", self.Player, path)
-	local tracker = self._Midaii[path]
+	local tracker = self._Trackers[path]
 	if tracker then
 		tracker:Destroy()
 	end
@@ -322,13 +322,13 @@ end
 
 function Profile:GetTracker(path: string): Tracker?
 	log("get tracker", self.Player, path)
-	return self._Midaii[path]
+	return self._Trackers[path]
 end
 
 function Profile:SetTracker(tracker)
 	log("set tracker", self.Player)
 	local path = tracker.Path
-	self._Midaii[path] = tracker
+	self._Trackers[path] = tracker
 
 	local mInst = tracker.Instance
 	assert(mInst ~= nil)
@@ -336,7 +336,7 @@ function Profile:SetTracker(tracker)
 
 	self._Maid[path] = tracker
 	self._Maid[path .. "_Destroy"] = tracker._OnDestroy:Connect(function()
-		self._Midaii[path] = nil
+		self._Trackers[path] = nil
 	end)
 
 	return nil
@@ -399,7 +399,7 @@ function Profile.new(player: Player): Profile
 		_IsLoaded = false,
 		_WasTeleported = wasTeleported,
 		_Index = 0,
-		_Midaii = {},
+		_Trackers = {},
 		_PreviousStates = prev,
 		_SessionId = nil :: string?,
 		_PlayerId = nil :: string?,
