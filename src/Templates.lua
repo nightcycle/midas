@@ -670,28 +670,90 @@ function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -
 	end
 end
 
-function Templates.groups(player: Player, profile: Profile): Tracker?
-	local isUsed = false
+function Templates.groups(player: Player): Tracker?
+
+	assert(RunService:IsClient())
+
+	local groupCount = 0
 	for k, v in pairs(Config.Template.State.Groups) do
-		isUsed = true
+		groupCount += 1
 	end
-	if isUsed then
-		local mGroups = Tracker._new(player, "Groups", profile)
+	if groupCount > 0 then
+		local mGroups = Tracker._new(player, "Groups")
 		mGroups:SetRoundingPrecision(0)
 	
 		task.spawn(function()
 			local groupConfig = Config.Template.State.Groups
 			assert(groupConfig ~= nil)
+
+			local callsPerMinute = math.floor(15 / groupCount) - 1
+
 			for groupName, groupId in pairs(groupConfig) do
-				local groupRank = player:GetRankInGroup(groupId)
-				-- local role = if isInGroup then player:GetRoleInGroup(groupId) else "none"
+				local rank = player:GetRankInGroup(groupId)
+			
+				if callsPerMinute >= 1 then
+					local lastUpdate = tick()
+					mGroups._Maid:GiveTask(RunService.Heartbeat:Connect(function()
+						if tick() - lastUpdate > 60/callsPerMinute then
+							lastUpdate = tick()
+							rank = player:GetRankInGroup(groupId)
+						end
+					end))
+				end
+
 				mGroups:SetState(string.gsub(groupName, "%s", "_"), function()
-					return groupRank
+					return rank
 				end)
 			end
 		end)
 	
 		return mGroups :: any
+	else
+		return nil
+	end
+end
+
+function Templates.badges(player: Player, profile: Profile): Tracker?
+	
+	assert(RunService:IsServer())
+
+	local badgeCount = 0
+	for k, v in pairs(Config.Template.State.Badges) do
+		badgeCount += 1
+	end
+	if badgeCount > 0 then
+		local BadgeService = game:GetService("BadgeService")
+
+		local mBadges = Tracker._new(player, "Badges", profile)
+		mBadges:SetRoundingPrecision(0)
+	
+		task.spawn(function()
+			local badgesConfig = Config.Template.State.Badges
+			assert(badgesConfig ~= nil)
+
+			local callsPerMinute = math.floor(35 / badgeCount) - 1
+		
+			for badgeName, badgeId in pairs(badgesConfig) do
+				local isBadgeOwned = BadgeService:UserHasBadgeAsync(player.UserId, badgeId)
+			
+				if not isBadgeOwned and callsPerMinute >= 1 then
+					local lastUpdate = tick()
+					mBadges._Maid:GiveTask(RunService.Heartbeat:Connect(function()
+						if tick() - lastUpdate > 60/callsPerMinute and not isBadgeOwned then
+							lastUpdate = tick()
+							isBadgeOwned = BadgeService:UserHasBadgeAsync(player.UserId, badgeId)
+						end
+					end))
+				end
+
+				-- local role = if isInGroup then player:GetRoleInGroup(groupId) else "none"
+				mBadges:SetState(string.gsub(badgeName, "%s", "_"), function()
+					return isBadgeOwned
+				end)
+			end
+		end)
+	
+		return mBadges :: any
 	else
 		return nil
 	end

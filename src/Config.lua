@@ -49,7 +49,7 @@ local Config: Types.ConfigurationData = {
 				SpeakingDistance = true,
 			},
 			Performance = {
-				
+
 				Client = {
 					Ping = true,
 					FPS = true,
@@ -132,6 +132,7 @@ local Config: Types.ConfigurationData = {
 				Teleport = true,
 				Enter = true,
 			},
+			Interval = nil,
 			Chat = {
 				Spoke = true,
 			},

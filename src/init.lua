@@ -222,8 +222,19 @@ if RunService:IsServer() then
 			assert(profile ~= nil)
 			Templates.join(player, profile, profile._WasTeleported)
 			Templates.chat(player, profile)
-			Templates.groups(player, profile)
+			Templates.badges(player, profile)
 			Templates.population(player, profile)
+			local updateInterval = Config.Template.Event.Interval
+			if updateInterval then
+				local intervalUpdate = Tracker._new(player, "Interval")
+				local lastUpdate = 0
+				intervalUpdate._Maid:GiveTask(RunService.Heartbeat:Connect(function()
+					if tick() - lastUpdate >= updateInterval then
+						lastUpdate = tick()
+						intervalUpdate:Fire("Update")
+					end
+				end))
+			end
 			Templates.serverPerformance(player, profile, function()
 				return profile.TimeDifference
 			end, function()
@@ -319,6 +330,7 @@ else
 
 	Templates.demographics(Players.LocalPlayer)
 	Templates.clientPerformance(Players.LocalPlayer)
+	Templates.groups(Players.LocalPlayer)
 
 end
 

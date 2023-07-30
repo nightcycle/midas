@@ -317,6 +317,7 @@ export type ConfigurationData = {
 			},
 		},
 		Event: {
+			Interval: number?,
 			Join: {
 				Teleport: boolean, 
 				Enter: boolean,
