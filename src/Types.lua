@@ -249,7 +249,6 @@ export type ConfigurationData = {
 				RobloxLanguage: boolean,
 				SystemLanguage: boolean,
 				UserSettings: {
-					Fullscreen: boolean,
 					GamepadCameraSensitivity: boolean,
 					MouseSensitivity: boolean,
 					SavedQualityLevel: boolean,

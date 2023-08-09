@@ -109,7 +109,6 @@ local Config: Types.ConfigurationData = {
 				RobloxLanguage = true,
 				SystemLanguage = true,
 				UserSettings = {
-					Fullscreen = true,
 					GamepadCameraSensitivity = true,
 					MouseSensitivity = true,
 					SavedQualityLevel = true,

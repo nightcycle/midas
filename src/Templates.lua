@@ -777,11 +777,6 @@ function Templates.demographics(player: Player): Tracker?
 			if isUserSettingsUsed then
 				local userSettings = UserSettings()
 				local gameSettings = userSettings:GetService("UserGameSettings")
-				if Config.Template.State.Demographics.UserSettings.Fullscreen then
-					mDemographics:SetState("UserSettings/Fullscreen", function()
-						return gameSettings.Fullscreen
-					end)
-				end
 				if Config.Template.State.Demographics.UserSettings.GamepadCameraSensitivity then
 					mDemographics:SetState("UserSettings/GamepadCameraSensitivity", function()
 						return gameSettings.GamepadCameraSensitivity
