@@ -387,7 +387,7 @@ function Tracker:_Load(player: Player, path: string, profile: Profile?, maid: Ma
 		log("building client instances", player, path)
 		-- Get profile folder
 		local profFolders = Profile.getProfilesFolder()
-		local profFolder = profFolders:WaitForChild(tostring(player.UserId), 5)
+		local profFolder = profFolders:WaitForChild(tostring(player.UserId), 20)
 		assert(profFolder ~= nil)
 
 		if time() < 15 then --give more slack when everything's loading in
