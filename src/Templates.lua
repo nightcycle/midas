@@ -623,11 +623,12 @@ function Templates.exit(player: Player, profile: Profile, getIfTeleporting: () -
 				end))
 			end
 			if Config.Template.Event.Exit.Disconnect then
-				mExit._Maid:GiveTask(Players.PlayerDisconnecting:Connect(function(remPlayer: Player)
-					if remPlayer == player then
-						mExit:Fire("Disconnect")
-					end
-				end))
+				warn(`Event/Exit/Disconnect is currently non-functional`)
+				-- mExit._Maid:GiveTask(Players.PlayerDisconnecting:Connect(function(remPlayer: Player)
+				-- 	if remPlayer == player then
+				-- 		mExit:Fire("Disconnect")
+				-- 	end
+				-- end))
 			end
 			if Config.Template.Event.Exit.Close then
 				mExit._Maid:GiveTask(game.Close:Connect(function()
