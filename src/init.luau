@@ -18,6 +18,8 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Types
 type Maid = Maid.Maid
 type OnSaveInvoke = StorageProviders.OnSaveInvoke
+type OnMultiSaveInvoke = StorageProviders.OnMultiSaveInvoke
+
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
@@ -27,6 +29,7 @@ export type Midas = {
 	_Maid: Maid,
 	_IsAlive: boolean,
 	_OnSaveInvoke: OnSaveInvoke,
+	_OnMultiSaveInvoke: OnMultiSaveInvoke,
 	_DataSets: {[string]: DataSet},
 	ProjectId: string?,
 	Util: typeof(Util),
@@ -34,6 +37,7 @@ export type Midas = {
 	CreateDataSet: (self: Midas, name: string, id: string) -> DataSet,
 	GetDataSet: (self: Midas, name: string) -> DataSet,
 	SetOnSaveInvoke: (self: Midas, onSaveInvoke: OnSaveInvoke) -> (),
+	SetOnMultiSaveInvoke: (self: Midas, onMultiSaveInvoke: OnMultiSaveInvoke) -> (),
 	Destroy: (self: Midas) -> (),
 	new: () -> Midas,
 	init: (maid: Maid) -> nil
@@ -60,18 +64,32 @@ end
 
 function Midas:CreateDataSet(name: string, id: string): DataSet
 	assert(self._DataSets[name] == nil, `dataSet of name {name} already exists`)
-	local dataSet = self._Maid:GiveTask(DataSet.new(name, id, function()
+	local dataSet = DataSet.new(
+		name, 
+		id, 
+		function()
+			return function(dataSetId: string, dataTableId: string, data: {[string]: unknown}, formats: {[string]: DataType}): boolean
+				local projectId = self.ProjectId
+				assert(projectId, `projectId hasn't been set yet`)
+		
+				local onSaveInvoke =  self._OnSaveInvoke
+				assert(onSaveInvoke, `onSaveInvoke hasn't been set yet`)
 
-		return function(dataSetId: string, dataTableId: string, data: {[string]: unknown}, formats: {[string]: DataType}): boolean
-			local projectId = self.ProjectId
-			assert(projectId, `projectId hasn't been set yet`)
-	
-			local onSaveInvoke =  self._OnSaveInvoke
-			assert(onSaveInvoke, `onSaveInvoke hasn't been set yet`)
+				return onSaveInvoke(projectId, dataSetId, dataTableId, data, formats)
+			end
+		end,
+		function()
+			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, formatList: {[number]: {[string]: DataType}}): boolean
+				local projectId = self.ProjectId
+				assert(projectId, `projectId hasn't been set yet`)
+		
+				local onMultiSaveInvoke =  self._OnMultiSaveInvoke
+				assert(onMultiSaveInvoke, `onMultiSaveInvoke hasn't been set yet`)
 
-			return onSaveInvoke(projectId, dataSetId, dataTableId, data, formats)
+				return onMultiSaveInvoke(projectId, dataSetId, dataTableId, dataList, formatList)
+			end
 		end
-	end))
+	)
 	self._DataSets[name] = dataSet
 	return dataSet
 end
@@ -94,6 +112,11 @@ function Midas.new()
 	self.StorageProviders = StorageProviders
 	self.Util = Util
 	self._OnSaveInvoke = function()
+		warn(`onSaveInvoke not set`)
+		return false
+	end
+	self._OnMultiSaveInvoke = function()
+		warn(`onMultiSaveInvoke not set`)
 		return false
 	end
 	self._DataSets = {}

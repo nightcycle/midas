@@ -15,6 +15,13 @@ export type OnSaveInvoke = (
 	formats: {[string]: DataType}
 ) -> boolean
 
+export type OnMultiSaveInvoke = (
+	projectId: string, 
+	dataSetId: string, 
+	dataTableId: string, 
+	dataList: {[number]: {[string]: unknown}},
+	formatList: {[number]: {[string]: DataType}}
+) -> boolean
 
 -- Constants
 -- Variables

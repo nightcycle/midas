@@ -7,6 +7,7 @@ local _Packages = _Package.Parent
 local StorageUtil = require(script:WaitForChild("Util"))
 -- Types
 export type OnSaveInvoke = StorageUtil.OnSaveInvoke
+export type OnMultiSaveInvoke = StorageUtil.OnMultiSaveInvoke
 -- Constants
 -- Variables
 -- References

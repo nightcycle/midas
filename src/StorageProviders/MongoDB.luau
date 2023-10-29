@@ -20,6 +20,13 @@ export type MongoDB = {
 	_Url: string,
 	Destroy: (self: MongoDB) -> (),
 	InsertOne: (self: MongoDB, dataSource: string, databaseName: string, collectionName: string, data: {[string]: any}, data: {[string]: DataType}) -> boolean,
+	InsertMany: (self: MongoDB,
+		dataSource: string, 
+		databaseName: string, 
+		collectionName: string, 
+		dataList: {[number]: {[string]: any}},
+		formatList: {[number]: {[string]: DataType}}
+	) -> boolean,
 	new: (apiKey: string, url: string) -> MongoDB,
 }
 
@@ -131,6 +138,55 @@ function MongoDB:InsertOne(
 	return response.Success
 end
 
+function MongoDB:InsertMany(
+	dataSource: string, 
+	databaseName: string, 
+	collectionName: string, 
+	dataList: {[number]: {[string]: any}},
+	formatList: {[number]: {[string]: DataType}}
+): boolean
+
+	local payload = {
+		["dataSource"] = dataSource,
+		["database"] = databaseName,
+		["collection"] = collectionName,
+		["documents"] = {}
+	}
+
+	for i, data in ipairs(dataList) do
+		local format = formatList[i]
+		assert(format ~= nil, `bad format at index {i}`)
+
+		local document = {}
+
+		for k, v in pairs(data) do
+			local f: DataType = format[k]
+			local conversion = DATA_TYPE_CONVERSION[f]
+			assert(conversion ~= nil, `bad data type {f} for {k}`)
+			document[k] = conversion(v)
+		end
+		
+		payload["documents"][i] = document
+	end
+
+
+	local encodedPayload = HttpService:JSONEncode(payload)
+
+	local response = HttpService:RequestAsync({
+		Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
+		Method = "POST",
+		Headers = {
+			['Content-Type'] = 'application/ejson',
+			[`Accept`] = `application/json`,
+			['apiKey'] = self._ApiKey,
+		},
+		Body = encodedPayload
+	})
+
+	print(response)
+
+	return response.Success
+end
 function MongoDB.new(apiKey: string, url: string)
 
 	local self: MongoDB = setmetatable({}, MongoDB) :: any
