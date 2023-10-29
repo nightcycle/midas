@@ -19,14 +19,21 @@ export type MongoDB = {
 	_ApiKey: string,
 	_Url: string,
 	Destroy: (self: MongoDB) -> (),
-	InsertOne: (self: MongoDB, dataSource: string, databaseName: string, collectionName: string, data: {[string]: any}, data: {[string]: DataType}) -> boolean,
+	InsertOne: (
+		self: MongoDB, 
+		dataSource: string, 
+		databaseName: string, 
+		collectionName: string, 
+		data: {[string]: any}, 
+		data: {[string]: DataType}
+	) -> (boolean, number?),
 	InsertMany: (self: MongoDB,
 		dataSource: string, 
 		databaseName: string, 
 		collectionName: string, 
 		dataList: {[number]: {[string]: any}},
 		formatList: {[number]: {[string]: DataType}}
-	) -> boolean,
+	) -> (boolean, number?),
 	new: (apiKey: string, url: string) -> MongoDB,
 }
 
@@ -133,7 +140,16 @@ function MongoDB:InsertOne(
 		Body = encodedPayload
 	})
 
-	print(response)
+	if not response.Success then
+		warn(response.StatusMessage)
+		if response.StatusCode == 429 then -- too many requests
+			error(`too many requests`)
+		elseif response.StatusCode == 413 then -- payload too large
+			error(`payload too large`)
+		elseif response.StatusCode == 401 then -- unauthorized
+			error(`unauthorized`)
+		end
+	end
 
 	return response.Success
 end
@@ -165,7 +181,7 @@ function MongoDB:InsertMany(
 			assert(conversion ~= nil, `bad data type {f} for {k}`)
 			document[k] = conversion(v)
 		end
-		
+
 		payload["documents"][i] = document
 	end
 
@@ -183,7 +199,18 @@ function MongoDB:InsertMany(
 		Body = encodedPayload
 	})
 
-	print(response)
+	if not response.Success then
+		warn(response.StatusMessage)
+		if response.StatusCode == 429 then -- too many requests
+			error(`too many requests`)
+		elseif response.StatusCode == 413 then -- payload too large
+			error(`payload too large`)
+		elseif response.StatusCode == 401 then -- unauthorized
+			error(`unauthorized`)
+		end
+	end
+
+
 
 	return response.Success
 end
