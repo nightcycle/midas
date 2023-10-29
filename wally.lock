@@ -3,9 +3,14 @@
 registry = "test"
 
 [[package]]
-name = "nightcycle/fetchu"
-version = "1.0.1"
+name = "boatbomber/hashlib"
+version = "1.0.0"
 dependencies = []
+
+[[package]]
+name = "nightcycle/compression-util"
+version = "4.1.1"
+dependencies = [["HashUtil", "boatbomber/hashlib@1.0.0"], ["TableUtil", "nightcycle/table-util@1.1.0"], ["TestEZ", "roblox/testez@0.4.1"]]
 
 [[package]]
 name = "nightcycle/maid"
@@ -14,13 +19,18 @@ dependencies = []
 
 [[package]]
 name = "nightcycle/midas"
-version = "2.0.0"
-dependencies = [["Fetchu", "nightcycle/fetchu@1.0.1"], ["Maid", "nightcycle/maid@1.1.4"], ["NetworkUtil", "nightcycle/network-util@1.7.0"], ["ServiceProxy", "nightcycle/service-proxy@1.0.0"], ["Signal", "nightcycle/signal@1.0.2"], ["TableUtil", "nightcycle/table-util@1.1.0"]]
+version = "2.0.4"
+dependencies = [["CompressionUtil", "nightcycle/compression-util@4.1.1"], ["HashUtil", "boatbomber/hashlib@1.0.0"], ["Maid", "nightcycle/maid@1.1.4"], ["NetworkUtil", "nightcycle/network-util@1.7.0"], ["Queue", "nightcycle/queue@2.2.0"], ["ServiceProxy", "nightcycle/service-proxy@1.0.0"], ["Signal", "nightcycle/signal@1.0.2"], ["TableUtil", "nightcycle/table-util@1.1.0"]]
 
 [[package]]
 name = "nightcycle/network-util"
 version = "1.7.0"
 dependencies = [["Maid", "nightcycle/maid@1.1.4"], ["Signal", "nightcycle/signal@1.0.2"]]
+
+[[package]]
+name = "nightcycle/queue"
+version = "2.2.0"
+dependencies = [["Maid", "nightcycle/maid@1.1.4"]]
 
 [[package]]
 name = "nightcycle/service-proxy"
@@ -35,4 +45,9 @@ dependencies = []
 [[package]]
 name = "nightcycle/table-util"
 version = "1.1.0"
+dependencies = []
+
+[[package]]
+name = "roblox/testez"
+version = "0.4.1"
 dependencies = []

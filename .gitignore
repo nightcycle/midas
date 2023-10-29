@@ -13,3 +13,7 @@ types
 tests/lsp/**
 tests/selene/**
 lints
+
+midas.rbxl
+midas.rbxl.lock
+test
