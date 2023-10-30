@@ -132,16 +132,38 @@ function MongoDB:InsertOne(
 
 	local encodedPayload = HttpService:JSONEncode(payload)
 
-	local response = HttpService:RequestAsync({
-		Url = `{self._Url}/endpoint/data/v1/action/insertOne`,
-		Method = "POST",
-		Headers = {
-			['Content-Type'] = 'application/ejson',
-			[`Accept`] = `application/json`,
-			['apiKey'] = self._ApiKey,
+	local response: {
+		Body: string?,
+		Headers: {
+			[string]: string
 		},
-		Body = encodedPayload
-	})
+		StatusCode: number,
+		StatusMessage: string,
+		Success: boolean
+	}
+	if game.PlaceId ~= 0 then
+		response = HttpService:RequestAsync({
+			Url = `{self._Url}/endpoint/data/v1/action/insertOne`,
+			Method = "POST",
+			Headers = {
+				['Content-Type'] = 'application/ejson',
+				[`Accept`] = `application/json`,
+				['apiKey'] = self._ApiKey,
+			},
+			Body = encodedPayload
+		})
+	else
+		response = {
+			Body = HttpService:JSONEncode({
+				insertedId = "abc123"
+			}),
+			Headers = {},
+			StatusCode = 200,
+			StatusMessage = "You're offline anything",
+			Success = true
+		}
+	end
+
 	if self.DebugPrintEnabled then
 		print(`MongoDB:InsertOne({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
 	end
@@ -190,17 +212,38 @@ function MongoDB:InsertMany(
 
 
 	local encodedPayload = HttpService:JSONEncode(payload)
-
-	local response = HttpService:RequestAsync({
-		Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
-		Method = "POST",
-		Headers = {
-			['Content-Type'] = 'application/ejson',
-			[`Accept`] = `application/json`,
-			['apiKey'] = self._ApiKey,
+	local response: {
+		Body: string?,
+		Headers: {
+			[string]: string
 		},
-		Body = encodedPayload
-	})
+		StatusCode: number,
+		StatusMessage: string,
+		Success: boolean
+	}
+	if game.PlaceId ~= 0 then
+		response = HttpService:RequestAsync({
+			Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
+			Method = "POST",
+			Headers = {
+				['Content-Type'] = 'application/ejson',
+				[`Accept`] = `application/json`,
+				['apiKey'] = self._ApiKey,
+			},
+			Body = encodedPayload
+		})
+	else
+		response = {
+			Body = HttpService:JSONEncode({{
+				insertedId = "abc123"
+			}}),
+			Headers = {},
+			StatusCode = 200,
+			StatusMessage = "You're offline anything",
+			Success = true
+		}
+	end
+	
 	if self.DebugPrintEnabled then
 		print(`MongoDB:InsertMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
 	end
