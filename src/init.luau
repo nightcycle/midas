@@ -2,13 +2,18 @@
 local _Package = script
 local _Packages = _Package.Parent
 -- Services
+local RunService = game:GetService("RunService")
 -- Packages
 local ServiceProxy = require(_Packages:WaitForChild("ServiceProxy"))
 local Maid = require(_Packages:WaitForChild("Maid"))
+local TableUtil = require(_Packages:WaitForChild("TableUtil"))
+
 -- Modules
 local DataSet = require(_Package:WaitForChild("DataSet"))
 local StorageProviders = require(_Package:WaitForChild("StorageProviders"))
 local Util = require(_Package:WaitForChild("Util"))
+local Tracker = require(_Package:WaitForChild("Tracker"))
+
 -- Types
 -- Constants
 -- Variables
@@ -17,9 +22,8 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Class
 -- Types
 type Maid = Maid.Maid
-type OnSaveInvoke = StorageProviders.OnSaveInvoke
-type OnMultiSaveInvoke = StorageProviders.OnMultiSaveInvoke
-
+type OnBatchSaveInvoke = StorageProviders.OnBatchSaveInvoke
+export type Tracker<V> = Tracker.Tracker<V>
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
@@ -28,16 +32,25 @@ export type Midas = {
 	__index: Midas,
 	_Maid: Maid,
 	_IsAlive: boolean,
-	_OnSaveInvoke: OnSaveInvoke,
-	_OnMultiSaveInvoke: OnMultiSaveInvoke,
+	_OnBatchSaveInvoke: OnBatchSaveInvoke,
 	_DataSets: {[string]: DataSet},
 	ProjectId: string?,
 	Util: typeof(Util),
 	StorageProviders: StorageProviders,
 	CreateDataSet: (self: Midas, name: string, id: string) -> DataSet,
+	Post: (self: Midas, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, number),
+	GetTracker: <V>(
+		self: Midas,
+		onDeltaOnly: boolean, 
+		fireOnSet: boolean, 
+		getIfEqual: (a: V?, b: V?) -> boolean, 
+		onFireInvoke: (value: V?) -> (), 
+		interval: number?, 
+		recharge: number?
+	) -> Tracker<V>,
 	GetDataSet: (self: Midas, name: string) -> DataSet,
-	SetOnSaveInvoke: (self: Midas, onSaveInvoke: OnSaveInvoke) -> (),
-	SetOnMultiSaveInvoke: (self: Midas, onMultiSaveInvoke: OnMultiSaveInvoke) -> (),
+	GetDataSets: (self: Midas) -> {[number]: DataSet},
+	SetOnBatchSaveInvoke: (self: Midas, onBatchSaveInvoke: OnBatchSaveInvoke) -> (),
 	Destroy: (self: Midas) -> (),
 	new: () -> Midas,
 	init: (maid: Maid) -> nil
@@ -62,31 +75,68 @@ function Midas:Destroy()
 	setmetatable(t, nil)
 end
 
+function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, number)
+	local netData = 0
+	local totalSuccess = true
+	local postCount = 0
+	local postCompletion = 0
+	for i, dataSets in ipairs(self:GetDataSets()) do
+		if dataSets:GetIfCanPost() then
+			task.wait(delayPerTable)
+			postCount += 1
+			local function post()
+				local success, data = dataSets:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
+				totalSuccess = success and totalSuccess
+				netData += data
+				postCompletion += 1
+			end
+			if recursive then
+				task.spawn(post)
+			else
+				post()
+			end
+		end
+	end
+	if recursive then
+		while postCount > postCompletion do
+			task.wait(delayPerTable)
+		end
+	end
+	if not totalSuccess and recursive then
+		task.wait(delayPerTable)
+		local success, data = self:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
+		totalSuccess = success and totalSuccess
+		netData += data
+	end
+	return totalSuccess, netData
+end
+
+function Midas:GetTracker<V>(
+	onDeltaOnly: boolean, 
+	fireOnSet: boolean, 
+	getIfEqual: (a: V?, b: V?) -> boolean, 
+	onFireInvoke: (value: V?) -> (), 
+	interval: number?, 
+	recharge: number?
+): Tracker<V>
+	return Tracker.new(onDeltaOnly, fireOnSet, getIfEqual :: any, onFireInvoke :: any, interval, recharge) :: any
+end
+
 function Midas:CreateDataSet(name: string, id: string): DataSet
+	assert(RunService:IsServer(), `bad domain`)
 	assert(self._DataSets[name] == nil, `dataSet of name {name} already exists`)
 	local dataSet = DataSet.new(
 		name, 
 		id, 
 		function()
-			return function(dataSetId: string, dataTableId: string, data: {[string]: unknown}, formats: {[string]: DataType}): boolean
+			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}): boolean
 				local projectId = self.ProjectId
 				assert(projectId, `projectId hasn't been set yet`)
 		
-				local onSaveInvoke =  self._OnSaveInvoke
-				assert(onSaveInvoke, `onSaveInvoke hasn't been set yet`)
+				local onBatchSaveInvoke =  self._OnBatchSaveInvoke
+				assert(onBatchSaveInvoke, `onBatchSaveInvoke hasn't been set yet`)
 
-				return onSaveInvoke(projectId, dataSetId, dataTableId, data, formats)
-			end
-		end,
-		function()
-			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, formatList: {[number]: {[string]: DataType}}): boolean
-				local projectId = self.ProjectId
-				assert(projectId, `projectId hasn't been set yet`)
-		
-				local onMultiSaveInvoke =  self._OnMultiSaveInvoke
-				assert(onMultiSaveInvoke, `onMultiSaveInvoke hasn't been set yet`)
-
-				return onMultiSaveInvoke(projectId, dataSetId, dataTableId, dataList, formatList)
+				return onBatchSaveInvoke(projectId, dataSetId, dataTableId, dataList, format)
 			end
 		end
 	)
@@ -95,12 +145,14 @@ function Midas:CreateDataSet(name: string, id: string): DataSet
 end
 
 function Midas:GetDataSet(name: string): DataSet
+	assert(RunService:IsServer(), `bad domain`)
 	local dataSets = self._DataSets[name]
 	assert(dataSets, `no dataset at {name}`)
 	return dataSets
 end
-function Midas:SetOnSaveInvoke(onSaveInvoke: OnSaveInvoke)
-	self._OnSaveInvoke = onSaveInvoke
+
+function Midas:GetDataSets(): {[number]: DataSet}
+	return TableUtil.values(self._DataSets)
 end
 
 function Midas.new()
@@ -111,14 +163,15 @@ function Midas.new()
 	self.ProjectId = nil
 	self.StorageProviders = StorageProviders
 	self.Util = Util
-	self._OnSaveInvoke = function()
-		warn(`onSaveInvoke not set`)
+	self._OnBatchSaveInvoke = function()
+		warn(`onBatchSaveInvoke not set`)
 		return false
 	end
-	self._OnMultiSaveInvoke = function()
-		warn(`onMultiSaveInvoke not set`)
-		return false
-	end
+
+	self._Maid:GiveTask(game.Close:Connect(function()
+		self:Post(math.huge, math.huge, 1/60, true)
+	end))
+
 	self._DataSets = {}
 	if CurrentMidas ~= nil then
 		 CurrentMidas:Destroy()

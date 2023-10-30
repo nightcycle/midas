@@ -7,20 +7,12 @@ local _Packages = _Package.Parent
 -- Types
 local Util = require(_Package:WaitForChild("Util"))
 type DataType = Util.DataType
-export type OnSaveInvoke = (
+export type OnBatchSaveInvoke = (
 	projectId: string, 
 	dataSetId: string, 
 	dataTableId: string, 
-	data: {[string]: unknown},
-	formats: {[string]: DataType}
-) -> boolean
-
-export type OnMultiSaveInvoke = (
-	projectId: string, 
-	dataSetId: string, 
-	dataTableId: string, 
-	dataList: {[number]: {[string]: unknown}},
-	formatList: {[number]: {[string]: DataType}}
+	dataList: {[number]: {[string]: unknown}}, 
+	format: {[string]: DataType}
 ) -> boolean
 
 -- Constants

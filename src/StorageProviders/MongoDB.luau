@@ -3,6 +3,8 @@ local _Package = script.Parent.Parent
 local _Packages = _Package.Parent
 -- Services
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+
 -- Packages
 local HashUtil = require(_Packages:WaitForChild("HashUtil"))
 -- Modules
@@ -18,6 +20,7 @@ export type MongoDB = {
 	_IsAlive: boolean,
 	_ApiKey: string,
 	_Url: string,
+	DebugPrintEnabled: boolean,
 	Destroy: (self: MongoDB) -> (),
 	InsertOne: (
 		self: MongoDB, 
@@ -25,14 +28,14 @@ export type MongoDB = {
 		databaseName: string, 
 		collectionName: string, 
 		data: {[string]: any}, 
-		data: {[string]: DataType}
+		format: {[string]: DataType}
 	) -> (boolean, number?),
 	InsertMany: (self: MongoDB,
 		dataSource: string, 
 		databaseName: string, 
 		collectionName: string, 
 		dataList: {[number]: {[string]: any}},
-		formatList: {[number]: {[string]: DataType}}
+		format: {[string]: DataType}
 	) -> (boolean, number?),
 	new: (apiKey: string, url: string) -> MongoDB,
 }
@@ -139,7 +142,9 @@ function MongoDB:InsertOne(
 		},
 		Body = encodedPayload
 	})
-
+	if self.DebugPrintEnabled then
+		print(`MongoDB:InsertOne({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
+	end
 	if not response.Success then
 		warn(response.StatusMessage)
 		if response.StatusCode == 429 then -- too many requests
@@ -159,7 +164,7 @@ function MongoDB:InsertMany(
 	databaseName: string, 
 	collectionName: string, 
 	dataList: {[number]: {[string]: any}},
-	formatList: {[number]: {[string]: DataType}}
+	format: {[string]: DataType}
 ): boolean
 
 	local payload = {
@@ -170,8 +175,6 @@ function MongoDB:InsertMany(
 	}
 
 	for i, data in ipairs(dataList) do
-		local format = formatList[i]
-		assert(format ~= nil, `bad format at index {i}`)
 
 		local document = {}
 
@@ -198,7 +201,9 @@ function MongoDB:InsertMany(
 		},
 		Body = encodedPayload
 	})
-
+	if self.DebugPrintEnabled then
+		print(`MongoDB:InsertMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
+	end
 	if not response.Success then
 		warn(response.StatusMessage)
 		if response.StatusCode == 429 then -- too many requests
@@ -215,11 +220,13 @@ function MongoDB:InsertMany(
 	return response.Success
 end
 function MongoDB.new(apiKey: string, url: string)
+	assert(RunService:IsServer(), `bad domain`)
 
 	local self: MongoDB = setmetatable({}, MongoDB) :: any
 	self._IsAlive = true
 	self._ApiKey = apiKey
 	self._Url = url
+	self.DebugPrintEnabled = true
 
 	return self
 end
