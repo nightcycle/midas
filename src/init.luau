@@ -43,8 +43,8 @@ export type Midas = {
 		self: Midas,
 		onDeltaOnly: boolean, 
 		fireOnSet: boolean, 
-		getIfEqual: (a: V?, b: V?) -> boolean, 
 		onFireInvoke: (value: V?) -> (), 
+		getIfEqual: ((a: V?, b: V?) -> boolean)?, 
 		interval: number?, 
 		recharge: number?
 	) -> Tracker<V>,
@@ -114,12 +114,12 @@ end
 function Midas:GetTracker<V>(
 	onDeltaOnly: boolean, 
 	fireOnSet: boolean, 
-	getIfEqual: (a: V?, b: V?) -> boolean, 
 	onFireInvoke: (value: V?) -> (), 
+	getIfEqual: ((a: V?, b: V?) -> boolean)?, 
 	interval: number?, 
 	recharge: number?
 ): Tracker<V>
-	return Tracker.new(onDeltaOnly, fireOnSet, getIfEqual :: any, onFireInvoke :: any, interval, recharge) :: any
+	return Tracker.new(onDeltaOnly, fireOnSet, onFireInvoke :: any, getIfEqual :: any, interval, recharge) :: any
 end
 
 function Midas:CreateDataSet(name: string, id: string): DataSet

@@ -35,8 +35,8 @@ export type Tracker<V> = {
 	new: (
 		onDeltaOnly: boolean, 
 		fireOnSet: boolean, 
-		getIfEqual: (a: V?, b: V?) -> boolean, 
 		onFireInvoke: (value: V?) -> (), 
+		getIfEqual: ((a: V?, b: V?) -> boolean)?, 
 		interval: number?, 
 		recharge: number?
 	) -> Tracker<V>,
@@ -86,8 +86,8 @@ end
 function Tracker.new(
 	onDeltaOnly: boolean, 
 	fireOnSet: boolean,
-	getIfEqual: (a: {[string]: unknown}?, b: {[string]: unknown}?) -> boolean, 
-	onFireInvoke: (value: {[string]: unknown}?) -> (), 
+	onFireInvoke: (value: {[string]: unknown}?) -> (),
+	getIfEqual: ((a: {[string]: unknown}?, b: {[string]: unknown}?) -> boolean)?, 
 	interval: number?, 
 	recharge: number?
 ): Tracker<{[string]: unknown}>
@@ -102,7 +102,21 @@ function Tracker.new(
 	self._Value = nil
 	self._LastFire = 0
 	self._HasChangedSinceFire = true
-	self._GetIfEqual = getIfEqual
+	self._GetIfEqual = getIfEqual or function(a: {[string]: unknown}?, b: {[string]: unknown}?): boolean
+		if a == nil and b == nil then
+			return true
+		elseif a then
+			return false
+		elseif b then
+			return false
+		else
+			assert(a and b)
+			for k, v in pairs(a) do
+				if v ~= b[k] then return false end
+			end
+			return true
+		end
+	end
 	self._OnFireInvoke = onFireInvoke
 
 	if interval then
