@@ -88,10 +88,15 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, number)
 		local nextEntry: {[string]: unknown}? = self._BatchQueue:Peek()
 		if nextEntry then
 			local size = 0
+			size += 1 --the brackets
 			for k, v in pairs(nextEntry) do
 				local solver = sizeSolvers[k]
 				assert(solver, `missing size solver for {k} in post of {self.Name}`)
 				size += solver(v)
+				size += k:len()
+				size += 2--the quotes around the key
+				size += 1--the colon between key and value
+				size += 1-- the comma at the end
 			end
 			entryCount += 1
 			netSize += size
