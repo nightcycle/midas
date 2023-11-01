@@ -12,7 +12,6 @@ local TableUtil = require(_Packages:WaitForChild("TableUtil"))
 local DataSet = require(_Package:WaitForChild("DataSet"))
 local StorageProviders = require(_Package:WaitForChild("StorageProviders"))
 local Util = require(_Package:WaitForChild("Util"))
-local Tracker = require(_Package:WaitForChild("Tracker"))
 
 -- Types
 -- Constants
@@ -23,7 +22,6 @@ local Tracker = require(_Package:WaitForChild("Tracker"))
 -- Types
 type Maid = Maid.Maid
 type OnBatchSaveInvoke = StorageProviders.OnBatchSaveInvoke
-export type Tracker<V> = Tracker.Tracker<V>
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
@@ -39,15 +37,6 @@ export type Midas = {
 	StorageProviders: StorageProviders,
 	CreateDataSet: (self: Midas, name: string, id: string) -> DataSet,
 	Post: (self: Midas, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, number),
-	GetTracker: <V>(
-		self: Midas,
-		onDeltaOnly: boolean, 
-		fireOnSet: boolean, 
-		onFireInvoke: (value: V?) -> (), 
-		getIfEqual: ((a: V?, b: V?) -> boolean)?, 
-		interval: number?, 
-		recharge: number?
-	) -> Tracker<V>,
 	GetDataSet: (self: Midas, name: string) -> DataSet,
 	GetDataSets: (self: Midas) -> {[number]: DataSet},
 	SetOnBatchSaveInvoke: (self: Midas, onBatchSaveInvoke: OnBatchSaveInvoke) -> (),
@@ -109,17 +98,6 @@ function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPe
 		netData += data
 	end
 	return totalSuccess, netData
-end
-
-function Midas:GetTracker<V>(
-	onDeltaOnly: boolean, 
-	fireOnSet: boolean, 
-	onFireInvoke: (value: V?) -> (), 
-	getIfEqual: ((a: V?, b: V?) -> boolean)?, 
-	interval: number?, 
-	recharge: number?
-): Tracker<V>
-	return Tracker.new(onDeltaOnly, fireOnSet, onFireInvoke :: any, getIfEqual :: any, interval, recharge) :: any
 end
 
 function Midas:CreateDataSet(name: string, id: string): DataSet
