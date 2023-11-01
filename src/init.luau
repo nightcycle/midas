@@ -35,8 +35,9 @@ export type Midas = {
 	ProjectId: string?,
 	Util: typeof(Util),
 	StorageProviders: StorageProviders,
+	GetRowCount: (self: Midas) -> number,
 	CreateDataSet: (self: Midas, name: string, id: string) -> DataSet,
-	Post: (self: Midas, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, number),
+	Post: (self: Midas, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, boolean, number),
 	GetDataSet: (self: Midas, name: string) -> DataSet,
 	GetDataSets: (self: Midas) -> {[number]: DataSet},
 	SetOnBatchSaveInvoke: (self: Midas, onBatchSaveInvoke: OnBatchSaveInvoke) -> (),
@@ -64,18 +65,20 @@ function Midas:Destroy()
 	setmetatable(t, nil)
 end
 
-function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, number)
+function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, boolean, number)
 	local netData = 0
 	local totalSuccess = true
+	local totalEmpty = true
 	local postCount = 0
 	local postCompletion = 0
 	for i, dataSets in ipairs(self:GetDataSets()) do
-		if dataSets:GetIfCanPost() then
+		if dataSets:GetRowCount() > 0 then
 			task.wait(delayPerTable)
 			postCount += 1
 			local function post()
-				local success, data = dataSets:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
+				local success, isEmpty, data = dataSets:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
 				totalSuccess = success and totalSuccess
+				totalEmpty = isEmpty and totalEmpty
 				netData += data
 				postCompletion += 1
 			end
@@ -93,11 +96,12 @@ function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPe
 	end
 	if not totalSuccess and recursive then
 		task.wait(delayPerTable)
-		local success, data = self:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
-		totalSuccess = success and totalSuccess
+		local success, isEmpty, data = self:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
 		netData += data
+		return success, isEmpty, netData
 	end
-	return totalSuccess, netData
+
+	return totalSuccess, totalEmpty, netData
 end
 
 function Midas:CreateDataSet(name: string, id: string): DataSet
@@ -131,6 +135,14 @@ end
 
 function Midas:GetDataSets(): {[number]: DataSet}
 	return TableUtil.values(self._DataSets)
+end
+
+function Midas:GetRowCount(): number
+	local rows = 0
+	for i, dataSet in ipairs(self:GetDataSets()) do
+		rows += dataSet:GetRowCount()
+	end
+	return rows
 end
 
 function Midas.new()

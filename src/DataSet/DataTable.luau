@@ -35,8 +35,8 @@ export type DataTable<RowData> = {
 	Name: string,
 	AddRow: (self: DataTable<RowData>, data: RowData) -> (),
 	AddColumn: (self: DataTable<RowData>, key: string, dataType: DataType, isNullable: boolean, getSize: (value: unknown) -> number) -> (),
-	GetIfCanPost: (self: DataTable<RowData>) -> boolean,
-	Post: (self: DataTable<RowData>, maxEntries: number, maxSize: number) -> (boolean, number),
+	GetRowCount: (self: DataTable<RowData>) -> number,
+	Post: (self: DataTable<RowData>, maxEntries: number, maxSize: number) -> (boolean, boolean, number),
 	new: (name: string, id: string, getOnBatchSaveInvoke: () -> OnBatchSaveInvoke) -> DataTable<RowData>,
 }
 
@@ -68,11 +68,11 @@ function DataTable:AddRow(param: unknown)
 	self._BatchQueue:Add(data, -tick())
 end
 
-function DataTable:GetIfCanPost(): boolean
-	return not self._BatchQueue:IsEmpty()
+function DataTable:GetRowCount(): number
+	return self._BatchQueue:GetLength()
 end
 
-function DataTable:Post(maxEntries: number, maxSize: number): (boolean, number)
+function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean, number)
 	
 	local format: {[string]: DataType} = {}
 	local sizeSolvers: {[string]: (value: unknown) -> number} = {}
@@ -117,7 +117,7 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, number)
 		end
 	end
 
-	return success, if success then netSize else 0
+	return success, self._BatchQueue:IsEmpty(), if success then netSize else 0
 end
 
 function DataTable:AddColumn(key: string, format: DataType, isNullable: boolean, getSize: (value: unknown) -> number)

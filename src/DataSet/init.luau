@@ -26,10 +26,9 @@ export type DataSet = {
 	_DataTables: {[string]: DataTable<any>},
 	_GetOnBatchSaveInvoke: () -> OnBatchSaveInvoke,
 	Name: string,
-	Post: (self: DataSet, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, number),
+	Post: (self: DataSet, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, boolean, number),
 	CreateDataTable: <RowData>(self: DataSet, name: string, id: string) -> DataTable<RowData>,
-	GetIfCanPost: (self: DataSet) -> boolean,
-
+	GetRowCount: (self: DataSet) -> number,
 	GetDataTable: <RowData>(self: DataSet, name: string) -> DataTable<RowData>,
 	GetDataTables: (self: DataSet) -> {[number]: DataTable<{[string]: unknown}>},
 	new: (name: string, id: string,  getOnBatchSaveInvoke: () -> OnBatchSaveInvoke) -> DataSet,
@@ -58,39 +57,41 @@ function DataSet:CreateDataTable<RowData>(name: string, id: string): DataTable<R
 	return dataTable
 end
 
-function DataSet:GetIfCanPost()
-	for i, dataTable in ipairs(self:GetDataTables()) do
-		if dataTable:GetIfCanPost() then
-			return true
-		end
-	end
-	return false
-end
-
 function DataSet:GetDataTable<RowData>(name: string): DataTable<RowData>
 	local dataTable = self._DataTables[name]
 	assert(dataTable, `no datatable at {name} in dataset {self.Name}`)
 	return dataTable
 end
 
-function DataSet:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, number)
+function DataSet:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, boolean, number)
 	local netData = 0
 	local totalSuccess = true
+	local totalEmpty = true
 	for i, dataTable in ipairs(self:GetDataTables()) do
-		if dataTable:GetIfCanPost() then
+		if dataTable:GetRowCount() == 0 then
 			task.wait(delayPerTable)
-			local success, data = dataTable:Post(maxEntriesPerTable, maxSizePerTable)
+			local success, isEmpty, data = dataTable:Post(maxEntriesPerTable, maxSizePerTable)
+			totalEmpty = totalEmpty and isEmpty
 			totalSuccess = success and totalSuccess
 			netData += data
 		end
 	end
 	if not totalSuccess and recursive then
 		task.wait(delayPerTable)
-		local success, data = self:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
-		totalSuccess = success and totalSuccess
+		local success, isEmpty, data = self:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
 		netData += data
+		return success, isEmpty, netData
 	end
-	return totalSuccess, netData
+	return totalSuccess, totalEmpty, netData
+end
+
+
+function DataSet:GetRowCount(): number
+	local rows = 0
+	for i, dataTable in ipairs(self:GetDataTables()) do
+		rows += dataTable:GetRowCount()
+	end
+	return rows
 end
 
 function DataSet:GetDataTables(): {[number]: DataTable<{[string]: unknown}>}
