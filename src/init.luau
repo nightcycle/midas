@@ -126,6 +126,10 @@ function Midas:CreateDataSet(name: string, id: string): DataSet
 	return dataSet
 end
 
+function Midas:SetOnBatchSaveInvoke(onBatchSaveInvoke: OnBatchSaveInvoke)
+	self._OnBatchSaveInvoke = onBatchSaveInvoke
+end
+
 function Midas:GetDataSet(name: string): DataSet
 	assert(RunService:IsServer(), `bad domain`)
 	local dataSets = self._DataSets[name]
