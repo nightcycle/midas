@@ -73,7 +73,9 @@ function DataTable:GetRowCount(): number
 end
 
 function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean, number)
-	
+	if self:GetRowCount() == 0 then
+		return true, true, 0
+	end
 	local format: {[string]: DataType} = {}
 	local sizeSolvers: {[string]: (value: unknown) -> number} = {}
 	for i, columnData in ipairs(self._Columns) do
