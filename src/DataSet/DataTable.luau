@@ -48,7 +48,7 @@ function DataTable:AddRow(param: unknown)
 	assert(type(param) == "table", `bad data "{param}" for dataTable {self.Name}`)
 	local data: {[any]: any} = param :: any
 	for i, columnData in ipairs(self._Columns) do
-		if not ((not columnData.IsNullable) or data[columnData.Key] ~= nil) then
+		if columnData.IsNullable == false and data[columnData.Key] == nil then
 			error(`missing data at key "{columnData.Key}" of dataTable {self.Name}`)
 		end
 	end
