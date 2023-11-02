@@ -68,7 +68,7 @@ function DataSet:Post(maxEntriesPerTable: number, maxSizePerTable: number, delay
 	local totalSuccess = true
 	local totalEmpty = true
 	for i, dataTable in ipairs(self:GetDataTables()) do
-		if dataTable:GetRowCount() == 0 then
+		if dataTable:GetRowCount() > 0 then
 			task.wait(delayPerTable)
 			local success, isEmpty, data = dataTable:Post(maxEntriesPerTable, maxSizePerTable)
 			totalEmpty = totalEmpty and isEmpty
