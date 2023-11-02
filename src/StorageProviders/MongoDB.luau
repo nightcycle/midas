@@ -64,6 +64,8 @@ local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
 			return {["$date"]= {["$numberLong"]= tostring(value)}}
 		elseif type(value) == "string" then
 			return { ["$date"]= value }
+		elseif typeof(value) == "DateTime" then
+			return { ["$date"]= Util.toTimeString(value)}
 		end
 		error(`bad type for {value}, type is {type(value)}`)
 	end,
