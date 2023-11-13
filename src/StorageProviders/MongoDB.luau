@@ -250,14 +250,17 @@ function MongoDB:InsertMany(
 		print(`MongoDB:InsertMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
 	end
 	if not response.Success then
-		warn(response.StatusMessage)
-		if response.StatusCode == 429 then -- too many requests
-			error(`too many requests`)
-		elseif response.StatusCode == 413 then -- payload too large
-			error(`payload too large`)
-		elseif response.StatusCode == 401 then -- unauthorized
-			error(`unauthorized`)
-		end
+	
+		error(`mongo post fail, code={response.StatusCode}, msg={response.StatusMessage}`)
+		-- if response.StatusCode == 429 then -- too many requests
+		-- 	error(`too many requests`)
+		-- elseif response.StatusCode == 413 then -- payload too large
+		-- 	error(`payload too large`)
+		-- elseif response.StatusCode == 401 then -- unauthorized
+		-- 	error(`unauthorized`)
+		-- else
+		-- 	error(`error [{response.StatusCode}] {response.StatusMessage}`)
+		-- end
 	end
 
 
