@@ -188,7 +188,7 @@ function DataTable.new(name: string, id: string, getOnBatchSaveInvoke: () -> OnB
 	self._BatchQueue.IsSorted = true
 	self._Columns = {}
 
-	table.freeze(self)
+	-- table.freeze(self)
 
 	return self
 end
