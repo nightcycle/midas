@@ -22,21 +22,14 @@ export type MongoDB = {
 	_Url: string,
 	DebugPrintEnabled: boolean,
 	Destroy: (self: MongoDB) -> (),
-	InsertOne: (
-		self: MongoDB, 
-		dataSource: string, 
-		databaseName: string, 
-		collectionName: string, 
-		data: {[string]: any}, 
-		format: {[string]: DataType}
-	) -> (boolean, number?),
 	InsertMany: (self: MongoDB,
 		dataSource: string, 
 		databaseName: string, 
 		collectionName: string, 
 		dataList: {[number]: {[string]: any}},
-		format: {[string]: DataType}
-	) -> (boolean, number?),
+		format: {[string]: DataType},
+		onPayloadSizeKnownInvoke: (size: number) -> ()
+	) -> boolean,
 	new: (apiKey: string, url: string) -> MongoDB,
 }
 
@@ -60,14 +53,8 @@ local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
 		}
 	end,
 	["Date"]=function(value: any): any
-		if type(value) == "number" then
-			return {["$date"]= {["$numberLong"]= tostring(value)}}
-		elseif type(value) == "string" then
-			return { ["$date"]= value }
-		elseif typeof(value) == "DateTime" then
-			return { ["$date"]= Util.toTimeString(value)}
-		end
-		error(`bad type for {value}, type is {type(value)}`)
+		assert(typeof(value) == "DateTime", `bad type for {value}, type is {typeof(value)}, expected DateTime`)
+		return { ["$date"]= Util.toTimeString(value)}
 	end,
 	["Decimal128"]=function(value: any): any
 		assert(type(value) == "number")
@@ -110,85 +97,13 @@ function MongoDB:Destroy()
 	setmetatable(t, nil)
 end
 
-function MongoDB:InsertOne(
-	dataSource: string, 
-	databaseName: string, 
-	collectionName: string, 
-	data: {[string]: any},
-	format: {[string]: DataType}
-): boolean
-
-	local payload = {
-		["dataSource"] = dataSource,
-		["database"] = databaseName,
-		["collection"] = collectionName,
-		["document"] = {}
-	}
-
-	for k, v in pairs(data) do
-		local f: DataType = format[k]
-		local conversion = DATA_TYPE_CONVERSION[f]
-		assert(conversion ~= nil, `bad data type {f} for {k}`)
-		payload["document"][k] = conversion(v)
-	end
-
-	local encodedPayload = HttpService:JSONEncode(payload)
-
-	local response: {
-		Body: string?,
-		Headers: {
-			[string]: string
-		},
-		StatusCode: number,
-		StatusMessage: string,
-		Success: boolean
-	}
-	if game.PlaceId ~= 0 then
-		response = HttpService:RequestAsync({
-			Url = `{self._Url}/endpoint/data/v1/action/insertOne`,
-			Method = "POST",
-			Headers = {
-				['Content-Type'] = 'application/ejson',
-				[`Accept`] = `application/json`,
-				['apiKey'] = self._ApiKey,
-			},
-			Body = encodedPayload
-		})
-	else
-		response = {
-			Body = HttpService:JSONEncode({
-				insertedId = "abc123"
-			}),
-			Headers = {},
-			StatusCode = 200,
-			StatusMessage = "You're offline anything",
-			Success = true
-		}
-	end
-
-	if self.DebugPrintEnabled then
-		print(`MongoDB:InsertOne({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
-	end
-	if not response.Success then
-		warn(response.StatusMessage)
-		if response.StatusCode == 429 then -- too many requests
-			error(`too many requests`)
-		elseif response.StatusCode == 413 then -- payload too large
-			error(`payload too large`)
-		elseif response.StatusCode == 401 then -- unauthorized
-			error(`unauthorized`)
-		end
-	end
-
-	return response.Success
-end
-
 function MongoDB:InsertMany(
 	dataSource: string, 
 	databaseName: string, 
 	collectionName: string, 
 	dataList: {[number]: {[string]: any}},
-	format: {[string]: DataType}
+	format: {[string]: DataType},
+	onPayloadSizeInvoke: (size: number) -> ()
 ): boolean
 
 	local payload = {
@@ -212,8 +127,8 @@ function MongoDB:InsertMany(
 		payload["documents"][i] = document
 	end
 
-
 	local encodedPayload = HttpService:JSONEncode(payload)
+	onPayloadSizeInvoke(encodedPayload:len())
 	local response: {
 		Body: string?,
 		Headers: {
@@ -250,20 +165,8 @@ function MongoDB:InsertMany(
 		print(`MongoDB:InsertMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
 	end
 	if not response.Success then
-	
-		error(`mongo post fail, code={response.StatusCode}, msg={response.StatusMessage}`)
-		-- if response.StatusCode == 429 then -- too many requests
-		-- 	error(`too many requests`)
-		-- elseif response.StatusCode == 413 then -- payload too large
-		-- 	error(`payload too large`)
-		-- elseif response.StatusCode == 401 then -- unauthorized
-		-- 	error(`unauthorized`)
-		-- else
-		-- 	error(`error [{response.StatusCode}] {response.StatusMessage}`)
-		-- end
+		error(`mongo post fail, code={response.StatusCode}, msg={response.StatusMessage}, body={response.Body}`)
 	end
-
-
 
 	return response.Success
 end

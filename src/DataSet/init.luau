@@ -18,7 +18,7 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Types
 type DataType = Util.DataType
 export type DataTable<RowData> = DataTable.DataTable<RowData>
-type OnBatchSaveInvoke = (dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}) -> boolean
+type OnBatchSaveInvoke = (dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}, onPayloadSizeKnownInvoke: (size: number) -> ()) -> boolean
 
 export type DataSet = {
 	__index: DataSet,
@@ -45,10 +45,10 @@ function DataSet:CreateDataTable<RowData>(name: string, id: string): DataTable<R
 		name, 
 		id, 
 		function()
-			return function(dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}): boolean
+			return function(dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}, onPayloadSizeKnownInvoke: (size: number) -> ()): boolean
 				local dataSetId = self._Id
 				local onBatchSaveInvoke =  self._GetOnBatchSaveInvoke()
-				return onBatchSaveInvoke(dataSetId, dataTableId, dataList, format)
+				return onBatchSaveInvoke(dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
 			end
 		end
 	)

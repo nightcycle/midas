@@ -12,7 +12,7 @@ type DateTimeData = {
 	Second: number,
 	Millisecond: number,
 }
-export type DataType = "Binary" | "Date" | "Decimal128" | "Double" | "Int32" | "Int64" | "Boolean" | "Array" | "Null" | "Object" | "String"
+export type DataType = "Binary" | "Date" | "Decimal128" | "Double" | "Int32" | "Int64" | "Boolean" | "Array" | "Object" | "String"
 
 -- Constants
 -- Variables

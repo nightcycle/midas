@@ -111,14 +111,14 @@ function Midas:CreateDataSet(name: string, id: string): DataSet
 		name, 
 		id, 
 		function()
-			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}): boolean
+			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}, onPayloadSizeKnownInvoke: (size: number) -> ()): boolean
 				local projectId = self.ProjectId
 				assert(projectId, `projectId hasn't been set yet`)
 		
 				local onBatchSaveInvoke =  self._OnBatchSaveInvoke
 				assert(onBatchSaveInvoke, `onBatchSaveInvoke hasn't been set yet`)
 
-				return onBatchSaveInvoke(projectId, dataSetId, dataTableId, dataList, format)
+				return onBatchSaveInvoke(projectId, dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
 			end
 		end
 	)

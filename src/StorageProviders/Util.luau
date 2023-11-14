@@ -12,7 +12,8 @@ export type OnBatchSaveInvoke = (
 	dataSetId: string, 
 	dataTableId: string, 
 	dataList: {[number]: {[string]: unknown}}, 
-	format: {[string]: DataType}
+	format: {[string]: DataType},
+	onPayloadSizeKnownInvoke: (size: number) -> ()
 ) -> boolean
 
 -- Constants
