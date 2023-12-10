@@ -91,6 +91,11 @@ local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
 local MongoDB = {} :: MongoDB
 MongoDB.__index = MongoDB
 
+
+--- @prop DebugPrintEnabled boolean 
+--- @within MongoDB
+--- Whether it prints the results of posting (good for debugging)
+
 function MongoDB:Destroy()
 	if not self._IsAlive then return end
 	self._IsAlive = false
