@@ -42,10 +42,17 @@ export type DataTable<RowData> = {
 }
 
 -- Class
+
+--[=[
+	@class DataTable
+
+	This is the base table class that rows are added for processing.
+]=]
 local DataTable = {} :: DataTable<{[string]: unknown}>
 DataTable.__index = DataTable
 
-function DataTable:AddRow(param: unknown)
+--- adds a row of data
+function DataTable:AddRow(param: {[string]: unknown})
 	assert(type(param) == "table", `bad data "{param}" for dataTable {self.Name}`)
 	local data: {[any]: any} = param :: any
 	for i, columnData in ipairs(self._Columns) do
@@ -103,10 +110,12 @@ function DataTable:AddRow(param: unknown)
 	self._BatchQueue:Add(data, -tick())
 end
 
+--- gets the number of rows that need to be processed
 function DataTable:GetRowCount(): number
 	return self._BatchQueue:GetLength()
 end
 
+--- processes the current rows
 function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean, number)
 	if self:GetRowCount() == 0 then
 		return true, true, 0
@@ -162,6 +171,7 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 	return success, self._BatchQueue:IsEmpty(), if success then netSize else 0
 end
 
+--- adds a column, only to be used when initially constructing the table
 function DataTable:AddColumn(key: string, format: DataType, isNullable: boolean)
 	for i, columnData in ipairs(self._Columns) do
 		if columnData.Key == key then

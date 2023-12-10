@@ -26,6 +26,8 @@ export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
 type StorageProviders = typeof(StorageProviders)
+
+
 export type Midas = {
 	__index: Midas,
 	_Maid: Maid,
@@ -41,6 +43,16 @@ export type Midas = {
 	GetDataSet: (self: Midas, name: string) -> DataSet,
 	GetDataSets: (self: Midas) -> {[number]: DataSet},
 	SetOnBatchSaveInvoke: (self: Midas, onBatchSaveInvoke: OnBatchSaveInvoke) -> (),
+	Automate: (
+		self: Midas,
+		printEnabled: boolean,
+		maxEntriesPerTable: number?,
+		minDurationPerTable: number?,
+		updateDelay: number?,
+		averageSizePerRow: number?,
+		escalationRate: number?,
+		onAttemptInvokeLogger: OnAttemptInvokeLogger?
+	) -> (),
 	Destroy: (self: Midas) -> (),
 	new: () -> Midas,
 	init: (maid: Maid) -> nil
@@ -48,8 +60,34 @@ export type Midas = {
 
 -- Class
 local CurrentMidas: Midas = nil :: any
+
+--[=[
+	@class Midas
+
+	This is the service itself, the main interface which the dev sets up the various data structures.
+]=]
 local Midas = {} :: Midas
 Midas.__index = Midas
+
+
+--- @type OnAttemptInvokeLogger (success: boolean, size: number, rowCount: number, currentSizeLimit: number, currentRowLimit: number, rowsRemaining: number, attemptIndex: number, errorMessage: string?) -> ()
+--- @within Midas
+---
+--- I often run a datatable on the performance of posts to tune the parameters / detect issue / estimate data validity. If you wish to do the same you can with this function.
+type OnAttemptInvokeLogger = (
+	success: boolean,
+	size: number,
+	rowCount: number,
+	currentSizeLimit: number,
+	currentRowLimit: number,
+	rowsRemaining: number,
+	attemptIndex: number,
+	errorMessage: string?
+) -> ()
+
+--- @prop ProjectId string? 
+--- @within Midas
+--- The project id passed to the posting function
 
 function Midas:Destroy()
 	if not self._IsAlive then return end
@@ -65,6 +103,17 @@ function Midas:Destroy()
 	setmetatable(t, nil)
 end
 
+--[=[
+	This triggers the process of gathering rows for posting for all datatables. All the parameters are meant to help the dev work within the limits of whatever API they use to store data.
+
+	@param maxEntriesPerTable number -- the max number of entries per table you'll be posting
+	@param maxSizePerTable number -- the max amount of data (in characters) that can be sent per table in a single post
+	@param delayPerTable number -- the amount it will wait between post requests, skipped if the table is empty
+	@param recursive boolean -- whether it sticks on a single table, delaying and posting until it is empty.
+	@return totalSuccess boolean -- whether all data tables posted without error
+	@return totalEmpty boolean -- whether every datatable is now empty
+	@return netData number -- the amount of data (in characters) sent by all tables
+]=]
 function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, boolean, number)
 	local netData = 0
 	local totalSuccess = true
@@ -104,6 +153,14 @@ function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPe
 	return totalSuccess, totalEmpty, netData
 end
 
+--[=[
+	Constructs a dataset
+
+	@param name string -- the key your dataset will be organized under
+	@param id string -- the id that's passed to the data posting solution
+
+	@return dataset DataSet -- the dataset you just constructed
+]=]
 function Midas:CreateDataSet(name: string, id: string): DataSet
 	assert(RunService:IsServer(), `bad domain`)
 	assert(self._DataSets[name] == nil, `dataSet of name {name} already exists`)
@@ -126,10 +183,17 @@ function Midas:CreateDataSet(name: string, id: string): DataSet
 	return dataSet
 end
 
+
+--[=[
+	Sets the posting function
+
+	@param onBatchSaveInvoke OnBatchSaveInvoke -- the function that posts data
+]=]
 function Midas:SetOnBatchSaveInvoke(onBatchSaveInvoke: OnBatchSaveInvoke)
 	self._OnBatchSaveInvoke = onBatchSaveInvoke
 end
 
+--- gets a dataset by name
 function Midas:GetDataSet(name: string): DataSet
 	assert(RunService:IsServer(), `bad domain`)
 	local dataSets = self._DataSets[name]
@@ -137,10 +201,12 @@ function Midas:GetDataSet(name: string): DataSet
 	return dataSets
 end
 
+--- gets a list of datasets
 function Midas:GetDataSets(): {[number]: DataSet}
 	return TableUtil.values(self._DataSets)
 end
 
+--- gets the number of rows currently waiting to be processed
 function Midas:GetRowCount(): number
 	local rows = 0
 	for i, dataSet in ipairs(self:GetDataSets()) do
@@ -148,6 +214,128 @@ function Midas:GetRowCount(): number
 	end
 	return rows
 end
+
+
+--[=[
+	Automates the posting of rows, dynamically adapting to handle errors and rate limits as appropriate.
+	@param printEnabled boolean -- whether you want to print the results of each post (useful for debugging).
+	@param maxEntriesPerTable number? -- The upper limit for how many entries you allow. Defaults to 200.
+	@param minDurationPerTable number? -- The delay after posting a table. Defaults to 1.
+	@param updateDelay number? -- How long Midas will wait for rows to accumulate between runs.
+	@param averageSizePerRow number? -- Used to estimate how much data will be passed by a table. Defaults to 200
+	@param escalationRate number? -- The speed at which it will alter limits to achieve a successful post.
+	@param onAttemptInvokeLogger OnAttemptInvokeLogger? --A function that is called after each attempted run, used for debugging / logging performance mostly.
+
+]=]
+function Midas:Automate(
+	printEnabled: boolean,
+	maxEntriesPerTable: number?,
+	minDurationPerTable: number?,
+	updateDelay: number?,
+	averageSizePerRow: number?,
+	escalationRate: number?,
+	onAttemptInvokeLogger: OnAttemptInvokeLogger?
+): ()
+
+	maxEntriesPerTable = maxEntriesPerTable or 200
+	assert(maxEntriesPerTable)
+
+	averageSizePerRow = averageSizePerRow or 200
+	assert(averageSizePerRow)
+
+	minDurationPerTable = minDurationPerTable or 1
+	assert(minDurationPerTable)
+
+	escalationRate = escalationRate or 2
+	assert(escalationRate)
+
+	updateDelay = updateDelay or 15
+	assert(updateDelay)
+
+	local function log(msg: string)
+		if printEnabled then
+			print(msg)
+		end
+	end
+	task.spawn(function()
+		local postIndex = 0
+	
+		while self._IsAlive do
+			local success: boolean, isComplete: boolean, size: number
+			local entriesPerTable = maxEntriesPerTable
+			local duration = minDurationPerTable
+			local runIndex = 0
+			postIndex += 1
+			task.wait(updateDelay)
+			repeat
+				success, isComplete, size = false, false, 0
+				runIndex += 1
+				local start = tick()
+				local maxSize = maxEntriesPerTable*averageSizePerRow
+				local rowCount = Midas:GetRowCount()
+		
+				local tableCount = 0
+				for i, dataSet in ipairs(self:GetDataSets()) do
+					tableCount += #dataSet:GetDataTables()
+				end
+	
+				local pSuccess, msg = pcall(function()
+					success, isComplete, size = Midas:Post(
+						entriesPerTable,
+						maxSize,
+						duration,
+						false
+					)
+				end)
+				log(`post {postIndex}.{runIndex} = [{success}&{pSuccess}]@[#{entriesPerTable}x{duration}s]`)
+			
+				if not pSuccess then
+					log(msg)
+					task.spawn(function()
+						error(msg)
+					end)
+					success = false
+				else
+					log("post-success")
+				end
+				if success and pSuccess then
+					entriesPerTable *= escalationRate
+					entriesPerTable = math.min(entriesPerTable, maxEntriesPerTable)
+					entriesPerTable = math.ceil(entriesPerTable)
+	
+					duration /= escalationRate
+					duration = math.max(duration, minDurationPerTable)
+	
+				else
+					entriesPerTable /= escalationRate
+					entriesPerTable = math.ceil(entriesPerTable)
+	
+					duration *= escalationRate
+				end
+	
+				if onAttemptInvokeLogger then
+					onAttemptInvokeLogger(
+						(success and pSuccess),
+						size,
+						rowCount,
+						maxSize,
+						entriesPerTable * tableCount,
+						self:GetRowCount(),
+						runIndex,
+						msg
+					)
+				end
+
+				local runDuration = tick() - start
+				
+				if runDuration < updateDelay then
+					task.wait(updateDelay-runDuration)
+				end
+			until (success == true and isComplete == true) or not self._IsAlive
+		end
+	end)
+end
+
 
 function Midas.new()
 
@@ -176,8 +364,13 @@ function Midas.new()
 	return self
 end
 
-function Midas.init(maid: Maid)
+--- initializes the package
+function Midas.init(maid: Maid?)
 	print(`booting {script.Name}`)
+	if not maid then
+		maid = Maid.new()
+	end
+	assert(maid ~= nil)
 	maid:GiveTask(Midas.new())
 	return nil
 end

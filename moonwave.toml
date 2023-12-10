@@ -1,0 +1,22 @@
+title = "midas"  # From Git
+gitRepoUrl = "https://github.com/nightcycle/midas" # From Git
+
+gitSourceBranch = "master"
+changelog = true
+classOrder = []
+
+[docusaurus]
+onBrokenLinks = "throw"
+onBrokenMarkdownLinks = "warn"
+favicon = "/logo.png"
+
+# From git:
+organizationName = "nightcycle"
+projectName = "midas"
+url = "https://nightcycle.github.io"
+baseUrl = "/midas/"
+tagline = "An analytics data management framework."
+
+[footer]
+style = "dark"
+copyright = "Copyright © 2024 Nightcycle Studios LLC. Built with Moonwave and Docusaurus"

@@ -83,7 +83,11 @@ local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
 -- Variables
 -- References
 -- Private Functions
--- Class
+--[=[
+	@class MongoDB
+
+	This is a simple API provider class, allowing you to make simplified reuqests without needing to think about http stuff.
+]=]
 local MongoDB = {} :: MongoDB
 MongoDB.__index = MongoDB
 
@@ -97,8 +101,9 @@ function MongoDB:Destroy()
 	setmetatable(t, nil)
 end
 
+--- sends the data to MongoDB
 function MongoDB:InsertMany(
-	dataSource: string, 
+	dataSource: string,
 	databaseName: string, 
 	collectionName: string, 
 	dataList: {[number]: {[string]: any}},
@@ -170,6 +175,9 @@ function MongoDB:InsertMany(
 
 	return response.Success
 end
+
+
+--- initializes the class
 function MongoDB.new(apiKey: string, url: string)
 	assert(RunService:IsServer(), `bad domain`)
 

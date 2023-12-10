@@ -12,6 +12,11 @@ type DateTimeData = {
 	Second: number,
 	Millisecond: number,
 }
+
+--- @type DataType "Binary" | "Date" | "Decimal128" | "Double" | "Int32" | "Int64" | "Boolean" | "Array" | "Object" | "String"
+--- @within Midas
+---
+--- The pre-approved storage types. Good for type validation + allocating the most efficient amount of storage space.
 export type DataType = "Binary" | "Date" | "Decimal128" | "Double" | "Int32" | "Int64" | "Boolean" | "Array" | "Object" | "String"
 
 -- Constants
