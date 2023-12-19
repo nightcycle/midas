@@ -272,7 +272,7 @@ function Midas:Automate(
 				runIndex += 1
 				local start = tick()
 				local maxSize = maxEntriesPerTable*averageSizePerRow
-				local rowCount = Midas:GetRowCount()
+				local rowCount = self:GetRowCount()
 		
 				local tableCount = 0
 				for i, dataSet in ipairs(self:GetDataSets()) do
@@ -280,7 +280,7 @@ function Midas:Automate(
 				end
 	
 				local pSuccess, msg = pcall(function()
-					success, isComplete, size = Midas:Post(
+					success, isComplete, size = self:Post(
 						entriesPerTable,
 						maxSize,
 						duration,
