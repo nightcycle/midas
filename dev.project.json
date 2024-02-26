@@ -6,8 +6,23 @@
 	],
 	"tree": {
 		"$className": "DataModel",
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+			"Server": {
+				"$path": "example/Server"
+			}
+		},
+		"StarterPlayerScripts": {
+			"$className": "StarterPlayerScripts",
+			"Client": {
+				"$path": "example/Client"
+			}
+		},
 		"ReplicatedStorage": {
 			"$className": "ReplicatedStorage",
+			"Shared": {
+				"$path": "example/Shared"
+			},
 			"Packages": {
 				"$className": "Folder",
 				"$path": "Packages",

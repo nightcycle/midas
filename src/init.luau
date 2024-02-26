@@ -55,7 +55,7 @@ export type Midas = {
 	) -> (),
 	Destroy: (self: Midas) -> (),
 	new: () -> Midas,
-	init: (maid: Maid) -> nil
+	init: () -> () -> ()
 }
 
 -- Class
@@ -365,14 +365,12 @@ function Midas.new()
 end
 
 --- initializes the package
-function Midas.init(maid: Maid?)
+function Midas.init(): () -> ()
 	print(`booting {script.Name}`)
-	if not maid then
-		maid = Maid.new()
+	local midas = Midas.new()
+	return function()
+		midas:Destroy()
 	end
-	assert(maid ~= nil)
-	maid:GiveTask(Midas.new())
-	return nil
 end
 
 return ServiceProxy(function()
