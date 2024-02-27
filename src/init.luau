@@ -74,7 +74,7 @@ Midas.__index = Midas
 --- @within Midas
 ---
 --- I often run a datatable on the performance of posts to tune the parameters / detect issue / estimate data validity. If you wish to do the same you can with this function.
-type OnAttemptInvokeLogger = (
+export type OnAttemptInvokeLogger = (
 	success: boolean,
 	size: number,
 	rowCount: number,

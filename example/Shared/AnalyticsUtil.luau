@@ -1,5 +1,6 @@
 --!strict
 -- Services
+local RunService = game:GetService("RunService")
 -- Packages
 -- Modules
 -- Types
@@ -131,6 +132,30 @@ local ANALYTICS_SESSION_EVENT_ENUM: {[AnalyticsSessionEvent]: number} = {
 -- Variables
 -- References
 -- Private Functions
+local function getOrConstructRemoteEvent(name: string): RemoteEvent
+	local out: Instance
+	if RunService:IsClient() then
+		out = script:WaitForChild(name)
+	else
+		out = script:FindFirstChild(name) or Instance.new("RemoteEvent")
+	end
+	assert(out:IsA("RemoteEvent"), `bad inst, expected RemoteEvent, got {out.ClassName}`)
+	out.Name = name
+	return out
+end
+
+local function getOrConstructRemoteFunction(name: string): RemoteFunction
+	local out: Instance
+	if RunService:IsClient() then
+		out = script:WaitForChild(name)
+	else
+		out = script:FindFirstChild(name) or Instance.new("RemoteFunction")
+	end
+	assert(out:IsA("RemoteFunction"), `bad inst, expected RemoteFunction, got {out.ClassName}`)
+	out.Name = name
+	return out
+end
+
 -- Class
 local AnalyticsUtil = {
 	Enums = {
@@ -145,24 +170,24 @@ local AnalyticsUtil = {
 			return num
 		end,
 	},
-	Config = {
-		Remote = {
-			Event = {
-				UpdateClientPerformance = "AnalyticsUpdateClientPerformance",
-				OnEmote = "AnalyticsOnEmote",
-				OnMapEvent = "OnMapEvent",
-				OnChangeCustomization = "OnChangeCustomization",
-				OnSettingsUpdate = "OnSettingsUpdate",
-			},
-			Function = {
-				Register = "AnalyticsRegisterUser",
-				GetPing = "AnalyticsGetPing",
-			},
+	Remote = {
+		Event = {
+			UpdateClientPerformance = getOrConstructRemoteEvent("AnalyticsUpdateClientPerformance"),
+			OnSettingsUpdate = getOrConstructRemoteEvent("OnSettingsUpdate"),
 		},
+		Function = {
+			Register = getOrConstructRemoteFunction("AnalyticsRegisterUser"),
+			GetPing = getOrConstructRemoteFunction("AnalyticsGetPing"),
+			GetLastPosition = getOrConstructRemoteFunction("AnalyticsGetLastPosition"),
+		},
+	},
+	Config = {
+		Version = "0.1.0",	
 		Iteration = {
 			User = {
 				Session = 7,
 				Performance = 2,
+				Social = 3,
 				Map = 2,
 				Settings = 2,
 			},
@@ -174,5 +199,7 @@ local AnalyticsUtil = {
 		},
 	},
 }
+
+
 
 return AnalyticsUtil

@@ -61,7 +61,7 @@ return function(): DataTables
 			local sessionDataTable = userDataSet:CreateDataTable("Session", "session")
 			addSessionIdColumn(sessionDataTable)
 			addTimestampColumn(sessionDataTable)
-			addIterationColumn(sessionDataTable)				
+			addIterationColumn(sessionDataTable)
 			sessionDataTable:AddColumn("job_id", "String", false)
 			sessionDataTable:AddColumn("event", "Int32", false)
 			sessionDataTable:AddColumn("follow_user_id", "Int64", true)
@@ -74,12 +74,12 @@ return function(): DataTables
 			sessionDataTable:AddColumn("user_id", "Int64", false)
 			sessionDataTable:AddColumn("duration", "Int32", false)
 			sessionDataTable:AddColumn("is_premium", "Boolean", true)
-			sessionDataTable:AddColumn("account_age", "Int32", true)	
+			sessionDataTable:AddColumn("account_age", "Int32", true)
 			sessionDataTable:AddColumn("is_verified", "Boolean", true)
 			sessionDataTable:AddColumn("is_tester", "Boolean", true)
 			sessionDataTable:AddColumn("is_nightcycle", "Boolean", true)
 			sessionDataTable:AddColumn("is_finished_loading", "Boolean", false)
-			
+
 			dataTables.User.Session = sessionDataTable
 		end
 
@@ -95,18 +95,17 @@ return function(): DataTables
 			performanceDataTable:AddColumn("instance_count", "Int32", false)
 			performanceDataTable:AddColumn("memory_total", "Int32", false)
 			performanceDataTable:AddColumn("memory_animation", "Int32", false)
-			performanceDataTable:AddColumn("memory_graphics", "Int32", false)		
-			performanceDataTable:AddColumn("memory_gui", "Int32", false)					
-			performanceDataTable:AddColumn("memory_instances", "Int32", false)		
-			performanceDataTable:AddColumn("memory_lua_heap", "Int32", false)				
-			performanceDataTable:AddColumn("memory_script", "Int32", false)			
-			performanceDataTable:AddColumn("memory_signal", "Int32", false)	
-			performanceDataTable:AddColumn("memory_sound", "Int32", false)							
+			performanceDataTable:AddColumn("memory_graphics", "Int32", false)
+			performanceDataTable:AddColumn("memory_gui", "Int32", false)
+			performanceDataTable:AddColumn("memory_instances", "Int32", false)
+			performanceDataTable:AddColumn("memory_lua_heap", "Int32", false)
+			performanceDataTable:AddColumn("memory_script", "Int32", false)
+			performanceDataTable:AddColumn("memory_signal", "Int32", false)
+			performanceDataTable:AddColumn("memory_sound", "Int32", false)
 			performanceDataTable:AddColumn("ping", "Int32", true)
 			dataTables.User.Performance = performanceDataTable
 		end
 
-	
 		do
 			local socialDataTable = userDataSet:CreateDataTable("Social", "social")
 			addSessionIdColumn(socialDataTable)
@@ -149,7 +148,6 @@ return function(): DataTables
 
 		local serverDataSet = Midas:CreateDataSet("Server", "server")
 
-	
 		do
 			local populationDataTable = serverDataSet:CreateDataTable("Population", "population")
 			addJobIdColumn(populationDataTable)
@@ -197,7 +195,6 @@ return function(): DataTables
 			midasDataTable:AddColumn("distribution", "String", false)
 			midasDataTable:AddColumn("error_message", "String", true)
 			dataTables.Server.Midas = midasDataTable
-
 		end
 	end
 

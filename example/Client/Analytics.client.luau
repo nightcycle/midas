@@ -13,16 +13,18 @@ local AnalyticsUtil = require(game:GetService("ReplicatedStorage"):WaitForChild(
 -- Types
 type AnalyticsPlatform = AnalyticsUtil.AnalyticsPlatform
 -- Constants
-local REGISTER_USER = AnalyticsUtil.Config.Remote.Function.Register
-local GET_PING = AnalyticsUtil.Config.Remote.Function.GetPing
-local UPDATE_PERFORMANCE = AnalyticsUtil.Config.Remote.Event.UpdateClientPerformance
-local ON_EMOTE = AnalyticsUtil.Config.Remote.Event.OnEmote
-local ON_MAP_EVENT = AnalyticsUtil.Config.Remote.Event.OnMapEvent
+
 local ANALYTICS_PERFORMANCE_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.User.Performance
 local ANALYTICS_SESSION_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.User.Session
 
 -- Variables
 -- References
+local RegisterUser = AnalyticsUtil.Remote.Function.Register
+local GetPing = AnalyticsUtil.Remote.Function.GetPing
+local UpdateClientPerformance = AnalyticsUtil.Remote.Event.UpdateClientPerformance
+local GetLastPosition = AnalyticsUtil.Remote.Function.GetLastPosition
+
+
 -- Private Functions
 function waitForChildOfClass(par: Instance, getIfAlive: () -> boolean, class: string): Instance?
 	local out: Instance? = par:FindFirstChildOfClass(class :: any)
@@ -66,7 +68,7 @@ do
 		end
 
 		local rowData: UserSessionRowData = {
-			event = PseudoEnum.getValueFromEnumItem("AnalyticsSessionEvent", PseudoEnum.AnalyticsSessionEvent.Join),
+			event = AnalyticsUtil.Enums.AnalyticsSessionEvent("Join"),
 			session_id = sessionId,
 			user_id = player.UserId,
 			iteration = ANALYTICS_SESSION_TABLE_ITERATION,
@@ -74,7 +76,7 @@ do
 			job_id = game.JobId,
 			is_voice_chat = isVCEnabled,
 			language = player.LocaleId,
-			platform = PseudoEnum.getValueFromEnumItem("AnalyticsPlatform", platformType),
+			platform = AnalyticsUtil.Enums.AnalyticsPlatform(platformType),
 			screen_x = workspace.CurrentCamera.ViewportSize.X,
 			screen_y = workspace.CurrentCamera.ViewportSize.Y,
 			is_premium = player.MembershipType == Enum.MembershipType.Premium,
@@ -84,7 +86,7 @@ do
 			is_finished_loading = false,
 		}
 
-		NetworkUtil.invokeServer(REGISTER_USER, rowData)
+		RegisterUser:InvokeServer(rowData)
 	end
 
 	local function initCharacter(character: Model?)
@@ -93,9 +95,6 @@ do
 		end
 		assert(character)
 
-		local characterMaid = Maid.new()
-		characterMaid.bind(character)
-
 		local humanoid: Instance? = waitForChildOfClass(character, function()
 			return character == player.Character
 		end, "Humanoid")
@@ -103,60 +102,19 @@ do
 
 		do
 			local lastKnownPosition: Vector3?
-			characterMaid:GiveTask(RunService.RenderStepped:Connect(function()
+			RunService.RenderStepped:Connect(function()
 				if humanoid.Health > 0 then
 					local hrp = character.PrimaryPart
 					if hrp then
 						lastKnownPosition = hrp.Position
 					end
 				end
-			end))
+			end)
 
-			characterMaid:GiveTask(humanoid.Died:Connect(function()
-				if lastKnownPosition then
-					if lastKnownPosition.Y < -10 then
-						NetworkUtil.fireServer(ON_MAP_EVENT, PseudoEnum.AnalyticsMapEvent.Fell, lastKnownPosition)
-					else
-						NetworkUtil.fireServer(ON_MAP_EVENT, PseudoEnum.AnalyticsMapEvent.Reset, lastKnownPosition)
-					end
-				end
-			end))
-		end
-
-		local primaryPart = character:WaitForChild("HumanoidRootPart", 10)
-		if primaryPart and primaryPart:IsA("BasePart") then
-			NetworkUtil.fireServer(ON_MAP_EVENT, PseudoEnum.AnalyticsMapEvent.Spawned, primaryPart.Position)
-		end
-
-		local animator: Instance? = waitForChildOfClass(humanoid, function()
-			return character == player.Character
-		end, "Animator")
-		assert(animator and animator:IsA("Animator"))
-
-		local description = humanoid:GetAppliedDescription()
-
-		characterMaid:GiveTask(animator.AnimationPlayed:Connect(function(track: AnimationTrack)
-			local animId = tonumber(track.Animation.AnimationId:gsub("%p", ""):gsub("%a", ""))
-
-			local emoteName: string?
-			local emoteId: number?
-			for name, ids in pairs(description:GetEmotes()) do
-				for i, id in ipairs(ids) do
-					if id == animId then
-						emoteId = id
-						emoteName = name
-						break
-					end
-				end
-				if emoteName then
-					break
-				end
+			GetLastPosition.OnClientInvoke = function(): Vector3?
+				return lastKnownPosition
 			end
-
-			if emoteName and emoteId then
-				NetworkUtil.fireServer(ON_EMOTE, emoteName, emoteId)
-			end
-		end))
+		end
 	end
 	player.CharacterAdded:Connect(initCharacter)
 	initCharacter(player.Character)
@@ -202,11 +160,11 @@ do
 				memory_signal = Stats:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Signals),
 				memory_sound = Stats:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Sounds),
 			}
-			NetworkUtil.fireServer(UPDATE_PERFORMANCE, rowData)
+			UpdateClientPerformance:FireServer(rowData)
 		end
 	end)
 
-	NetworkUtil.onClientInvoke(GET_PING, function()
+	GetPing.OnClientInvoke = function(): boolean
 		return true
-	end)
+	end
 end

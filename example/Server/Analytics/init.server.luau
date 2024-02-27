@@ -32,15 +32,10 @@ export type Analytics = {
 	new: () -> Analytics,
 }
 -- Constants
-local MONGO_API_KEY = "abc1235230sawhateveryourapikeyis"
+local MONGO_API_KEY = "abc1235230sawhateveryourapikeyis" -- DEFINITELY DO NOT PUT THIS IN SHARED OR CLIENT
 local MONGO_URL_ENDPOINT = "https://us-east-2.aws.data.mongodb-api.com/app/data-abc123"
 local PROJECT_ID = "project-id"
-local REGISTER_USER = AnalyticsUtil.Config.Remote.Function.Register
-local GET_PING = AnalyticsUtil.Config.Remote.Function.GetPing
-local UPDATE_PERFORMANCE = AnalyticsUtil.Config.Remote.Event.UpdateClientPerformance
-local ON_EMOTE = AnalyticsUtil.Config.Remote.Event.OnEmote
-local ON_CUSTOM_CHANGE = AnalyticsUtil.Config.Remote.Event.OnChangeCustomization
-local ON_SETTINGS_CHANGE = AnalyticsUtil.Config.Remote.Event.OnSettingsUpdate
+local VERSION = AnalyticsUtil.Config.Version
 local MAX_ENTRIES_PER_TABLE = 200 --how many entries / rows trigger a table post
 local AVG_SIZE_PER_ROW = 200 --the avg number of characters per row, used to est char limit trigger of table post
 local MIN_DURATION_PER_TABLE = 1 --the minimum amount of time posts are separated by
@@ -49,14 +44,21 @@ local GROUP_ID = 123456
 local GROUP_TESTER_RANK_ID = 7891011
 local UPDATE_DELAY = 15
 local TESTER_RANK = 10
+local ANALYTICS_SOCIAL_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.User.Social
 local ANALYTICS_SESSION_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.User.Session
 local ANALYTICS_SETTINGS_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.User.Settings
 local ANALYTICS_MIDAS_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.Server.Midas
 local ANALYTICS_PERFORMANCE_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.Server.Performance
 local ANALYTICS_POPULATION_TABLE_ITERATION = AnalyticsUtil.Config.Iteration.Server.Population
+
 local ON_LOADING_SEQUENCE_COMPLETE = "OnLoadingSequenceComplete"
 -- Variables
 -- References
+local RegisterUser = AnalyticsUtil.Remote.Function.Register
+local GetPing = AnalyticsUtil.Remote.Function.GetPing
+local UpdatePerformance = AnalyticsUtil.Remote.Event.UpdateClientPerformance
+local OnSettingsUpdate = AnalyticsUtil.Remote.Event.OnSettingsUpdate
+local GetLastPosition = AnalyticsUtil.Remote.Function.GetLastPosition
 -- Private Functions
 
 -- Class
@@ -64,25 +66,29 @@ local Analytics = {} :: Analytics
 Analytics.__index = Analytics
 
 function Analytics.new(): Analytics
-	Midas.init()
-	Midas.ProjectId = PROJECT_ID
 
-	local mongoDB = Midas.StorageProviders.MongoDB.new(MONGO_API_KEY, MONGO_URL_ENDPOINT)
-	mongoDB.DebugPrintEnabled = false -- RunService:IsStudio()
-
-	Midas:SetOnBatchSaveInvoke(
-		function(
-			projectId: string,
-			dataSetId: string,
-			dataTableId: string,
-			dataList: { [number]: { [string]: unknown } },
-			format: { [string]: DataType },
-			onPayloadSizeKnownInvoke:(number) -> ()
-		): boolean
-			return mongoDB:InsertMany(projectId, dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
-		end
-	)
+	do
+		Midas.init()
+		Midas.ProjectId = PROJECT_ID
 	
+		local mongoDB = Midas.StorageProviders.MongoDB.new(MONGO_API_KEY, MONGO_URL_ENDPOINT)
+		mongoDB.DebugPrintEnabled = false -- RunService:IsStudio()
+	
+		Midas:SetOnBatchSaveInvoke(
+			function(
+				projectId: string,
+				dataSetId: string,
+				dataTableId: string,
+				dataList: { [number]: { [string]: unknown } },
+				format: { [string]: DataType },
+				onPayloadSizeKnownInvoke:(number) -> ()
+			): boolean
+				return mongoDB:InsertMany(projectId, dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
+			end
+		)	
+	end
+
+
 	local self: Analytics = setmetatable({}, Analytics) :: any
 	self.SessionIds = {}
 	self.DataTables = AnalyticsConstruction()
@@ -104,7 +110,7 @@ function Analytics.new(): Analytics
 				local count = 0
 				for i, player in ipairs(Players:GetPlayers()) do
 					local start = tick()
-					NetworkUtil.invokeClient(GET_PING, player)
+					GetPing:InvokeClient(player)
 					local finish = tick()
 					count += 1
 					netPing += (finish - start)*1000
@@ -128,11 +134,11 @@ function Analytics.new(): Analytics
 					memory_sound = Stats:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.Sounds),
 					memory_total = Stats:GetTotalMemoryUsageMb(),
 					ping = if count > 0 then math.round(netPing/count) else nil,
-					version = Version
+					version = VERSION
 				})
 			end)
 			if not success then
-				LogService:Log(msg)
+				print(msg)
 			end
 			task.wait(15)
 		end
@@ -143,12 +149,11 @@ function Analytics.new(): Analytics
 	local onLoadingComplete = Instance.new("RemoteEvent")
 	onLoadingComplete.Name = ON_LOADING_SEQUENCE_COMPLETE
 	onLoadingComplete.OnServerEvent:Connect(function(player: Player)
-		-- print("LOAD COMPLETE!", player.UserId)
 		loadRegistry[player.UserId] = true
 	end)
 	onLoadingComplete.Parent = StarterGui
 
-	NetworkUtil.onServerInvoke(REGISTER_USER, function(player: Player, joinRowData: UserSessionRowData): nil
+	RegisterUser.OnServerInvoke = function(player: Player, joinRowData: UserSessionRowData): nil
 		if self.SessionIds[player.UserId] then return nil end
 		
 		local start = joinRowData.timestamp
@@ -159,11 +164,14 @@ function Analytics.new(): Analytics
 		local onPlayerRemoving: RBXScriptConnection
 
 		onChatted = player.Chatted:Connect(function(message: string, otherPlayer: Player?)
+			local lastPosition = GetLastPosition:InvokeClient(player)
+			assert(lastPosition == nil or typeof(lastPosition) == "Vector3", `bad position: {typeof(lastPosition)}`)
 			self.DataTables.User.Social:AddRow({
-				event = PseudoEnum.getValueFromEnumItem("AnalyticsSocialEvent", PseudoEnum.AnalyticsSocialEvent.Chat),
 				message = message,
+				pos_x = if lastPosition then lastPosition.X else nil,
+				pos_y = if lastPosition then lastPosition.Y else nil,
+				pos_z = if lastPosition then lastPosition.Z else nil,
 				iteration = ANALYTICS_SOCIAL_TABLE_ITERATION,
-				target_user_id = if otherPlayer then otherPlayer.UserId else nil,
 				session_id = sessionId,
 				timestamp = DateTime.now(),
 			})
@@ -180,7 +188,7 @@ function Analytics.new(): Analytics
 				-- print("didLoad", didLoad)
 				local finish = DateTime.now()
 				self.DataTables.User.Session:AddRow({
-					event = PseudoEnum.getValueFromEnumItem("AnalyticsSessionEvent", PseudoEnum.AnalyticsSessionEvent.Quit),
+					event = AnalyticsUtil.Enums.AnalyticsSessionEvent("Quit"),
 					session_id = sessionId,
 					iteration = ANALYTICS_SESSION_TABLE_ITERATION,
 					job_id = game.JobId,
@@ -206,7 +214,7 @@ function Analytics.new(): Analytics
 
 		task.spawn(function()
 			local success, msg = pcall(function()
-				joinRowData.is_nightcycle = player:IsInGroup(GROUP_ID)
+				joinRowData.is_group = player:IsInGroup(GROUP_ID)
 				joinRowData.is_tester = player:GetRankInGroup(GROUP_TESTER_RANK_ID) == TESTER_RANK
 			end)
 			if not success then
@@ -218,14 +226,133 @@ function Analytics.new(): Analytics
 		end)
 
 		return nil
-	end)
+	end
 
-	NetworkUtil.getRemoteFunction(REGISTER_USER)
+	Midas:Automate(
+		true,
+		MAX_ENTRIES_PER_TABLE,
+		MIN_DURATION_PER_TABLE,
+		UPDATE_DELAY,
+		AVG_SIZE_PER_ROW,
+		ESCALATION_RATE,
+		function()
+
+		end
+	)
+
+	function Midas:Automate(
+		printEnabled: boolean,
+		maxEntriesPerTable: number?,
+		minDurationPerTable: number?,
+		updateDelay: number?,
+		averageSizePerRow: number?,
+		escalationRate: number?,
+		onAttemptInvokeLogger: Midas.OnAttemptInvokeLogger?
+	): ()
+	
+		maxEntriesPerTable = maxEntriesPerTable or 200
+		assert(maxEntriesPerTable)
+	
+		averageSizePerRow = averageSizePerRow or 200
+		assert(averageSizePerRow)
+	
+		minDurationPerTable = minDurationPerTable or 1
+		assert(minDurationPerTable)
+	
+		escalationRate = escalationRate or 2
+		assert(escalationRate)
+	
+		updateDelay = updateDelay or 15
+		assert(updateDelay)
+	
+		local function log(msg: string)
+			if printEnabled then
+				print(msg)
+			end
+		end
+		task.spawn(function()
+			local postIndex = 0
+		
+			while self._IsAlive do
+				local success: boolean, isComplete: boolean, size: number
+				local entriesPerTable = maxEntriesPerTable
+				local duration = minDurationPerTable
+				local runIndex = 0
+				postIndex += 1
+				task.wait(updateDelay)
+				repeat
+					success, isComplete, size = false, false, 0
+					runIndex += 1
+					local start = tick()
+					local maxSize = maxEntriesPerTable*averageSizePerRow
+					local rowCount = self:GetRowCount()
+			
+					local tableCount = 0
+					for i, dataSet in ipairs(self:GetDataSets()) do
+						tableCount += #dataSet:GetDataTables()
+					end
+		
+					local pSuccess, msg = pcall(function()
+						success, isComplete, size = self:Post(
+							entriesPerTable,
+							maxSize,
+							duration,
+							false
+						)
+					end)
+					log(`post {postIndex}.{runIndex} = [{success}&{pSuccess}]@[#{entriesPerTable}x{duration}s]`)
+				
+					if not pSuccess then
+						log(msg)
+						task.spawn(function()
+							error(msg)
+						end)
+						success = false
+					else
+						log("post-success")
+					end
+					if success and pSuccess then
+						entriesPerTable *= escalationRate
+						entriesPerTable = math.min(entriesPerTable, maxEntriesPerTable)
+						entriesPerTable = math.ceil(entriesPerTable)
+		
+						duration /= escalationRate
+						duration = math.max(duration, minDurationPerTable)
+		
+					else
+						entriesPerTable /= escalationRate
+						entriesPerTable = math.ceil(entriesPerTable)
+		
+						duration *= escalationRate
+					end
+		
+					if onAttemptInvokeLogger then
+						onAttemptInvokeLogger(
+							(success and pSuccess),
+							size,
+							rowCount,
+							maxSize,
+							entriesPerTable * tableCount,
+							self:GetRowCount(),
+							runIndex,
+							msg
+						)
+					end
+	
+					local runDuration = tick() - start
+					
+					if runDuration < updateDelay then
+						task.wait(updateDelay-runDuration)
+					end
+				until (success == true and isComplete == true) or not self._IsAlive
+			end
+		end)
+	end
 
 	task.spawn(function()
 		local postIndex = 0
 
-		while self._IsAlive do
+		while true do
 			local success: boolean, isComplete: boolean, size: number
 			local entriesPerTable = MAX_ENTRIES_PER_TABLE
 			local duration = MIN_DURATION_PER_TABLE
@@ -258,16 +385,16 @@ function Analytics.new(): Analytics
 						false
 					)
 				end)
-				LogService:Log(`post {postIndex}.{runIndex} = [{success}&{pSuccess}]@[#{entriesPerTable}x{duration}s]`)
+				print(`post {postIndex}.{runIndex} = [{success}&{pSuccess}]@[#{entriesPerTable}x{duration}s]`)
 			
 				if not pSuccess then
-					LogService:Log(msg)
+					print(msg)
 					task.spawn(function()
 						error(msg)
 					end)
 					success = false
 				else
-					LogService:Log("post-success")
+					print("post-success")
 				end
 				if success and pSuccess then
 					entriesPerTable *= ESCALATION_RATE
@@ -311,27 +438,13 @@ function Analytics.new(): Analytics
 				if runDuration < UPDATE_DELAY then
 					task.wait(UPDATE_DELAY-runDuration)
 				end
-			until (success == true and isComplete == true) or not self._IsAlive
+			until (success == true and isComplete == true)
 		end
 	end)
 
-	do
-		NetworkUtil.onServerEvent(ON_CUSTOM_CHANGE, function(player: Player, whiteColor: Color3?, blackColor: Color3?, skin: string?)
-			local sessionId = self.SessionIds[player.UserId]
-			assert(sessionId ~= nil)
-			self.DataTables.User.Customization:AddRow({
-				session_id = sessionId,
-				iteration = ANALYTICS_CUSTOMIZATION_TABLE_ITERATION,
-				white_color = if whiteColor then whiteColor:ToHex() else nil,
-				black_color = if blackColor then blackColor:ToHex() else nil,
-				skin = skin,
-				timestamp = DateTime.now(),
-			})
-		end)
-	end
 
 	do
-		NetworkUtil.onServerEvent(ON_SETTINGS_CHANGE, function(player: Player, isDark: boolean?, isLarge: boolean?, isMusicEnabled: boolean?)
+		OnSettingsUpdate.OnServerEvent:Connect(function(player: Player, isDark: boolean?, isLarge: boolean?, isMusicEnabled: boolean?)
 			local sessionId = self.SessionIds[player.UserId]
 			assert(sessionId ~= nil)
 			self.DataTables.User.Settings:AddRow({
@@ -344,19 +457,17 @@ function Analytics.new(): Analytics
 			})
 		end)
 	end
+
 	do
 		local friends: {[string]: {[number]: string}} = {}
 		local users: {[number]: number} = {}
-		local function update(event: PseudoEnum.AnalyticsSessionEvent)
+		local function update(event: AnalyticsUtil.AnalyticsSessionEvent)
 			self.DataTables.Server.Population:AddRow({
 				job_id = game.JobId,
 				iteration = ANALYTICS_POPULATION_TABLE_ITERATION,
 				friends = HttpService:JSONEncode(friends),
 				users = HttpService:JSONEncode(users),
-				event = PseudoEnum.getValueFromEnumItem(
-					"AnalyticsSessionEvent", 
-					event
-				),
+				event = AnalyticsUtil.Enums.AnalyticsSessionEvent(event),
 				timestamp = DateTime.now(),
 			} :: ServerPopulationRowData)
 		end
@@ -379,8 +490,8 @@ function Analytics.new(): Analytics
 					end
 				end
 			end
-			update(PseudoEnum.AnalyticsSessionEvent.Join)
-		end))
+			update("Join")
+		end)
 
 		Players.PlayerRemoving:Connect(function(player: Player)
 			local i = table.find(users, player.UserId)
@@ -400,35 +511,21 @@ function Analytics.new(): Analytics
 					end
 				end
 			end
-			update(PseudoEnum.AnalyticsSessionEvent.Quit)
-		end))
+			update("Quit")
+		end)
 	end
 
-	do
-
-		NetworkUtil.onServerEvent(ON_EMOTE, function(player: Player, emoteName: string, emoteId: number)
-			local sessionId = self.SessionIds[player.UserId]
-			assert(sessionId ~= nil)
-			self.DataTables.User.Social:AddRow({
-				event = PseudoEnum.getValueFromEnumItem("AnalyticsSocialEvent", PseudoEnum.AnalyticsSocialEvent.Emote),
-				session_id = sessionId,
-				iteration = ANALYTICS_SOCIAL_TABLE_ITERATION,
-				emote_id = emoteId,
-				timestamp = DateTime.now(),
-			})
-		end))
-	end
 
 	do	
-		NetworkUtil.onServerEvent(UPDATE_PERFORMANCE, function(player: Player, data: UserPerformanceRowData)
+		UpdatePerformance.OnServerEvent:Connect(function(player: Player, data: UserPerformanceRowData)
 
 			local start = tick()
-			NetworkUtil.invokeClient(GET_PING, player)
+			GetPing:InvokeClient(player)
 			local finish = tick()
 			data.ping = math.round(1000*(finish-start))
 
 			self.DataTables.User.Performance:AddRow(data)
-		end))
+		end)
 
 	end
 
