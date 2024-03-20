@@ -15,7 +15,7 @@ To seamlessly integrate into the most common standards of data processing workfl
 ### 2. Define a Storage Solution
 
 #### MongoDB
-One solution I personally use is MongoDB Atlas. You can read how to set that up [here](https://www.mongodb.com/docs/atlas/getting-started/). It offers a terabyte of storage at a reasonable price. To get the data out there are also [many official](https://www.mongodb.com/try/download/shell) MongoDB tools and solutions for that as well.
+One solution I personally use is MongoDB Atlas. You can read how to set that up [here](https://www.mongodb.com/docs/atlas/getting-started/), remember to enabled the "Data API" under the "Services" menu. MongoDB offers a terabyte of storage at a reasonable price. To get the data out there are also [many official](https://www.mongodb.com/try/download/shell) MongoDB tools and solutions for that as well.
 
 ```lua
 	local mongoDB = Midas.StorageProviders.MongoDB.new(
