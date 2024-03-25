@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v2.3.1">
 <title data-rh="true">Midas | midas</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://nightcycle.github.io/midas/api/Midas"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="Midas | midas"><meta data-rh="true" name="description" content="This is the service itself, the main interface which the dev sets up the various data structures."><meta data-rh="true" property="og:description" content="This is the service itself, the main interface which the dev sets up the various data structures."><link data-rh="true" rel="icon" href="/midas/logo.png"><link data-rh="true" rel="canonical" href="https://nightcycle.github.io/midas/api/Midas"><link data-rh="true" rel="alternate" href="https://nightcycle.github.io/midas/api/Midas" hreflang="en"><link data-rh="true" rel="alternate" href="https://nightcycle.github.io/midas/api/Midas" hreflang="x-default"><link rel="stylesheet" href="/midas/assets/css/styles.19a5646f.css">
-<link rel="preload" href="/midas/assets/js/runtime~main.ca4fdc86.js" as="script">
-<link rel="preload" href="/midas/assets/js/main.e9fc67b9.js" as="script">
+<link rel="preload" href="/midas/assets/js/runtime~main.6780c0c3.js" as="script">
+<link rel="preload" href="/midas/assets/js/main.d627df3b.js" as="script">
 </head>
 <body class="navigation-with-keyboard">
 <script>!function(){function e(e){document.documentElement.setAttribute("data-theme",e)}var t=function(){var e=null;try{e=localStorage.getItem("theme")}catch(e){}return e}();null!==t?e(t):window.matchMedia("(prefers-color-scheme: dark)").matches?e("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,e("light"))}()</script><div id="__docusaurus">
@@ -25,7 +25,7 @@
 <p>The pre-approved storage types. Good for type validation + allocating the most efficient amount of storage space.</p>
 </div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="properties">Properties<a href="#properties" class="hash-link" aria-label="Direct link to Properties" title="Direct link to Properties">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="ProjectId"><code style="text-decoration:none">ProjectId</code><a href="#ProjectId" class="hash-link" aria-label="Direct link to ProjectId" title="Direct link to ProjectId">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/init.luau#L91"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->.<!-- -->ProjectId<!-- -->:<!-- --> </code> <code class="blue_P4bS">string?</code></div><div>
 <p>The project id passed to the posting function</p>
-</div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="init"><code style="text-decoration:none">init</code><a href="#init" class="hash-link" aria-label="Direct link to init" title="Direct link to init">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/init.luau#L368"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->.</code><code class="green_DgR4">init</code><code>(</code><code>maid<!-- -->: </code><code class="blue_P4bS">Maid?</code><code>) → </code><code>(</code><code>)</code></div><div>
+</div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="init"><code style="text-decoration:none">init</code><a href="#init" class="hash-link" aria-label="Direct link to init" title="Direct link to init">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/init.luau#L368"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->.</code><code class="green_DgR4">init</code><code>(</code><code>) → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code><code class="purple_ieR2"> → </code><code class="purple_ieR2">(</code><code class="purple_ieR2">)</code></div><div>
 <p>initializes the package</p>
 </div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Post"><code style="text-decoration:none">Post</code><a href="#Post" class="hash-link" aria-label="Direct link to Post" title="Direct link to Post">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nightcycle/midas/blob/master/src/init.luau#L117"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>Midas<!-- -->:</code><code class="green_DgR4">Post</code><code>(</code><div class="inset_uKQm"><div><code>maxEntriesPerTable<!-- -->: </code><code class="blue_P4bS">number</code><code>,</code><span class="inlineDescription_G7Er">-- <span>
 <p>the max number of entries per table you'll be posting</p>
@@ -272,14 +272,13 @@
         {
             &quot;name&quot;: &quot;init&quot;,
             &quot;desc&quot;: &quot;initializes the package\r&quot;,
-            &quot;params&quot;: [
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [
                 {
-                    &quot;name&quot;: &quot;maid&quot;,
                     &quot;desc&quot;: &quot;&quot;,
-                    &quot;lua_type&quot;: &quot;Maid?&quot;
+                    &quot;lua_type&quot;: &quot;() -&gt; ()\r\n&quot;
                 }
             ],
-            &quot;returns&quot;: [],
             &quot;function_type&quot;: &quot;static&quot;,
             &quot;source&quot;: {
                 &quot;line&quot;: 368,
@@ -361,7 +360,7 @@
         &quot;path&quot;: &quot;src/init.luau&quot;
     }
 }</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#DataList" class="table-of-contents__link toc-highlight">DataList</a></li><li><a href="#DataType" class="table-of-contents__link toc-highlight">DataType</a></li><li><a href="#FormatDictionary" class="table-of-contents__link toc-highlight">FormatDictionary</a></li><li><a href="#OnAttemptInvokeLogger" class="table-of-contents__link toc-highlight">OnAttemptInvokeLogger</a></li><li><a href="#OnBatchSaveInvoke" class="table-of-contents__link toc-highlight">OnBatchSaveInvoke</a></li><li><a href="#PayloadRecorder" class="table-of-contents__link toc-highlight">PayloadRecorder</a></li></ul></li><li><a href="#properties" class="table-of-contents__link toc-highlight">Properties</a><ul><li><a href="#ProjectId" class="table-of-contents__link toc-highlight">ProjectId</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Automate" class="table-of-contents__link toc-highlight">:Automate</a></li><li><a href="#CreateDataSet" class="table-of-contents__link toc-highlight">:CreateDataSet</a></li><li><a href="#GetDataSet" class="table-of-contents__link toc-highlight">:GetDataSet</a></li><li><a href="#GetDataSets" class="table-of-contents__link toc-highlight">:GetDataSets</a></li><li><a href="#GetRowCount" class="table-of-contents__link toc-highlight">:GetRowCount</a></li><li><a href="#Post" class="table-of-contents__link toc-highlight">:Post</a></li><li><a href="#SetOnBatchSaveInvoke" class="table-of-contents__link toc-highlight">:SetOnBatchSaveInvoke</a></li><li><a href="#init" class="table-of-contents__link toc-highlight">.init</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2024 Nightcycle Studios LLC. Built with Moonwave and Docusaurus</div></div></div></footer></div>
-<script src="/midas/assets/js/runtime~main.ca4fdc86.js"></script>
-<script src="/midas/assets/js/main.e9fc67b9.js"></script>
+<script src="/midas/assets/js/runtime~main.6780c0c3.js"></script>
+<script src="/midas/assets/js/main.d627df3b.js"></script>
 </body>
 </html>
