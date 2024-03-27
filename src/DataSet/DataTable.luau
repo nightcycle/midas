@@ -184,11 +184,11 @@ function DataTable:AddRow(param: { [string]: unknown })
 end
 
 function DataTable:SetKeyColumn(key: string)
-	assert(self._Columns[key] ~= nil)
 	local isFound = false
 	for i, column in ipairs(self._Columns) do
 		if column.Key == key then
 			isFound = true
+			break
 		end
 	end
 	assert(isFound, `no column exists with key {key} in datatable {self.Name}`)
@@ -235,13 +235,30 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 		end
 	until self._BatchQueue:IsEmpty() or entryCount >= maxEntries or netSize >= maxSize
 
-	local onBatchInvoke = self._GetOnBatchInsertInvoke()
 	local attemptSize = 0
-	local success = onBatchInvoke(self._Id, dataList, format, function(size: number)
-		attemptSize += size
-		self._TotalDataPosted += size
-		self._TotalRowsPosted += #dataList
-	end)
+	local success: boolean
+
+	if self._Key then
+		local onBatchInvoke = self._GetOnBatchSetInvoke()
+		local key = self._Key
+		assert(key)
+		success = onBatchInvoke(self._Id, dataList, key, format, function(size: number)
+			attemptSize += size
+			self._TotalDataPosted += size
+			self._TotalRowsPosted += #dataList
+		end)
+	
+	else
+		local onBatchInvoke = self._GetOnBatchInsertInvoke()
+		success = onBatchInvoke(self._Id, dataList, format, function(size: number)
+			attemptSize += size
+			self._TotalDataPosted += size
+			self._TotalRowsPosted += #dataList
+		end)
+	
+	end
+
+
 	if not success then
 		for i, v in ipairs(dataList) do
 			self._BatchQueue:Add(v, 0)

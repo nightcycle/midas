@@ -22,6 +22,16 @@ export type MongoDB = {
 	_Url: string,
 	DebugPrintEnabled: boolean,
 	Destroy: (self: MongoDB) -> (),
+	StupidSetMany: (
+		self: MongoDB,
+		dataSource: string,
+		databaseName: string,
+		collectionName: string,
+		onKey: string,
+		dataList: { [number]: { [string]: any } },
+		format: { [string]: DataType },
+		onPayloadSizeKnownInvoke: (size: number) -> ()
+	) -> boolean,
 	InsertMany: (
 		self: MongoDB,
 		dataSource: string,
@@ -105,6 +115,108 @@ function MongoDB:Destroy()
 	setmetatable(self, nil)
 end
 
+
+--- sends the data to MongoDB matching at a specific key - it does this by mass deleting data at the key, then mass writing. This is dangerous because the delete could succeed, but the replacement write could fail.
+function MongoDB:StupidSetMany(
+	dataSource: string,
+	databaseName: string,
+	collectionName: string,
+	onKey: string,
+	dataList: { [number]: { [string]: any } },
+	format: { [string]: DataType },
+	onPayloadSizeKnownInvoke: (size: number) -> ()
+)
+	local payload = {
+		["dataSource"] = dataSource,
+		["database"] = databaseName,
+		["collection"] = collectionName,
+		["documents"] = {},
+	}
+	local deletePayload = {
+		["dataSource"] = dataSource,
+		["database"] = databaseName,
+		["collection"] = collectionName,
+		["filter"] = {
+			["u"] = {
+				["$in"] = {},
+			},
+		},
+	}
+
+	for i, data in ipairs(dataList) do
+		local document = {}
+
+		for k, v in pairs(data) do
+			local f: DataType = format[k]
+			local conversion = DATA_TYPE_CONVERSION[f]
+			assert(conversion ~= nil, `bad data type {f} for {k}`)
+			document[k] = conversion(v)
+		end
+
+		deletePayload["filter"]["u"]["$in"][i] = document["u"]
+		payload["documents"][i] = document
+	end
+
+	local encodedDeletePayload = HttpService:JSONEncode(deletePayload)
+	local encodedPayload = HttpService:JSONEncode(payload)
+	onPayloadSizeKnownInvoke(encodedPayload:len() + encodedDeletePayload:len())
+	local response: {
+		Body: string?,
+		Headers: {
+			[string]: string,
+		},
+		StatusCode: number,
+		StatusMessage: string,
+		Success: boolean,
+	}
+	if game.PlaceId ~= 0 then
+		local deleteResponse = HttpService:RequestAsync({
+			Url = `{self._Url}/endpoint/data/v1/action/deleteMany`,
+			Method = "POST",
+			Headers = {
+				["Content-Type"] = "application/ejson",
+				[`Accept`] = `application/json`,
+				["apiKey"] = self._ApiKey,
+			},
+			Body = encodedDeletePayload,
+		})
+		if not deleteResponse.Success then
+			error(`mongo delete post fail, code={response.StatusCode}, msg={response.StatusMessage}, body={response.Body}`)
+		end
+
+		response = HttpService:RequestAsync({
+			Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
+			Method = "POST",
+			Headers = {
+				["Content-Type"] = "application/ejson",
+				[`Accept`] = `application/json`,
+				["apiKey"] = self._ApiKey,
+			},
+			Body = encodedPayload,
+		})
+	else
+		response = {
+			Body = HttpService:JSONEncode({ {
+				insertedId = "abc123",
+			} }),
+			Headers = {},
+			StatusCode = 200,
+			StatusMessage = "You're offline",
+			Success = true,
+		}
+	end
+
+	if self.DebugPrintEnabled then
+		print(`MongoDB:StupidSetMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
+	end
+
+	if not response.Success then
+		error(`mongo insert post fail, code={response.StatusCode}, msg={response.StatusMessage}, body={response.Body}`)
+	end
+
+	return response.Success
+end
+
 --- sends the data to MongoDB
 function MongoDB:InsertMany(
 	dataSource: string,
@@ -163,7 +275,7 @@ function MongoDB:InsertMany(
 			} }),
 			Headers = {},
 			StatusCode = 200,
-			StatusMessage = "You're offline anything",
+			StatusMessage = "You're offline",
 			Success = true,
 		}
 	end
