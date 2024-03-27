@@ -23,7 +23,7 @@ One solution I personally use is MongoDB Atlas. You can read how to set that up 
 		"https://us-east-2.aws.data.mongodb-api.com/app/data-abcdef"
 	)
 	mongoDB.DebugPrintEnabled = RunService:IsStudio()
-	Midas:SetOnBatchSaveInvoke(
+	Midas:SetOnBatchInsertInvoke(
 		function(
 			projectId: string,
 			dataSetId: string,
@@ -43,9 +43,6 @@ One solution I personally use is MongoDB Atlas. You can read how to set that up 
 		end
 	)
 ```
-
-#### AWS Aurora
-If you have a LOT of users, you'll want a more powerful solution. As a result I've added support for AWS Aurora as the first overpowered solution. It's a pain to set up, but read / writes cost about a quarter as much as MongoDB, which when you have a ton of users can save a decent chunk of money a month. Be familiar with SQL.
 
 ### 3. Define a Table
 ```lua
