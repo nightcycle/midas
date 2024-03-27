@@ -186,8 +186,9 @@ end
 function DataTable:SetKeyColumn(key: string)
 	local isFound = false
 	for i, column in ipairs(self._Columns) do
-		if column.Key == key then
+		if column.Key == key or column.ExternalKey == key then
 			isFound = true
+			key = column.Key
 			break
 		end
 	end

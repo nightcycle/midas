@@ -137,7 +137,7 @@ function MongoDB:StupidSetMany(
 		["database"] = databaseName,
 		["collection"] = collectionName,
 		["filter"] = {
-			["u"] = {
+			[onKey] = {
 				["$in"] = {},
 			},
 		},
@@ -153,7 +153,7 @@ function MongoDB:StupidSetMany(
 			document[k] = conversion(v)
 		end
 
-		deletePayload["filter"]["u"]["$in"][i] = document["u"]
+		deletePayload["filter"][onKey]["$in"][i] = document[onKey]
 		payload["documents"][i] = document
 	end
 
