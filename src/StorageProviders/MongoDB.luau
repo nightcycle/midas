@@ -12,7 +12,7 @@ local Util = require(_Package:WaitForChild("Util"))
 
 -- Types
 type MongoInsertOneResponse = {
-	insertedId: string
+	insertedId: string,
 }
 type DataType = Util.DataType
 export type MongoDB = {
@@ -22,61 +22,62 @@ export type MongoDB = {
 	_Url: string,
 	DebugPrintEnabled: boolean,
 	Destroy: (self: MongoDB) -> (),
-	InsertMany: (self: MongoDB,
-		dataSource: string, 
-		databaseName: string, 
-		collectionName: string, 
-		dataList: {[number]: {[string]: any}},
-		format: {[string]: DataType},
+	InsertMany: (
+		self: MongoDB,
+		dataSource: string,
+		databaseName: string,
+		collectionName: string,
+		dataList: { [number]: { [string]: any } },
+		format: { [string]: DataType },
 		onPayloadSizeKnownInvoke: (size: number) -> ()
 	) -> boolean,
 	new: (apiKey: string, url: string) -> MongoDB,
 }
 
 -- Constants
-local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
-	["Int32"]=function(value: any): any
+local DATA_TYPE_CONVERSION: { [DataType]: (value: any) -> any } = {
+	["Int32"] = function(value: any): any
 		assert(type(value) == "number")
-		return { ["$numberInt"]= tostring(math.round(value)) }
+		return { ["$numberInt"] = tostring(math.round(value)) }
 	end,
-	["Int64"]=function(value: any): any
+	["Int64"] = function(value: any): any
 		assert(type(value) == "number")
-		return { ["$numberLong"]= tostring(math.round(value)) }
+		return { ["$numberLong"] = tostring(math.round(value)) }
 	end,
 	["Binary"] = function(value: any): any
 		assert(type(value) == "string")
 		return {
 			["$binary"] = {
 				["base64"] = HashUtil.base64_encode(value),
-				["subType"] = "05"
-			}
+				["subType"] = "05",
+			},
 		}
 	end,
-	["Date"]=function(value: any): any
+	["Date"] = function(value: any): any
 		assert(typeof(value) == "DateTime", `bad type for {value}, type is {typeof(value)}, expected DateTime`)
-		return { ["$date"]= Util.toTimeString(value)}
+		return { ["$date"] = Util.toTimeString(value) }
 	end,
-	["Decimal128"]=function(value: any): any
+	["Decimal128"] = function(value: any): any
 		assert(type(value) == "number")
-		return { ["$numberDecimal"]= tostring(value) }
+		return { ["$numberDecimal"] = tostring(value) }
 	end,
-	["Double"]=function(value: any): any
+	["Double"] = function(value: any): any
 		assert(type(value) == "number")
-		return { ["$numberDouble"]= tostring(value) }
+		return { ["$numberDouble"] = tostring(value) }
 	end,
-	["Boolean"]=function(value: any): any
+	["Boolean"] = function(value: any): any
 		return value
 	end,
-	["Array"]=function(value: any): any
+	["Array"] = function(value: any): any
 		return value
 	end,
-	["Null"]=function(value: any): any
+	["Null"] = function(value: any): any
 		return value
 	end,
-	["Object"]=function(value: any): any
+	["Object"] = function(value: any): any
 		return value
 	end,
-	["String"]=function(value: any): any
+	["String"] = function(value: any): any
 		return value
 	end,
 }
@@ -91,40 +92,36 @@ local DATA_TYPE_CONVERSION: {[DataType]: (value: any) -> any} = {
 local MongoDB = {} :: MongoDB
 MongoDB.__index = MongoDB
 
-
---- @prop DebugPrintEnabled boolean 
+--- @prop DebugPrintEnabled boolean
 --- @within MongoDB
 --- Whether it prints the results of posting (good for debugging)
 
 function MongoDB:Destroy()
-	if not self._IsAlive then return end
-	self._IsAlive = false
-	local t: any = self
-	for k, v in pairs(t) do
-		t[k] = nil
+	if not self._IsAlive then
+		return
 	end
-	setmetatable(t, nil)
+	self._IsAlive = false
+	table.clear(self)
+	setmetatable(self, nil)
 end
 
 --- sends the data to MongoDB
 function MongoDB:InsertMany(
 	dataSource: string,
-	databaseName: string, 
-	collectionName: string, 
-	dataList: {[number]: {[string]: any}},
-	format: {[string]: DataType},
+	databaseName: string,
+	collectionName: string,
+	dataList: { [number]: { [string]: any } },
+	format: { [string]: DataType },
 	onPayloadSizeInvoke: (size: number) -> ()
 ): boolean
-
 	local payload = {
 		["dataSource"] = dataSource,
 		["database"] = databaseName,
 		["collection"] = collectionName,
-		["documents"] = {}
+		["documents"] = {},
 	}
 
 	for i, data in ipairs(dataList) do
-
 		local document = {}
 
 		for k, v in pairs(data) do
@@ -142,35 +139,35 @@ function MongoDB:InsertMany(
 	local response: {
 		Body: string?,
 		Headers: {
-			[string]: string
+			[string]: string,
 		},
 		StatusCode: number,
 		StatusMessage: string,
-		Success: boolean
+		Success: boolean,
 	}
 	if game.PlaceId ~= 0 then
 		response = HttpService:RequestAsync({
 			Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
 			Method = "POST",
 			Headers = {
-				['Content-Type'] = 'application/ejson',
+				["Content-Type"] = "application/ejson",
 				[`Accept`] = `application/json`,
-				['apiKey'] = self._ApiKey,
+				["apiKey"] = self._ApiKey,
 			},
-			Body = encodedPayload
+			Body = encodedPayload,
 		})
 	else
 		response = {
-			Body = HttpService:JSONEncode({{
-				insertedId = "abc123"
-			}}),
+			Body = HttpService:JSONEncode({ {
+				insertedId = "abc123",
+			} }),
 			Headers = {},
 			StatusCode = 200,
 			StatusMessage = "You're offline anything",
-			Success = true
+			Success = true,
 		}
 	end
-	
+
 	if self.DebugPrintEnabled then
 		print(`MongoDB:InsertMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
 	end
@@ -180,7 +177,6 @@ function MongoDB:InsertMany(
 
 	return response.Success
 end
-
 
 --- initializes the class
 function MongoDB.new(apiKey: string, url: string)

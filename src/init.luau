@@ -21,28 +21,38 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Class
 -- Types
 type Maid = Maid.Maid
-type OnBatchSaveInvoke = StorageProviders.OnBatchSaveInvoke
+type OnBatchInsertInvoke = StorageProviders.OnBatchInsertInvoke
+type OnBatchSetInvoke = StorageProviders.OnBatchSetInvoke
+
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
 type StorageProviders = typeof(StorageProviders)
 
-
 export type Midas = {
 	__index: Midas,
 	_Maid: Maid,
 	_IsAlive: boolean,
-	_OnBatchSaveInvoke: OnBatchSaveInvoke,
-	_DataSets: {[string]: DataSet},
+	_OnBatchInsertInvoke: OnBatchInsertInvoke,
+	_OnBatchSetInvoke: OnBatchSetInvoke,
+	_DataSets: { [string]: DataSet },
 	ProjectId: string?,
 	Util: typeof(Util),
 	StorageProviders: StorageProviders,
 	GetRowCount: (self: Midas) -> number,
 	CreateDataSet: (self: Midas, name: string, id: string) -> DataSet,
-	Post: (self: Midas, maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean) -> (boolean, boolean, number),
+	Post: (
+		self: Midas,
+		maxEntriesPerTable: number,
+		maxSizePerTable: number,
+		delayPerTable: number,
+		recursive: boolean
+	) -> (boolean, boolean, number),
 	GetDataSet: (self: Midas, name: string) -> DataSet,
-	GetDataSets: (self: Midas) -> {[number]: DataSet},
-	SetOnBatchSaveInvoke: (self: Midas, onBatchSaveInvoke: OnBatchSaveInvoke) -> (),
+	GetDataSets: (self: Midas) -> { [number]: DataSet },
+	SetOnBatchInsertInvoke: (self: Midas, onBatchInsertInvoke: OnBatchInsertInvoke) -> (),
+	SetOnBatchSetInvoke: (self: Midas, onBatchSetInvoke: OnBatchSetInvoke) -> (),
+
 	Automate: (
 		self: Midas,
 		printEnabled: boolean,
@@ -55,7 +65,7 @@ export type Midas = {
 	) -> (),
 	Destroy: (self: Midas) -> (),
 	new: () -> Midas,
-	init: () -> () -> ()
+	init: () -> () -> (),
 }
 
 -- Class
@@ -68,7 +78,6 @@ local CurrentMidas: Midas = nil :: any
 ]=]
 local Midas = {} :: Midas
 Midas.__index = Midas
-
 
 --- @type OnAttemptInvokeLogger (success: boolean, size: number, rowCount: number, currentSizeLimit: number, currentRowLimit: number, rowsRemaining: number, attemptIndex: number, errorMessage: string?) -> ()
 --- @within Midas
@@ -85,12 +94,14 @@ export type OnAttemptInvokeLogger = (
 	errorMessage: string?
 ) -> ()
 
---- @prop ProjectId string? 
+--- @prop ProjectId string?
 --- @within Midas
 --- The project id passed to the posting function
 
 function Midas:Destroy()
-	if not self._IsAlive then return end
+	if not self._IsAlive then
+		return
+	end
 	self._IsAlive = false
 	if CurrentMidas == self then
 		CurrentMidas = nil :: any
@@ -114,7 +125,12 @@ end
 	@return totalEmpty boolean -- whether every datatable is now empty
 	@return netData number -- the amount of data (in characters) sent by all tables
 ]=]
-function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, boolean, number)
+function Midas:Post(
+	maxEntriesPerTable: number,
+	maxSizePerTable: number,
+	delayPerTable: number,
+	recursive: boolean
+): (boolean, boolean, number)
 	local netData = 0
 	local totalSuccess = true
 	local totalEmpty = true
@@ -125,7 +141,8 @@ function Midas:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPe
 			task.wait(delayPerTable)
 			postCount += 1
 			local function post()
-				local success, isEmpty, data = dataSets:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
+				local success, isEmpty, data =
+					dataSets:Post(maxEntriesPerTable, maxSizePerTable, delayPerTable, recursive)
 				totalSuccess = success and totalSuccess
 				totalEmpty = isEmpty and totalEmpty
 				netData += data
@@ -164,33 +181,68 @@ end
 function Midas:CreateDataSet(name: string, id: string): DataSet
 	assert(RunService:IsServer(), `bad domain`)
 	assert(self._DataSets[name] == nil, `dataSet of name {name} already exists`)
-	local dataSet = DataSet.new(
-		name, 
-		id, 
-		function()
-			return function(dataSetId: string, dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}, onPayloadSizeKnownInvoke: (size: number) -> ()): boolean
-				local projectId = self.ProjectId
-				assert(projectId, `projectId hasn't been set yet`)
-		
-				local onBatchSaveInvoke =  self._OnBatchSaveInvoke
-				assert(onBatchSaveInvoke, `onBatchSaveInvoke hasn't been set yet`)
+	local dataSet = DataSet.new(name, id, function()
+		return function(
+			dataSetId: string,
+			dataTableId: string,
+			dataList: { [number]: { [string]: unknown } },
+			format: { [string]: DataType },
+			onPayloadSizeKnownInvoke: (size: number) -> ()
+		): boolean
+			local projectId = self.ProjectId
+			assert(projectId, `projectId hasn't been set yet`)
 
-				return onBatchSaveInvoke(projectId, dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
-			end
+			local onBatchInsertInvoke = self._OnBatchInsertInvoke
+			assert(onBatchInsertInvoke, `onBatchInsertInvoke hasn't been set yet`)
+
+			return onBatchInsertInvoke(projectId, dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
 		end
-	)
+	end, function()
+		return function(
+			dataSetId: string,
+			dataTableId: string,
+			onKey: string,
+			dataList: { [number]: { [string]: unknown } },
+			format: { [string]: DataType },
+			onPayloadSizeKnownInvoke: (size: number) -> ()
+		): boolean
+			local projectId = self.ProjectId
+			assert(projectId, `projectId hasn't been set yet`)
+
+			local onBatchSetInvoke = self._OnBatchSetInvoke
+			assert(onBatchSetInvoke, `onBatchSetInvoke hasn't been set yet`)
+
+			return onBatchSetInvoke(
+				projectId,
+				dataSetId,
+				dataTableId,
+				onKey,
+				dataList,
+				format,
+				onPayloadSizeKnownInvoke
+			)
+		end
+	end)
 	self._DataSets[name] = dataSet
 	return dataSet
 end
 
+--[=[
+	Sets the posting function
+
+	@param onBatchInsertInvoke OnBatchInsertInvoke -- the function that posts data
+]=]
+function Midas:SetOnBatchInsertInvoke(onBatchInsertInvoke: OnBatchInsertInvoke)
+	self._OnBatchInsertInvoke = onBatchInsertInvoke
+end
 
 --[=[
 	Sets the posting function
 
-	@param onBatchSaveInvoke OnBatchSaveInvoke -- the function that posts data
+	@param onBatchInsertInvoke OnBatchInsertInvoke -- the function that posts data
 ]=]
-function Midas:SetOnBatchSaveInvoke(onBatchSaveInvoke: OnBatchSaveInvoke)
-	self._OnBatchSaveInvoke = onBatchSaveInvoke
+function Midas:SetOnBatchSetInvoke(onBatchSetInvoke: OnBatchSetInvoke)
+	self._OnBatchSetInvoke = onBatchSetInvoke
 end
 
 --- gets a dataset by name
@@ -202,7 +254,7 @@ function Midas:GetDataSet(name: string): DataSet
 end
 
 --- gets a list of datasets
-function Midas:GetDataSets(): {[number]: DataSet}
+function Midas:GetDataSets(): { [number]: DataSet }
 	return TableUtil.values(self._DataSets)
 end
 
@@ -214,7 +266,6 @@ function Midas:GetRowCount(): number
 	end
 	return rows
 end
-
 
 --[=[
 	Automates the posting of rows, dynamically adapting to handle errors and rate limits as appropriate.
@@ -236,7 +287,6 @@ function Midas:Automate(
 	escalationRate: number?,
 	onAttemptInvokeLogger: OnAttemptInvokeLogger?
 ): ()
-
 	maxEntriesPerTable = maxEntriesPerTable or 200
 	assert(maxEntriesPerTable)
 
@@ -259,7 +309,7 @@ function Midas:Automate(
 	end
 	task.spawn(function()
 		local postIndex = 0
-	
+
 		while self._IsAlive do
 			local success: boolean, isComplete: boolean, size: number
 			local entriesPerTable = maxEntriesPerTable
@@ -271,24 +321,19 @@ function Midas:Automate(
 				success, isComplete, size = false, false, 0
 				runIndex += 1
 				local start = tick()
-				local maxSize = maxEntriesPerTable*averageSizePerRow
+				local maxSize = maxEntriesPerTable * averageSizePerRow
 				local rowCount = self:GetRowCount()
-		
+
 				local tableCount = 0
 				for i, dataSet in ipairs(self:GetDataSets()) do
 					tableCount += #dataSet:GetDataTables()
 				end
-	
+
 				local pSuccess, msg = pcall(function()
-					success, isComplete, size = self:Post(
-						entriesPerTable,
-						maxSize,
-						duration,
-						false
-					)
+					success, isComplete, size = self:Post(entriesPerTable, maxSize, duration, false)
 				end)
 				log(`post {postIndex}.{runIndex} = [{success}&{pSuccess}]@[#{entriesPerTable}x{duration}s]`)
-			
+
 				if not pSuccess then
 					log(msg)
 					task.spawn(function()
@@ -302,17 +347,16 @@ function Midas:Automate(
 					entriesPerTable *= escalationRate
 					entriesPerTable = math.min(entriesPerTable, maxEntriesPerTable)
 					entriesPerTable = math.ceil(entriesPerTable)
-	
+
 					duration /= escalationRate
 					duration = math.max(duration, minDurationPerTable)
-	
 				else
 					entriesPerTable /= escalationRate
 					entriesPerTable = math.ceil(entriesPerTable)
-	
+
 					duration *= escalationRate
 				end
-	
+
 				if onAttemptInvokeLogger then
 					onAttemptInvokeLogger(
 						(success and pSuccess),
@@ -327,37 +371,39 @@ function Midas:Automate(
 				end
 
 				local runDuration = tick() - start
-				
+
 				if runDuration < updateDelay then
-					task.wait(updateDelay-runDuration)
+					task.wait(updateDelay - runDuration)
 				end
 			until (success == true and isComplete == true) or not self._IsAlive
 		end
 	end)
 end
 
-
 function Midas.new()
-
 	local self: Midas = setmetatable({}, Midas) :: any
 	self._IsAlive = true
 	self._Maid = Maid.new()
 	self.ProjectId = nil
 	self.StorageProviders = StorageProviders
 	self.Util = Util
-	self._OnBatchSaveInvoke = function()
-		warn(`onBatchSaveInvoke not set`)
+	self._OnBatchInsertInvoke = function(): boolean
+		warn(`onBatchInsertInvoke not set`)
+		return false
+	end
+	self._OnBatchSetInvoke = function(): boolean
+		warn(`onBatchInsertInvoke not set`)
 		return false
 	end
 
 	self._Maid:GiveTask(game.Close:Connect(function()
-		self:Post(math.huge, math.huge, 1/60, true)
+		self:Post(math.huge, math.huge, 1 / 60, true)
 	end))
 
 	self._DataSets = {}
 	if CurrentMidas ~= nil then
-		 CurrentMidas:Destroy()
-		 CurrentMidas = nil :: any
+		CurrentMidas:Destroy()
+		CurrentMidas = nil :: any
 	end
 	CurrentMidas = self
 

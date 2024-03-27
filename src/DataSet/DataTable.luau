@@ -22,24 +22,54 @@ type ColumnData = {
 	ExternalKey: string,
 	Key: string,
 	Format: DataType,
-	IsNullable: boolean
+	IsNullable: boolean,
 }
 
-type OnBatchSaveInvoke = (dataTableId: string, dataList: {[number]: {[string]: unknown}}, format: {[string]: DataType}, onPayloadSizeKnownInvoke: (size: number) -> ()) -> boolean
+type OnBatchInsertInvoke = (
+	dataTableId: string,
+	dataList: { [number]: { [string]: unknown } },
+	format: { [string]: DataType },
+	onPayloadSizeKnownInvoke: (size: number) -> ()
+) -> boolean
+type OnBatchSetInvoke = (
+	dataTableId: string,
+	dataList: { [number]: { [string]: unknown } },
+	onKey: string,
+	format: { [string]: DataType },
+	onPayloadSizeKnownInvoke: (size: number) -> ()
+) -> boolean
+
 export type DataTable<RowData> = {
 	__index: DataTable<RowData>,
 	_Id: string,
-	_Columns: {[number]: ColumnData},
-	_GetOnBatchSaveInvoke: () -> OnBatchSaveInvoke,
+	_Key: string?,
+	_Columns: { [number]: ColumnData },
+	_GetOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+	_GetOnBatchSetInvoke: () -> OnBatchSetInvoke,
 	_BatchQueue: Queue<RowData>,
 	_TotalRowsPosted: number,
 	_TotalDataPosted: number,
 	Name: string,
 	AddRow: (self: DataTable<RowData>, data: RowData) -> (),
-	AddColumn: (self: DataTable<RowData>, key: string, dataType: DataType, isNullable: boolean, keySymbol: string?) -> (),
+	AddColumn: (
+		self: DataTable<RowData>,
+		key: string,
+		dataType: DataType,
+		isNullable: boolean,
+		keySymbol: string?
+	) -> (),
+	SetKeyColumn: (
+		self: DataTable<RowData>,
+		key: string
+	) -> (),
 	GetRowCount: (self: DataTable<RowData>) -> number,
 	Post: (self: DataTable<RowData>, maxEntries: number, maxSize: number) -> (boolean, boolean, number),
-	new: (name: string, id: string, getOnBatchSaveInvoke: () -> OnBatchSaveInvoke) -> DataTable<RowData>,
+	new: (
+		name: string,
+		id: string,
+		getOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+		getOnBatchSetInvoke: () -> OnBatchSetInvoke
+	) -> DataTable<RowData>,
 }
 
 -- Class
@@ -49,55 +79,94 @@ export type DataTable<RowData> = {
 
 	This is the base table class that rows are added for processing.
 ]=]
-local DataTable = {} :: DataTable<{[string]: unknown}>
+local DataTable = {} :: DataTable<{ [string]: unknown }>
 DataTable.__index = DataTable
 
 --- adds a row of data
-function DataTable:AddRow(param: {[string]: unknown})
+function DataTable:AddRow(param: { [string]: unknown })
 	assert(type(param) == "table", `bad data "{param}" for dataTable {self.Name}`)
-	local data: {[any]: any} = param :: any
+	local data: { [any]: any } = param :: any
 
 	for i, columnData in ipairs(self._Columns) do
 		local v = data[columnData.ExternalKey]
 		if v == nil then
-			if columnData.IsNullable == false then 
+			if columnData.IsNullable == false then
 				error(`missing data at key "{columnData.ExternalKey}" of dataTable {self.Name}`)
 			end
 		else
 			if columnData.Format == "Binary" then
-				assert(type(v) == "string", `bad value {v} at key "{columnData.ExternalKey}", expected string, received {type(v)}`)
-				assert(type(v) == "number", `bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`)
+				assert(
+					type(v) == "string",
+					`bad value {v} at key "{columnData.ExternalKey}", expected string, received {type(v)}`
+				)
+				assert(
+					type(v) == "number",
+					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
+				)
 			elseif columnData.Format == "String" then
-				assert(type(v) == "string", `bad value {v} at key "{columnData.ExternalKey}", expected string, received {type(v)}`)
+				assert(
+					type(v) == "string",
+					`bad value {v} at key "{columnData.ExternalKey}", expected string, received {type(v)}`
+				)
 			elseif columnData.Format == "Boolean" then
-			assert(type(v) == "boolean", `bad value {v} at key "{columnData.ExternalKey}", expected boolean, received {type(v)}`)
+				assert(
+					type(v) == "boolean",
+					`bad value {v} at key "{columnData.ExternalKey}", expected boolean, received {type(v)}`
+				)
 			elseif columnData.Format == "Array" then
-				assert(type(v) == "table", `bad value {v} at key "{columnData.ExternalKey}", expected table, received {type(v)}`)
+				assert(
+					type(v) == "table",
+					`bad value {v} at key "{columnData.ExternalKey}", expected table, received {type(v)}`
+				)
 			elseif columnData.Format == "Object" then
-				assert(type(v) == "table", `bad value {v} at key "{columnData.ExternalKey}", expected table, received {type(v)}`)
+				assert(
+					type(v) == "table",
+					`bad value {v} at key "{columnData.ExternalKey}", expected table, received {type(v)}`
+				)
 			elseif columnData.Format == "Date" then
-				assert(typeof(v) == "DateTime", `bad value {v} at key "{columnData.ExternalKey}", expected DateTime, received {typeof(v)}`)
+				assert(
+					typeof(v) == "DateTime",
+					`bad value {v} at key "{columnData.ExternalKey}", expected DateTime, received {typeof(v)}`
+				)
 			end
-			
+
 			if type(v) == "number" and v ~= v then
 				error(`NAN data at key "{columnData.ExternalKey}" of dataTable {self.Name}`)
 			end
-			
+
 			if columnData.Format == "Decimal128" then
-				assert(type(v) == "number", `bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`)
+				assert(
+					type(v) == "number",
+					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
+				)
 			elseif columnData.Format == "Double" then
-				assert(type(v) == "number", `bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`)
+				assert(
+					type(v) == "number",
+					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
+				)
 			elseif columnData.Format == "Int32" then
-				assert(type(v) == "number", `bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`)
-				assert(math.abs(v) < 2147483647, `integer is larger than 32 bits at key "{columnData.Key}" - consider changing to Int64`)
+				assert(
+					type(v) == "number",
+					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
+				)
+				assert(
+					math.abs(v) < 2147483647,
+					`integer is larger than 32 bits at key "{columnData.Key}" - consider changing to Int64`
+				)
 			elseif columnData.Format == "Int64" then
-				assert(type(v) == "number", `bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`)
-				assert(math.abs(v) < 9223372036854775807, `integer is larger than 64 bits at key "{columnData.ExternalKey}"`)
+				assert(
+					type(v) == "number",
+					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
+				)
+				assert(
+					math.abs(v) < 9223372036854775807,
+					`integer is larger than 64 bits at key "{columnData.ExternalKey}"`
+				)
 			end
 		end
 	end
 
-	local compressedData: {[string]: unknown} = {}
+	local compressedData: { [string]: unknown } = {}
 	for k, v in pairs(data) do
 		local found = false
 		for i, columnData in ipairs(self._Columns) do
@@ -114,6 +183,18 @@ function DataTable:AddRow(param: {[string]: unknown})
 	self._BatchQueue:Add(compressedData, -tick())
 end
 
+function DataTable:SetKeyColumn(key: string)
+	assert(self._Columns[key] ~= nil)
+	local isFound = false
+	for i, column in ipairs(self._Columns) do
+		if column.Key == key then
+			isFound = true
+		end
+	end
+	assert(isFound, `no column exists with key {key} in datatable {self.Name}`)
+	self._Key = key
+end
+
 --- gets the number of rows that need to be processed
 function DataTable:GetRowCount(): number
 	return self._BatchQueue:GetLength()
@@ -124,24 +205,24 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 	if self:GetRowCount() == 0 then
 		return true, true, 0
 	end
-	local format: {[string]: DataType} = {}
+	local format: { [string]: DataType } = {}
 	for i, columnData in ipairs(self._Columns) do
 		format[columnData.Key] = columnData.Format
 	end
-	local dataList: {[number]: {[string]: unknown}} = {}
+	local dataList: { [number]: { [string]: unknown } } = {}
 
 	local entryCount = 0
 	local netSize = 0
 
 	local averageSize: number
 	if self._TotalRowsPosted > 0 then
-		averageSize = self._TotalDataPosted/self._TotalRowsPosted
+		averageSize = self._TotalDataPosted / self._TotalRowsPosted
 	else
 		averageSize = 100
 	end
 
 	repeat
-		local nextEntry: {[string]: unknown}? = self._BatchQueue:Peek()
+		local nextEntry: { [string]: unknown }? = self._BatchQueue:Peek()
 		if nextEntry then
 			entryCount += 1
 			netSize += averageSize
@@ -154,18 +235,13 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 		end
 	until self._BatchQueue:IsEmpty() or entryCount >= maxEntries or netSize >= maxSize
 
-	local onBatchInvoke = self._GetOnBatchSaveInvoke()
+	local onBatchInvoke = self._GetOnBatchInsertInvoke()
 	local attemptSize = 0
-	local success = onBatchInvoke(
-		self._Id, 
-		dataList, 
-		format, 
-		function(size: number)  
-			attemptSize += size
-			self._TotalDataPosted += size
-			self._TotalRowsPosted += #dataList
-		end	
-	)
+	local success = onBatchInvoke(self._Id, dataList, format, function(size: number)
+		attemptSize += size
+		self._TotalDataPosted += size
+		self._TotalRowsPosted += #dataList
+	end)
 	if not success then
 		for i, v in ipairs(dataList) do
 			self._BatchQueue:Add(v, 0)
@@ -188,19 +264,25 @@ function DataTable:AddColumn(key: string, format: DataType, isNullable: boolean,
 		ExternalKey = key,
 		Key = keySymbol or key,
 		Format = format,
-		IsNullable = isNullable
+		IsNullable = isNullable,
 	}
 	table.insert(self._Columns, columnData)
 end
 
-function DataTable.new(name: string, id: string, getOnBatchSaveInvoke: () -> OnBatchSaveInvoke): DataTable<{[string]: unknown}>
-
-	local self: DataTable<{[string]: unknown}> = setmetatable({}, DataTable) :: any
+function DataTable.new(
+	name: string,
+	id: string,
+	getOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+	getOnBatchSetInvoke: () -> OnBatchSetInvoke
+): DataTable<{ [string]: unknown }>
+	local self: DataTable<{ [string]: unknown }> = setmetatable({}, DataTable) :: any
 	self._Id = id
 	self.Name = name
+	self._Key = nil
 	self._TotalRowsPosted = 0
 	self._TotalDataPosted = 0
-	self._GetOnBatchSaveInvoke = getOnBatchSaveInvoke
+	self._GetOnBatchInsertInvoke = getOnBatchInsertInvoke
+	self._GetOnBatchSetInvoke = getOnBatchSetInvoke
 	self._BatchQueue = Queue.new()
 	self._BatchQueue.IsSorted = true
 	self._Columns = {}

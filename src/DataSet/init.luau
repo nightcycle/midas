@@ -18,19 +18,27 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Types
 type DataType = Util.DataType
 export type DataTable<RowData> = DataTable.DataTable<RowData>
-type OnBatchSaveInvoke = (
+type OnBatchInsertInvoke = (
 	dataSetId: string,
 	dataTableId: string,
 	dataList: { [number]: { [string]: unknown } },
 	format: { [string]: DataType },
 	onPayloadSizeKnownInvoke: (size: number) -> ()
 ) -> boolean
-
+type OnBatchSetInvoke = (
+	dataSetId: string,
+	dataTableId: string,
+	onKey: string,
+	dataList: { [number]: { [string]: unknown } },
+	format: { [string]: DataType },
+	onPayloadSizeKnownInvoke: (size: number) -> ()
+) -> boolean
 export type DataSet = {
 	__index: DataSet,
 	_Id: string,
 	_DataTables: { [string]: DataTable<any> },
-	_GetOnBatchSaveInvoke: () -> OnBatchSaveInvoke,
+	_GetOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+	_GetOnBatchSetInvoke: () -> OnBatchSetInvoke,
 	Name: string,
 	Post: (
 		self: DataSet,
@@ -43,7 +51,12 @@ export type DataSet = {
 	GetRowCount: (self: DataSet) -> number,
 	GetDataTable: <RowData>(self: DataSet, name: string) -> DataTable<RowData>,
 	GetDataTables: (self: DataSet) -> { [number]: DataTable<{ [string]: unknown }> },
-	new: (name: string, id: string, getOnBatchSaveInvoke: () -> OnBatchSaveInvoke) -> DataSet,
+	new: (
+		name: string,
+		id: string,
+		getOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+		getOnBatchSetInvoke: () -> OnBatchSetInvoke
+	) -> DataSet,
 }
 
 -- Class
@@ -52,7 +65,8 @@ export type DataSet = {
 	@class DataSet
 
 	This allows for the organization of datatables into smaller buckets.
-]=]--
+]=]
+--
 local DataSet = {} :: DataSet
 DataSet.__index = DataSet
 
@@ -68,8 +82,20 @@ function DataSet:CreateDataTable<RowData>(name: string, id: string): DataTable<R
 			onPayloadSizeKnownInvoke: (size: number) -> ()
 		): boolean
 			local dataSetId = self._Id
-			local onBatchSaveInvoke = self._GetOnBatchSaveInvoke()
-			return onBatchSaveInvoke(dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
+			local onBatchInsertInvoke = self._GetOnBatchInsertInvoke()
+			return onBatchInsertInvoke(dataSetId, dataTableId, dataList, format, onPayloadSizeKnownInvoke)
+		end
+	end, function()
+		return function(
+			dataTableId: string,
+			dataList: { [number]: { [string]: unknown } },
+			onKey: string,
+			format: { [string]: DataType },
+			onPayloadSizeKnownInvoke: (size: number) -> ()
+		): boolean
+			local dataSetId = self._Id
+			local onBatchSetInvoke = self._GetOnBatchSetInvoke()
+			return onBatchSetInvoke(dataSetId, dataTableId, onKey, dataList, format, onPayloadSizeKnownInvoke)
 		end
 	end)
 
@@ -85,7 +111,12 @@ function DataSet:GetDataTable<RowData>(name: string): DataTable<RowData>
 end
 
 --- posts the current entries from all underlying datatables
-function DataSet:Post(maxEntriesPerTable: number, maxSizePerTable: number, delayPerTable: number, recursive: boolean): (boolean, boolean, number)
+function DataSet:Post(
+	maxEntriesPerTable: number,
+	maxSizePerTable: number,
+	delayPerTable: number,
+	recursive: boolean
+): (boolean, boolean, number)
 	local netData = 0
 	local totalSuccess = true
 	local totalEmpty = true
@@ -121,11 +152,17 @@ function DataSet:GetDataTables(): { [number]: DataTable<{ [string]: unknown }> }
 	return TableUtil.values(self._DataTables)
 end
 
-function DataSet.new(name: string, id: string, getOnBatchSaveInvoke: () -> OnBatchSaveInvoke): DataSet
+function DataSet.new(
+	name: string,
+	id: string,
+	getOnBatchInsertInvoke: () -> OnBatchInsertInvoke,
+	getOnBatchSetInvoke: () -> OnBatchSetInvoke
+): DataSet
 	local self: DataSet = setmetatable({}, DataSet) :: any
 	self._Id = id
 	self.Name = name
-	self._GetOnBatchSaveInvoke = getOnBatchSaveInvoke
+	self._GetOnBatchInsertInvoke = getOnBatchInsertInvoke
+	self._GetOnBatchSetInvoke = getOnBatchSetInvoke
 	self._DataTables = {}
 
 	table.freeze(self)
