@@ -150,7 +150,7 @@ function DataTable:AddRow(param: { [string]: unknown })
 					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
 				)
 				assert(
-					math.abs(v) < 2147483647,
+					math.abs(v) < (2^32)-1,
 					`integer is larger than 32 bits at key "{columnData.Key}" - consider changing to Int64`
 				)
 			elseif columnData.Format == "Int64" then
@@ -159,7 +159,7 @@ function DataTable:AddRow(param: { [string]: unknown })
 					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
 				)
 				assert(
-					math.abs(v) < 9223372036854775807,
+					math.abs(v) < (2^64)-1,
 					`integer is larger than 64 bits at key "{columnData.ExternalKey}"`
 				)
 			end
