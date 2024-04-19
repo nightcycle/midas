@@ -396,7 +396,7 @@ function Midas.new()
 		return false
 	end
 
-	self._Maid:GiveTask(game.Close:Connect(function()
+	self._Maid:GiveTask(game:BindToClose(function()
 		self:Post(math.huge, math.huge, 1 / 60, true)
 	end))
 
