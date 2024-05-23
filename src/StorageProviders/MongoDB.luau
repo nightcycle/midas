@@ -181,7 +181,7 @@ function MongoDB:StupidSetMany(
 			Body = encodedDeletePayload,
 		})
 		if not deleteResponse.Success then
-			error(`mongo delete post fail, code={response.StatusCode}, msg={response.StatusMessage}, body={response.Body}`)
+			error(`mongo delete post fail, code={deleteResponse.StatusCode}, msg={deleteResponse.StatusMessage}, body={deleteResponse.Body}`)
 		end
 
 		response = HttpService:RequestAsync({
