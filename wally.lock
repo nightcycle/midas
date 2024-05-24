@@ -18,9 +18,14 @@ version = "1.1.4"
 dependencies = []
 
 [[package]]
+name = "nightcycle/maid"
+version = "2.0.0"
+dependencies = []
+
+[[package]]
 name = "nightcycle/midas"
 version = "2.0.4"
-dependencies = [["CompressionUtil", "nightcycle/compression-util@4.1.1"], ["HashUtil", "boatbomber/hashlib@1.0.0"], ["Maid", "nightcycle/maid@1.1.4"], ["NetworkUtil", "nightcycle/network-util@1.7.0"], ["Queue", "nightcycle/queue@2.3.0"], ["ServiceProxy", "nightcycle/service-proxy@1.0.0"], ["Signal", "nightcycle/signal@1.0.2"], ["TableUtil", "nightcycle/table-util@1.1.0"]]
+dependencies = [["CompressionUtil", "nightcycle/compression-util@4.1.1"], ["HashUtil", "boatbomber/hashlib@1.0.0"], ["Maid", "nightcycle/maid@2.0.0"], ["NetworkUtil", "nightcycle/network-util@1.7.0"], ["Queue", "nightcycle/queue@2.3.0"], ["ServiceProxy", "nightcycle/service-proxy@1.0.0"], ["Signal", "nightcycle/signal@1.0.2"], ["TableUtil", "nightcycle/table-util@1.1.0"]]
 
 [[package]]
 name = "nightcycle/network-util"

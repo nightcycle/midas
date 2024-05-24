@@ -9,7 +9,7 @@ exclude = ["Packages", ".vscode"]
 
 [dependencies]
 Signal = "nightcycle/signal@^1.0.2"
-Maid = "nightcycle/maid@1.1.4"
+Maid = "nightcycle/maid@2.0.0"
 NetworkUtil = "nightcycle/network-util@1.7.0"
 TableUtil = "nightcycle/table-util@1.1.0"
 ServiceProxy = "nightcycle/service-proxy@1.0.0"
