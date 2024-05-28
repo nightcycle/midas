@@ -396,9 +396,13 @@ function Midas.new()
 		return false
 	end
 
-	game:BindToClose(function()
-		self:Post(math.huge, math.huge, 1 / 60, true)
-	end)
+	if RunService:IsRunning() then
+		game:BindToClose(function()
+			self:Post(math.huge, math.huge, 1 / 60, true)
+		end)
+	else
+		warn(`Midas is being run from plugin / command line, skipping "BindToClose" mass-post`)	
+	end
 
 	self._DataSets = {}
 	if CurrentMidas ~= nil then
