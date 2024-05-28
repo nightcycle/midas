@@ -179,6 +179,7 @@ function MongoDB:StupidSetMany(
 				["apiKey"] = self._ApiKey,
 			},
 			Body = encodedDeletePayload,
+			Compress = Enum.HttpCompression.None,
 		})
 		if not deleteResponse.Success then
 			error(`mongo delete post fail, code={deleteResponse.StatusCode}, msg={deleteResponse.StatusMessage}, body={deleteResponse.Body}`)
@@ -193,6 +194,7 @@ function MongoDB:StupidSetMany(
 				["apiKey"] = self._ApiKey,
 			},
 			Body = encodedPayload,
+			Compress = Enum.HttpCompression.None,
 		})
 	else
 		response = {
@@ -267,6 +269,7 @@ function MongoDB:InsertMany(
 				["apiKey"] = self._ApiKey,
 			},
 			Body = encodedPayload,
+			Compress = Enum.HttpCompression.None,
 		})
 	else
 		response = {
