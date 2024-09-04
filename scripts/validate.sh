@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 sh scripts/download-types.sh
-sh scripts/build.sh
+sh scripts/build.sh $1
 cd "build"
 luau-lsp analyze \
 	--sourcemap="darklua-sourcemap.json" \
