@@ -10,6 +10,10 @@ ROJO_CONFIG=$5
 # remove letters
 GOAL_VERSION_STR=$(echo "$GOAL_VERSION_STR" | sed 's/[a-zA-Z]//g')
 
+# list current directory with echo
+echo "Current directory contents:"
+ls -la
+
 # read file
 wally_toml_contents=$(cat "wally.toml")
 
