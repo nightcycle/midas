@@ -1,18 +1,13 @@
 --!strict
-
-local _Package = script
-local _Packages = _Package.Parent
 -- Services
-local RunService = game:GetService("RunService")
 -- Packages
-local ServiceProxy = require(_Packages:WaitForChild("ServiceProxy"))
-local Maid = require(_Packages:WaitForChild("Maid"))
-local TableUtil = require(_Packages:WaitForChild("TableUtil"))
+local ServiceProxy = require("@pkg/@nightcycle/service-proxy")
+local TableUtil = require("@pkg/@nightcycle/table-util")
 
 -- Modules
-local DataSet = require(_Package:WaitForChild("DataSet"))
-local StorageProviders = require(_Package:WaitForChild("StorageProviders"))
-local Util = require(_Package:WaitForChild("Util"))
+local DataSet = require("./DataSet")
+local StorageProviders = require("./StorageProviders")
+local Util = require("./Util")
 
 -- Types
 -- Constants
@@ -21,7 +16,6 @@ local Util = require(_Package:WaitForChild("Util"))
 -- Private Functions
 -- Class
 -- Types
-type Maid = Maid.Maid
 type OnBatchInsertInvoke = StorageProviders.OnBatchInsertInvoke
 type OnBatchSetInvoke = StorageProviders.OnBatchSetInvoke
 
@@ -32,7 +26,6 @@ type StorageProviders = typeof(StorageProviders)
 
 export type Midas = {
 	__index: Midas,
-	_Maid: Maid,
 	_IsAlive: boolean,
 	_OnBatchInsertInvoke: OnBatchInsertInvoke,
 	_OnBatchSetInvoke: OnBatchSetInvoke,
@@ -107,12 +100,8 @@ function Midas:Destroy()
 	if CurrentMidas == self then
 		CurrentMidas = nil :: any
 	end
-	self._Maid:Destroy()
-	local t: any = self
-	for k, v in pairs(t) do
-		t[k] = nil
-	end
-	setmetatable(t, nil)
+	table.clear(self)
+	setmetatable(self, nil)
 end
 
 --[=[
@@ -180,7 +169,6 @@ end
 	@return dataset DataSet -- the dataset you just constructed
 ]=]
 function Midas:CreateDataSet(name: string, id: string): DataSet
-	assert(RunService:IsServer(), `bad domain`)
 	assert(self._DataSets[name] == nil, `dataSet of name {name} already exists`)
 	local dataSet = DataSet.new(name, id, function()
 		return function(
@@ -248,7 +236,6 @@ end
 
 --- gets a dataset by name
 function Midas:GetDataSet(name: string): DataSet
-	assert(RunService:IsServer(), `bad domain`)
 	local dataSets = self._DataSets[name]
 	assert(dataSets, `no dataset at {name}`)
 	return dataSets
@@ -381,10 +368,9 @@ function Midas:Automate(
 	end)
 end
 
-function Midas.new()
+function Midas.new(): Midas
 	local self: Midas = setmetatable({}, Midas) :: any
 	self._IsAlive = true
-	self._Maid = Maid.new()
 	self.ProjectId = nil
 	self.StorageProviders = StorageProviders
 	self.Util = Util
@@ -397,12 +383,13 @@ function Midas.new()
 		return false
 	end
 
-	if RunService:IsRunning() then
+	local success, msg = pcall(function()
 		game:BindToClose(function()
 			self:Post(math.huge, math.huge, 1 / 60, true)
 		end)
-	else
-		warn(`Midas is being run from plugin / command line, skipping "BindToClose" mass-post`)	
+	end)
+	if not success then
+		warn(msg)
 	end
 
 	self._DataSets = {}

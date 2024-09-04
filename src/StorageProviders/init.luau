@@ -1,10 +1,8 @@
 --!strict
-local _Package = script.Parent
-local _Packages = _Package.Parent
 -- Services
 -- Packages
 -- Modules
-local StorageUtil = require(script:WaitForChild("Util"))
+local StorageUtil = require("./Util")
 -- Types
 export type OnBatchInsertInvoke = StorageUtil.OnBatchInsertInvoke
 export type OnBatchSetInvoke = StorageUtil.OnBatchSetInvoke

@@ -1,0 +1,48 @@
+{
+	"editor.formatOnSave": true,
+	"files.autoSave": "onFocusChange",
+	"luau-lsp.sourcemap.rojoProjectFile": "dev.project.json",
+	"luau-lsp.types.robloxSecurityLevel": "LocalUserSecurity",
+	"luau-lsp.require.mode": "relativeToFile",
+	"luau-lsp.require.directoryAliases": {
+		"@proj": "src",
+		"@pkg": "node_modules/.luau-aliases"
+	},
+	"luau-lsp.fflags.override": {
+		"LuauTypeInferIterationLimit": "0",
+		"LuauCheckRecursionLimit": "0",
+		"LuauTypeInferRecursionLimit": "0",
+		"LuauTarjanChildLimit": "0",
+		"LuauTypeInferTypePackLoopLimit": "0",
+		"LuauVisitRecursionLimit": "0",
+		"LuauParseDeclareClassIndexer": "true"
+	},
+	"files.exclude": {
+		"**lints": true,
+		"**types": true,
+		"npm-sourcemap.json": true,
+		"wally-sourcemap.json": true,
+		"darklua-sourcemap.json": true,
+		"serve": true,
+		// "build": true,
+		"package-lock.json": true,
+		"node_modules": true,
+		"requirements.txt": true,
+		"Packages": true,
+	},
+	"emeraldwalk.runonsave": {
+		"shell": "C:\\Program Files\\Git\\bin\\bash.exe",
+		"commands": [
+			{
+				"match": ".lua",
+				"isAsync": false,
+				"cmd": "rojo sourcemap dev.project.json --output sourcemap.json"
+			},
+			{
+				"match": "project.json",
+				"isAsync": false,
+				"cmd": "sh scripts/npm-install.sh"
+			},
+		]
+	}
+}

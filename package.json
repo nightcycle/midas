@@ -1,0 +1,27 @@
+{
+	"name": "@nightcycle/midas",
+	"version": "1.0.2",
+	"description": "a package",
+	"license": "Apache-2.0",
+	"author": "nightcycle <coyer@nightcycle.us>",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nightcycle/midas.git"
+	},
+	"main": "src/init.luau",
+	"scripts": {
+		"prepare": "npmluau"
+	},
+	"dependencies": {
+		"@nightcycle/service-proxy": "^1.0.0",
+		"@nightcycle/table-util": "^3.0.0",
+		"@nightcycle/queue": "^2.3.2",
+		"@rbxts/rbxts-hashlib": "^1.0.2"
+	},
+	"devDependencies": {
+		"npmluau": "^0.1.1"
+	},
+	"keywords": [
+		"luau"
+	]
+}

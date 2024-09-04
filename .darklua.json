@@ -1,0 +1,19 @@
+{
+	"rules": [
+		{
+			"rule": "convert_require",
+			"current": {
+				"name": "path",
+				"sources": {
+					"@proj": "src",
+					"@pkg": "node_modules/.luau-aliases"
+				}
+			},
+			"target": {
+				"name": "roblox",
+				"rojo_sourcemap": "./npm-sourcemap.json",
+				"indexing_style": "wait_for_child"
+			}
+		}
+	]
+}

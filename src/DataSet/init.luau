@@ -1,13 +1,11 @@
 --!strict
-local _Package = script.Parent
-local _Packages = _Package.Parent
 -- Services
 -- Packages
-local TableUtil = require(_Packages:WaitForChild("TableUtil"))
+local TableUtil = require("@pkg/@nightcycle/table-util")
 
 -- Modules
-local DataTable = require(script:WaitForChild("DataTable"))
-local Util = require(_Package:WaitForChild("Util"))
+local DataTable = require("./DataTable")
+local Util = require("@proj/Util")
 
 -- Types
 -- Constants

@@ -1,11 +1,9 @@
 --!strict
-local _Package = script.Parent.Parent
-local _Packages = _Package.Parent
 -- Services
 -- Packages
 -- Modules
 -- Types
-local Util = require(_Package:WaitForChild("Util"))
+local Util = require("../Util")
 
 type DataType = Util.DataType
 

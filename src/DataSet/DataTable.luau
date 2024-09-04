@@ -1,12 +1,10 @@
 --!strict
-local _Package = script.Parent.Parent
-local _Packages = _Package.Parent
 -- Services
 -- Packages
-local Queue = require(_Packages:WaitForChild("Queue"))
+local Queue = require("@pkg/@nightcycle/queue")
 
 -- Modules
-local Util = require(_Package:WaitForChild("Util"))
+local Util = require("@proj/Util")
 
 -- Types
 -- Constants
@@ -58,10 +56,7 @@ export type DataTable<RowData> = {
 		isNullable: boolean,
 		keySymbol: string?
 	) -> (),
-	SetKeyColumn: (
-		self: DataTable<RowData>,
-		key: string
-	) -> (),
+	SetKeyColumn: (self: DataTable<RowData>, key: string) -> (),
 	GetRowCount: (self: DataTable<RowData>) -> number,
 	Post: (self: DataTable<RowData>, maxEntries: number, maxSize: number) -> (boolean, boolean, number),
 	new: (
@@ -150,7 +145,7 @@ function DataTable:AddRow(param: { [string]: unknown })
 					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
 				)
 				assert(
-					math.abs(v) < (2^32)-1,
+					math.abs(v) < (2 ^ 32) - 1,
 					`integer is larger than 32 bits at key "{columnData.Key}" - consider changing to Int64`
 				)
 			elseif columnData.Format == "Int64" then
@@ -158,10 +153,7 @@ function DataTable:AddRow(param: { [string]: unknown })
 					type(v) == "number",
 					`bad value {v} at key "{columnData.ExternalKey}", expected number, received {type(v)}`
 				)
-				assert(
-					math.abs(v) < (2^64)-1,
-					`integer is larger than 64 bits at key "{columnData.ExternalKey}"`
-				)
+				assert(math.abs(v) < (2 ^ 64) - 1, `integer is larger than 64 bits at key "{columnData.ExternalKey}"`)
 			end
 		end
 	end
@@ -248,7 +240,6 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 			self._TotalDataPosted += size
 			self._TotalRowsPosted += #dataList
 		end)
-	
 	else
 		local onBatchInvoke = self._GetOnBatchInsertInvoke()
 		success = onBatchInvoke(self._Id, dataList, format, function(size: number)
@@ -256,9 +247,7 @@ function DataTable:Post(maxEntries: number, maxSize: number): (boolean, boolean,
 			self._TotalDataPosted += size
 			self._TotalRowsPosted += #dataList
 		end)
-	
 	end
-
 
 	if not success then
 		for i, v in ipairs(dataList) do

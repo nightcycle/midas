@@ -1,14 +1,9 @@
 --!strict
-local _Package = script.Parent.Parent
-local _Packages = _Package.Parent
 -- Services
-local HttpService = game:GetService("HttpService")
-local RunService = game:GetService("RunService")
-
 -- Packages
-local HashUtil = require(_Packages:WaitForChild("HashUtil"))
+local HashUtil = require("@pkg/@rbxts/rbxts-hashlib")
 -- Modules
-local Util = require(_Package:WaitForChild("Util"))
+local Util = require("@proj/Util")
 
 -- Types
 type MongoInsertOneResponse = {
@@ -18,20 +13,10 @@ type DataType = Util.DataType
 export type MongoDB = {
 	__index: MongoDB,
 	_IsAlive: boolean,
-	_ApiKey: string,
+	_ApiKey: string | Secret,
 	_Url: string,
 	DebugPrintEnabled: boolean,
 	Destroy: (self: MongoDB) -> (),
-	StupidSetMany: (
-		self: MongoDB,
-		dataSource: string,
-		databaseName: string,
-		collectionName: string,
-		onKey: string,
-		dataList: { [number]: { [string]: any } },
-		format: { [string]: DataType },
-		onPayloadSizeKnownInvoke: (size: number) -> ()
-	) -> boolean,
 	InsertMany: (
 		self: MongoDB,
 		dataSource: string,
@@ -115,110 +100,6 @@ function MongoDB:Destroy()
 	setmetatable(self, nil)
 end
 
-
---- sends the data to MongoDB matching at a specific key - it does this by mass deleting data at the key, then mass writing. This is dangerous because the delete could succeed, but the replacement write could fail.
-function MongoDB:StupidSetMany(
-	dataSource: string,
-	databaseName: string,
-	collectionName: string,
-	onKey: string,
-	dataList: { [number]: { [string]: any } },
-	format: { [string]: DataType },
-	onPayloadSizeKnownInvoke: (size: number) -> ()
-)
-	local payload = {
-		["dataSource"] = dataSource,
-		["database"] = databaseName,
-		["collection"] = collectionName,
-		["documents"] = {},
-	}
-	local deletePayload = {
-		["dataSource"] = dataSource,
-		["database"] = databaseName,
-		["collection"] = collectionName,
-		["filter"] = {
-			[onKey] = {
-				["$in"] = {},
-			},
-		},
-	}
-
-	for i, data in ipairs(dataList) do
-		local document = {}
-
-		for k, v in pairs(data) do
-			local f: DataType = format[k]
-			local conversion = DATA_TYPE_CONVERSION[f]
-			assert(conversion ~= nil, `bad data type {f} for {k}`)
-			document[k] = conversion(v)
-		end
-
-		deletePayload["filter"][onKey]["$in"][i] = document[onKey]
-		payload["documents"][i] = document
-	end
-
-	local encodedDeletePayload = HttpService:JSONEncode(deletePayload)
-	local encodedPayload = HttpService:JSONEncode(payload)
-	onPayloadSizeKnownInvoke(encodedPayload:len() + encodedDeletePayload:len())
-	local response: {
-		Body: string?,
-		Headers: {
-			[string]: string,
-		},
-		StatusCode: number,
-		StatusMessage: string,
-		Success: boolean,
-	}
-	if game.PlaceId ~= 0 then
-		local deleteResponse = HttpService:RequestAsync({
-			Url = `{self._Url}/endpoint/data/v1/action/deleteMany`,
-			Method = "POST",
-			Headers = {
-				["Content-Type"] = "application/ejson",
-				[`Accept`] = `application/json`,
-				["apiKey"] = self._ApiKey,
-			},
-			Body = encodedDeletePayload,
-			Compress = Enum.HttpCompression.None,
-		})
-		if not deleteResponse.Success then
-			error(`mongo delete post fail, code={deleteResponse.StatusCode}, msg={deleteResponse.StatusMessage}, body={deleteResponse.Body}`)
-		end
-
-		response = HttpService:RequestAsync({
-			Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
-			Method = "POST",
-			Headers = {
-				["Content-Type"] = "application/ejson",
-				[`Accept`] = `application/json`,
-				["apiKey"] = self._ApiKey,
-			},
-			Body = encodedPayload,
-			Compress = Enum.HttpCompression.None,
-		})
-	else
-		response = {
-			Body = HttpService:JSONEncode({ {
-				insertedId = "abc123",
-			} }),
-			Headers = {},
-			StatusCode = 200,
-			StatusMessage = "You're offline",
-			Success = true,
-		}
-	end
-
-	if self.DebugPrintEnabled then
-		print(`MongoDB:StupidSetMany({dataSource}/{databaseName}/{collectionName}) -> [{response.StatusCode}]`)
-	end
-
-	if not response.Success then
-		error(`mongo insert post fail, code={response.StatusCode}, msg={response.StatusMessage}, body={response.Body}`)
-	end
-
-	return response.Success
-end
-
 --- sends the data to MongoDB
 function MongoDB:InsertMany(
 	dataSource: string,
@@ -248,8 +129,15 @@ function MongoDB:InsertMany(
 		payload["documents"][i] = document
 	end
 
-	local encodedPayload = HttpService:JSONEncode(payload)
-	onPayloadSizeInvoke(encodedPayload:len())
+	local isLune: boolean?
+	do
+		local success, _result = pcall(function()
+			local req: any = require
+			local _ = req("@lune/serde")
+		end)
+		isLune = success
+	end
+
 	local response: {
 		Body: string?,
 		Headers: {
@@ -259,28 +147,62 @@ function MongoDB:InsertMany(
 		StatusMessage: string,
 		Success: boolean,
 	}
-	if game.PlaceId ~= 0 then
-		response = HttpService:RequestAsync({
-			Url = `{self._Url}/endpoint/data/v1/action/insertMany`,
-			Method = "POST",
-			Headers = {
-				["Content-Type"] = "application/ejson",
-				[`Accept`] = `application/json`,
-				["apiKey"] = self._ApiKey,
-			},
-			Body = encodedPayload,
-			Compress = Enum.HttpCompression.None,
+
+	local url = `{self._Url}/endpoint/data/v1/action/insertMany`
+	local headers = {
+		["Content-Type"] = "application/ejson",
+		[`Accept`] = `application/json`,
+		["apiKey"] = self._ApiKey,
+	} :: { [string]: Secret | string }
+	if isLune then
+		local req: any = require
+		local serde: any = req("@lune/serde")
+		local net: any = req("@lune/net")
+
+		local encodedPayload = serde.encode("json", payload)
+		onPayloadSizeInvoke(encodedPayload:len())
+
+		local netResponse = net.request({
+			url = url,
+			method = "POST",
+			headers = headers,
+			body = encodedPayload,
 		})
-	else
+
 		response = {
-			Body = HttpService:JSONEncode({ {
-				insertedId = "abc123",
-			} }),
-			Headers = {},
-			StatusCode = 200,
-			StatusMessage = "You're offline",
-			Success = true,
+			Body = netResponse.body,
+			Headers = netResponse.headers,
+			StatusCode = netResponse.statusCode,
+			StatusMessage = netResponse.statusMessage,
+			Success = netResponse.success,
 		}
+	else
+		local encodedPayload = game:GetService("HttpService"):JSONEncode(payload)
+		onPayloadSizeInvoke(encodedPayload:len())
+
+		if game.PlaceId ~= 0 then
+			response = game:GetService("HttpService"):RequestAsync({
+				Url = url,
+				Method = "POST",
+				Headers = {
+					["Content-Type"] = "application/ejson",
+					[`Accept`] = `application/json`,
+					["apiKey"] = self._ApiKey,
+				} :: { [string]: Secret | string },
+				Body = encodedPayload,
+				Compress = Enum.HttpCompression.None,
+			})
+		else
+			response = {
+				Body = game:GetService("HttpService"):JSONEncode({ {
+					insertedId = "abc123",
+				} }),
+				Headers = {},
+				StatusCode = 200,
+				StatusMessage = "You're offline",
+				Success = true,
+			}
+		end
 	end
 
 	if self.DebugPrintEnabled then
@@ -295,8 +217,6 @@ end
 
 --- initializes the class
 function MongoDB.new(apiKey: string, url: string)
-	assert(RunService:IsServer(), `bad domain`)
-
 	local self: MongoDB = setmetatable({}, MongoDB) :: any
 	self._IsAlive = true
 	self._ApiKey = apiKey

@@ -1,0 +1,11 @@
+{
+	"languageMode": "strict",
+	"lintErrors": true,
+	"lint": {
+		"*": true
+	},
+	"aliases": {
+		"pkg": "./node_modules/.luau-aliases",
+		"proj": "./src"
+	}
+}

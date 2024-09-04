@@ -1,20 +1,24 @@
-src_old
-.vscode
-package-lock.json
-Packages
-.gitconfig
-*.parquet
-*.csv
-*.pyc
 
-sourcemap.json
-test.project.json
+
+# Directories
+Packages
+node_modules
+build
+serve
+.mypy_cache
 types
-tests/lsp/**
-tests/selene/**
 lints
 
-midas.rbxl
-midas.rbxl.lock
-test
-build
+# Files
+darklua-sourcemap.json
+wally-sourcemap.json
+npm-sourcemap.json
+wally.lock
+
+# File types
+*.lock
+*.gitconfig
+*.rbxl
+*.rbxlx
+*.lock
+
