@@ -46,6 +46,7 @@ fi
 
 cp -r "src" "$build_dir/src"
 cp -rL "node_modules" "$build_dir/node_modules"
+cp -rL "scripts" "$build_dir/scripts"
 
 cp -r "types" "$build_dir/types"
 cp -r "lints" "$build_dir/lints"

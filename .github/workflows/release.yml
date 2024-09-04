@@ -90,7 +90,7 @@ jobs:
     needs: get_published_release
     runs-on: windows-latest
     env:
-      ROJO_CONFIG: "npm.project.json"
+      ROJO_CONFIG: "dev.project.json"
     steps:
       # Checkout your Git repo
       - uses: actions/checkout@v4
