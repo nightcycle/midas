@@ -4,7 +4,7 @@
 local Queue = require("@pkg/@nightcycle/queue")
 
 -- Modules
-local Util = require("@proj/Util")
+local Util = require("../Util")
 
 -- Types
 -- Constants

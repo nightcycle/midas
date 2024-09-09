@@ -5,7 +5,6 @@
 	"luau-lsp.types.robloxSecurityLevel": "LocalUserSecurity",
 	"luau-lsp.require.mode": "relativeToFile",
 	"luau-lsp.require.directoryAliases": {
-		"@proj": "src",
 		"@pkg": "node_modules/.luau-aliases"
 	},
 	"luau-lsp.fflags.override": {

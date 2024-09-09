@@ -3,7 +3,7 @@
 -- Packages
 local HashUtil = require("@pkg/@rbxts/rbxts-hashlib")
 -- Modules
-local Util = require("@proj/Util")
+local Util = require("../Util")
 
 -- Types
 type MongoInsertOneResponse = {

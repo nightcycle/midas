@@ -5,7 +5,6 @@
 		"*": true
 	},
 	"aliases": {
-		"pkg": "./node_modules/.luau-aliases",
-		"proj": "./src"
+		"pkg": "./node_modules/.luau-aliases"
 	}
 }

@@ -38,7 +38,13 @@ local Util = {}
 
 function Util.toTimeString(dateTime: DateTime): string
 	local data = dateTime:ToUniversalTime() :: DateTimeData
-	return `{data["Year"]}-{string.format("%02d", data["Month"])}-{string.format("%02d", data["Day"])}T{string.format("%02d", data["Hour"])}:{string.format("%02d", data["Minute"])}:{string.format("%02d", data["Second"])}.{string.format("%03d", data["Millisecond"])}Z`
+	return `{data["Year"]}-{string.format("%02d", data["Month"])}-{string.format("%02d", data["Day"])}T{string.format(
+		"%02d",
+		data["Hour"]
+	)}:{string.format("%02d", data["Minute"])}:{string.format("%02d", data["Second"])}.{string.format(
+		"%03d",
+		data["Millisecond"]
+	)}Z`
 end
 
 return Util

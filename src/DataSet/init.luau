@@ -5,7 +5,7 @@ local TableUtil = require("@pkg/@nightcycle/table-util")
 
 -- Modules
 local DataTable = require("./DataTable")
-local Util = require("@proj/Util")
+local Util = require("../Util")
 
 -- Types
 -- Constants
