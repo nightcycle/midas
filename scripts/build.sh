@@ -43,6 +43,7 @@ if [ "$is_wally" = true ]; then
 	echo "wally project detected, copying model.project.json to default.project.json"
 	cp -r "$MODEL_ROJO_CONFIG" "$build_dir/default.project.json"
 	cp -r "wally.toml" "$build_dir/wally.toml"
+	cp -r "aftman.toml" "$build_dir/aftman.toml"
 fi
 
 cp -r "src" "$build_dir/src"

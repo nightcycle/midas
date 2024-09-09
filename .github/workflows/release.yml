@@ -79,6 +79,11 @@ jobs:
           asset_name: Package.rbxl
           asset_content_type: application/octet-stream
 
+      - uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          path: build
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: publish package
         shell: bash
         run: |
