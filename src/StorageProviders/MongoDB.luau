@@ -1,7 +1,7 @@
 --!strict
 -- Services
 -- Packages
-local HashUtil = require("@pkg/@rbxts/rbxts-hashlib")
+-- local HashUtil = require("@pkg/@rbxts/rbxts-hashlib")
 -- Modules
 local Util = require("../Util")
 
@@ -39,15 +39,15 @@ local DATA_TYPE_CONVERSION: { [DataType]: (value: any) -> any } = {
 		assert(type(value) == "number")
 		return { ["$numberLong"] = tostring(math.round(value)) }
 	end,
-	["Binary"] = function(value: any): any
-		assert(type(value) == "string")
-		return {
-			["$binary"] = {
-				["base64"] = HashUtil.base64_encode(value),
-				["subType"] = "05",
-			},
-		}
-	end,
+	-- ["Binary"] = function(value: any): any
+	-- 	assert(type(value) == "string")
+	-- 	return {
+	-- 		["$binary"] = {
+	-- 			["base64"] = HashUtil.base64_encode(value),
+	-- 			["subType"] = "05",
+	-- 		},
+	-- 	}
+	-- end,
 	["Date"] = function(value: any): any
 		assert(typeof(value) == "DateTime", `bad type for {value}, type is {typeof(value)}, expected DateTime`)
 		return { ["$date"] = Util.toTimeString(value) }

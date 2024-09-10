@@ -15,8 +15,7 @@
 	"dependencies": {
 		"@nightcycle/service-proxy": "^1.0.0",
 		"@nightcycle/table-util": "^3.0.0",
-		"@nightcycle/queue": "^2.3.2",
-		"@rbxts/rbxts-hashlib": "^1.0.2"
+		"@nightcycle/queue": "^2.3.2"
 	},
 	"devDependencies": {
 		"npmluau": "^0.1.1"
