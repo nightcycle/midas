@@ -22,11 +22,3 @@ do
 	echo "removing $dir"
 	rm -rf "$dir"
 done
-
-
-# fix hashlib require
-echo "fixing hashlib require"
-bad_script_path="node_modules/@rbxts/rbxts-hashlib/out/init.lua"
-bad_script=$(cat "$bad_script_path")
-modified_script=$(echo "$bad_script" | sed 's/local Base64 = require(script.Base64)/local Base64 = require(".\/Base64")/')
-echo "$modified_script" > "$bad_script_path"
