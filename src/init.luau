@@ -18,6 +18,7 @@ local Util = require("./Util")
 -- Types
 type OnBatchInsertInvoke = StorageProviders.OnBatchInsertInvoke
 type OnBatchSetInvoke = StorageProviders.OnBatchSetInvoke
+export type PartialLuneDatetime = Util.PartialLuneDatetime
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType
@@ -403,7 +404,7 @@ end
 
 --- initializes the package
 function Midas.init(): () -> ()
-	print(`booting Midas`)
+	print(`booting {script.Name}`)
 	local midas = Midas.new()
 	return function()
 		midas:Destroy()
