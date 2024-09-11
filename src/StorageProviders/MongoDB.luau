@@ -177,7 +177,7 @@ function MongoDB:InsertMany(
 			Headers = netResponse.headers,
 			StatusCode = netResponse.statusCode,
 			StatusMessage = netResponse.statusMessage,
-			Success = netResponse.success,
+			Success = netResponse.success or netResponse.statusCode == 201, -- 201 also means it worked but will return as false
 		}
 	else
 		local encodedPayload = game:GetService("HttpService"):JSONEncode(payload)
