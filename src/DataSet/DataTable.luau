@@ -120,8 +120,8 @@ function DataTable:AddRow(param: { [string]: unknown })
 				)
 			elseif columnData.Format == "Date" then
 				assert(
-					typeof(v) == "DateTime",
-					`bad value {v} at key "{columnData.ExternalKey}", expected DateTime, received {typeof(v)}`
+					Util.getIfDateTimeLike(v),
+					`bad value {v} at key "{columnData.ExternalKey}", expected DateTime / datetime, received {typeof(v)}`
 				)
 			end
 

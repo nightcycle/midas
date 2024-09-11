@@ -18,7 +18,6 @@ local Util = require("./Util")
 -- Types
 type OnBatchInsertInvoke = StorageProviders.OnBatchInsertInvoke
 type OnBatchSetInvoke = StorageProviders.OnBatchSetInvoke
-
 export type DataTable<RowData> = DataSet.DataTable<RowData>
 export type DataSet = DataSet.DataSet
 export type DataType = Util.DataType

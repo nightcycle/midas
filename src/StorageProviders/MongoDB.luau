@@ -49,7 +49,10 @@ local DATA_TYPE_CONVERSION: { [DataType]: (value: any) -> any } = {
 	-- 	}
 	-- end,
 	["Date"] = function(value: any): any
-		assert(typeof(value) == "DateTime", `bad type for {value}, type is {typeof(value)}, expected DateTime`)
+		assert(
+			Util.getIfDateTimeLike(value),
+			`bad type for {value}, type is {typeof(value)}, expected DateTime / datetime`
+		)
 		return { ["$date"] = Util.toTimeString(value) }
 	end,
 	["Decimal128"] = function(value: any): any
