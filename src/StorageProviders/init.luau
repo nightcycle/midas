@@ -13,6 +13,6 @@ export type OnBatchSetInvoke = StorageUtil.OnBatchSetInvoke
 -- Class
 local Util = {}
 
-Util.MongoDB = require(script:WaitForChild("MongoDB"))
+Util.MongoDB = require("./MongoDB")
 
 return Util
