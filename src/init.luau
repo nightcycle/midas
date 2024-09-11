@@ -404,7 +404,7 @@ end
 
 --- initializes the package
 function Midas.init(): () -> ()
-	print(`booting {script.Name}`)
+	print(`booting Midas`)
 	local midas = Midas.new()
 	return function()
 		midas:Destroy()
