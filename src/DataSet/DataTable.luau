@@ -175,7 +175,7 @@ function DataTable:AddRow(param: { [string]: unknown })
 
 	local isLune = true
 	pcall(function()
-		local workspace = game:GetService("Workspace")
+		local _workspace = game:GetService("Workspace")
 		isLune = false
 	end)
 	if isLune then
