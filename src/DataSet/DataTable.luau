@@ -10,6 +10,7 @@ local Util = require("../Util")
 -- Constants
 -- Variables
 -- References
+local LuneIndex = 0 --alternative to tick for lune
 -- Private Functions
 -- Class
 -- Types
@@ -172,7 +173,17 @@ function DataTable:AddRow(param: { [string]: unknown })
 		end
 	end
 
-	self._BatchQueue:Add(compressedData, -tick())
+	local isLune = true
+	pcall(function()
+		local workspace = game:GetService("Workspace")
+		isLune = false
+	end)
+	if isLune then
+		LuneIndex += 1
+		self._BatchQueue:Add(compressedData, -LuneIndex)
+	else
+		self._BatchQueue:Add(compressedData, -tick())
+	end
 end
 
 function DataTable:SetKeyColumn(key: string)
